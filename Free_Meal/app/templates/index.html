@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Free Meal Eligibility Check</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            width: 400px;
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #007BFF;
+        }
+
+        #explanation {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
+            text-align: left;
+        }
+    </style>
+    <script>
+        function checkEligibility() {
+            const data = {
+                marital_status: document.getElementById('marital_status').value,
+                age: parseInt(document.getElementById('age').value),
+                annual_income: parseFloat(document.getElementById('annual_income').value),
+                family_income: parseFloat(document.getElementById('family_income').value),
+                number_of_children: parseInt(document.getElementById('number_of_children').value),
+                siblings_in_university: parseInt(document.getElementById('siblings_in_university').value),
+                unemployment_benefit: document.getElementById('unemployment_benefit').value === 'true',
+                permanent_residence: document.getElementById('permanent_residence').value
+            };
+
+            fetch('/check_eligibility', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                document.getElementById('result').innerText = result.eligible ?
+                    'You are eligible for free meals!' : 'You are not eligible for free meals.';
+
+                const explanationDiv = document.getElementById('explanation');
+                explanationDiv.innerHTML = '<strong>Reasons:</strong><ul>' +
+                    result.reasons.map(reason => `<li>${reason}</li>`).join('') + '</ul>';
+            })
+            .catch(error => {
+                document.getElementById('result').innerText = 'Error checking eligibility.';
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Free Meal Eligibility Check</h2>
+        <form onsubmit="event.preventDefault(); checkEligibility();">
+            <label>Marital Status:</label>
+            <select id="marital_status">
+                <option value="single">Single</option>
+                <option value="married">Married</option>
+            </select>
+
+            <label>Age:</label>
+            <input type="number" id="age" required>
+
+            <label>Annual Income (€):</label>
+            <input type="number" id="annual_income" required>
+
+            <label>Family Income (€):</label>
+            <input type="number" id="family_income" required>
+
+            <label>Number of Children:</label>
+            <input type="number" id="number_of_children" value="0">
+
+            <label>Siblings in University:</label>
+            <input type="number" id="siblings_in_university" value="0">
+
+            <label>Unemployment Benefit:</label>
+            <select id="unemployment_benefit">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+            </select>
+
+            <label>Permanent Residence:</label>
+            <select id="permanent_residence">
+                <option value="same_city">Same City as University</option>
+                <option value="different_city">Different City</option>
+            </select>
+
+            <button type="submit">Check Eligibility</button>
+        </form>
+
+        <div id="result"></div>
+        <div id="explanation"></div>
+    </div>
+</body>
+</html>
