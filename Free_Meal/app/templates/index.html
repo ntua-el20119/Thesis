@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Free Meal Eligibility Check</title>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,6 +13,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            overflow: auto;
         }
 
         .container {
@@ -20,6 +22,8 @@
             border-radius: 8px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
             width: 400px;
+            max-height: 90vh; /* Ensure the container doesn't exceed the viewport height */
+            overflow-y: auto; /* Make the container scrollable if content overflows */
             text-align: center;
         }
 
@@ -33,6 +37,13 @@
             margin: 10px 0 5px;
             text-align: left;
             font-weight: bold;
+        }
+
+        .explanation {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+            text-align: left;
         }
 
         input, select, button {
@@ -68,78 +79,129 @@
             text-align: left;
         }
     </style>
-    <script>
-        function checkEligibility() {
-            const data = {
-                marital_status: document.getElementById('marital_status').value,
-                age: parseInt(document.getElementById('age').value),
-                annual_income: parseFloat(document.getElementById('annual_income').value),
-                family_income: parseFloat(document.getElementById('family_income').value),
-                number_of_children: parseInt(document.getElementById('number_of_children').value),
-                siblings_in_university: parseInt(document.getElementById('siblings_in_university').value),
-                unemployment_benefit: document.getElementById('unemployment_benefit').value === 'true',
-                permanent_residence: document.getElementById('permanent_residence').value
-            };
+<script>
+    function checkEligibility() {
+        const data = {
+            age: parseInt(document.getElementById('age').value),
+            marital_status: document.getElementById('marital_status').value,
+            annual_income: parseFloat(document.getElementById('annual_income').value),
+            family_income: parseFloat(document.getElementById('family_income').value),
+            number_of_children: parseInt(document.getElementById('number_of_children').value),
+            siblings_in_university: parseInt(document.getElementById('siblings_in_university').value),
+            unemployment_benefit: document.getElementById('unemployment_benefit').value === 'true',
+            permanent_residence: document.getElementById('permanent_residence').value,
+            family_member_disability: document.getElementById('family_member_disability').value === 'true',
+            orphan_status: document.getElementById('orphan_status').value === 'true',
+            large_family_status: document.getElementById('large_family_status').value === 'true',
+            terrorism_victim_child: document.getElementById('terrorism_victim_child').value === 'true'
+        };
 
-            fetch('/check_eligibility', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => {
-                document.getElementById('result').innerText = result.eligible ?
-                    'You are eligible for free meals!' : 'You are not eligible for free meals.';
+        fetch('/check_eligibility', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            document.getElementById('result').innerText = result.eligible ?
+                'Έχετε δικαίωμα δωρεάν σίτισης' : 'Δεν έχετε δικαίωμα δωρεάν σίτισης';
 
-                const explanationDiv = document.getElementById('explanation');
-                explanationDiv.innerHTML = '<strong>Reasons:</strong><ul>' +
-                    result.reasons.map(reason => `<li>${reason}</li>`).join('') + '</ul>';
-            })
-            .catch(error => {
-                document.getElementById('result').innerText = 'Error checking eligibility.';
-                console.error('Error:', error);
-            });
-        }
-    </script>
+            const explanationDiv = document.getElementById('explanation');
+            explanationDiv.innerHTML = '<strong>Λόγος:</strong> ' + (result.reason || "Δεν δόθηκε αιτιολόγηση.");
+        })
+        .catch(error => {
+            document.getElementById('result').innerText = 'Σφάλμα κατά τον έλεγχο.';
+            console.error('Error:', error);
+        });
+    }
+</script>
 </head>
 <body>
     <div class="container">
-        <h2>Free Meal Eligibility Check</h2>
+        <h2>Δικαίωμα Δωρεάν Σίτισης</h2>
         <form onsubmit="event.preventDefault(); checkEligibility();">
-            <label>Marital Status:</label>
-            <select id="marital_status">
-                <option value="single">Single</option>
-                <option value="married">Married</option>
-            </select>
-
-            <label>Age:</label>
+            <label>Ηλικία:</label>
+            <div class="explanation">Η ηλικία σας</div>
             <input type="number" id="age" required>
+            
 
-            <label>Annual Income (€):</label>
+            <label>Οικογενειακή Κατάσταση:</label>
+            <div class="explanation">Έγγαμος ή άγαμος</div>
+            <select id="marital_status">
+                <option value="single">Άγαμος</option>
+                <option value="married">Έγγαμος</option>
+            </select>
+ 
+
+            <label>Ατομικό Ετήσιο Εισόδημα (€):</label>
+            <div class="explanation">Το προσωπικό σας εισόδημα. (Αν δεν έχετε κανένα εισόδημα, συμπληρώστε 0)</div>
             <input type="number" id="annual_income" required>
 
-            <label>Family Income (€):</label>
+
+            <label>Οικογενειακό Ετήσιο Εισόδημα (€):</label>
+            <div class="explanation">Combined income of your family household.</div>
             <input type="number" id="family_income" required>
 
-            <label>Number of Children:</label>
+
+            <label>Αριθμός Τέκνων:</label>
+            <div class="explanation">Αριθμός τέκνων στην οικογένεια σας:</div>
             <input type="number" id="number_of_children" value="0">
 
-            <label>Siblings in University:</label>
+
+            <label>Αδέλφια ενεργοί φοιτητές</label>
+            <div class="explanation">Αδέλφια που φοιτούν στο πανεπιστήμιο</div>
             <input type="number" id="siblings_in_university" value="0">
 
-            <label>Unemployment Benefit:</label>
+
+            <label>Επίδομα Ανεργείας:</label>
+            <div class="explanation">Εισπράτετε εσείς ή ο/η συζυγός σας (αν είστε έγγαμος) ή κάποιος εκ των γονέων σας (αν ειστε άγαμος) επίδομα ανεργείας;</div>
             <select id="unemployment_benefit">
-                <option value="false">No</option>
-                <option value="true">Yes</option>
+                <option value="false">Όχι</option>
+                <option value="true">Ναι</option>
             </select>
 
-            <label>Permanent Residence:</label>
+
+            <label>Τοποθεσία Μόνιμης Κατοικίας </label>
+            <div class="explanation">Κατοικείτε στον ίδιο δήμο που λειτουργεί το πανεπιστήμιο;</div>
             <select id="permanent_residence">
-                <option value="same_city">Same City as University</option>
-                <option value="different_city">Different City</option>
+                <option value="different_city">Όχι</option>
+                <option value="same_city">Ναι</option>
             </select>
 
-            <button type="submit">Check Eligibility</button>
+
+            <label>Μέλος Οικογένειας με Αναπηρία</label>
+            <div class="explanation">Γονείς, τέκνα, αδέλφια, συζύγους που είναι τυφλοί ή κωφάλαλοι ή νεφροπαθείς, που υποβάλλονται σε αιμοκάθαρση ή πάσχουν από μυϊκή δυστροφία Duchenne ή ανήκουν στην κατηγορία ατόμων ειδικών αναγκών επειδή έχουν κινητικά προβλήματα οφειλόμενα σε αναπηρία άνω του 67%.</div>
+            <select id="family_member_disability">
+                <option value="false">Όχι</option>
+                <option value="true">Ναι</option>
+            </select>
+
+
+            <label>Απορφανισθέντες φοιτητές</label>
+            <div class="explanation">Είστε απορφανισθέντας φοιτητής/τρια</div>
+            <select id="orphan_status">
+                <option value="false">Οχι</option>
+                <option value="true">Ναι</option>
+            </select>
+
+
+            <label>Πολύτεκνη Οικογένεια</label>
+            <div class="explanation">Τουλάχιστον 3 παιδιά</div>
+            <select id="large_family_status">
+                <option value="false">Όχι</option>
+                <option value="true">Ναι</option>
+            </select>
+
+
+            <label>Θύμα Τρομοκρατίας</label>
+            <div class="explanation">Φοιτητές που φέρουν την ιδιότητα του τέκνου θύματος τρομοκρατίας</div>
+            <select id="terrorism_victim_child">
+                <option value="false">Όχι</option>
+                <option value="true">Ναι</option>
+            </select>
+
+
+            <button type="submit">Έλεγχος</button>
         </form>
 
         <div id="result"></div>
@@ -147,3 +209,4 @@
     </div>
 </body>
 </html>
+
