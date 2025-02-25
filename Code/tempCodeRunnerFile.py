@@ -1,0 +1,1 @@
+pos = nx.spring_layout(G_balanced)  # Spring layout για δέντρο που μοιάζει με binary search tree
