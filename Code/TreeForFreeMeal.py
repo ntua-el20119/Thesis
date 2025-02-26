@@ -41,4 +41,3 @@ pos = nx.spring_layout(G_balanced)  # Spring layout για δέντρο που �
 nx.draw(G_balanced, pos, with_labels=True, node_size=5000, node_color="lightgreen", font_size=10, font_weight='bold', arrowsize=20)
 plt.title("Ισοσταθμισμένο Δέντρο Απόφασης για Δωρεάν Σίτιση", size=15)
 plt.show()
-
