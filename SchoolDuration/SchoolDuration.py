@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import pandas as pd
+
 # Σταθερές για τη διάρκεια των σπουδών
 EXTRA_SEMESTERS_STANDARD = 4  # Πρόσθετα εξάμηνα για 4ετή προγράμματα
 EXTRA_SEMESTERS_LONG = 6       # Πρόσθετα εξάμηνα για μεγαλύτερα προγράμματα
