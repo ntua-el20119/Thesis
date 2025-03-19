@@ -1,0 +1,166 @@
+---
+metadata:
+  title: Καθορισμός Δικαιούχου Δωρεάν Σίτισης
+  short title: Δωρεάν Σίτιση Φοιτητών
+  description: Μια συνέντευξη για να καθοριστεί αν ένας φοιτητής δικαιούται δωρεάν σίτιση με βάση το Άρθρο 1.
+---
+mandatory: True
+code: |
+  # Αρχικοποίηση μεταβλητών
+  eligible = False
+  priority = False
+---
+question: Είστε ενεργός φοιτητής σε Α.Ε.Ι. της ημεδαπής ή φιλοξενούμενος φοιτητής ή αλλοδαπός υπότροφος του Υπουργείου Παιδείας;
+yesno: is_student
+---
+question: Είστε ήδη κάτοχος πτυχίου, μεταπτυχιακού ή διδακτορικού τίτλου αντίστοιχα με τον κύκλο σπουδών σας;
+yesno: has_degree
+---
+code: |
+  if not is_student or has_degree:
+    eligible = False
+    final_result = "Δεν δικαιούστε δωρεάν σίτιση."
+    interview_complete = True
+  else:
+    interview_complete = False
+---
+question: Ανήκετε σε μία από τις παρακάτω ειδικές κατηγορίες;
+subquestion: |
+  - Πολύτεκνος ή τέκνο πολύτεκνης οικογένειας
+  - Γονέας ή τέκνο οικογένειας με 3 ζώντα τέκνα
+  - Έχετε αδελφό/ή ενεργό φοιτητή 1ου κύκλου σε διαφορετική πόλη από τη μόνιμη κατοικία των γονέων
+  - Απορφανισθείς από έναν ή και τους δύο γονείς και κάτω των 25 ετών
+  - Τέκνο άγαμης μητέρας με μη αναγνωρισθέν τέκνο κάτω των 25 ετών
+  - Έχετε γονείς, τέκνα, αδέλφια ή σύζυγο με σοβαρή αναπηρία
+  - Πάσχετε από σοβαρές ασθένειες (ν. 3794/2009)
+  - Τέκνο θύματος τρομοκρατίας και κάτω των 25 ετών
+yesno: special_category
+---
+code: |
+  if special_category:
+    eligible = True
+    priority = True
+    final_result = "Δικαιούστε δωρεάν σίτιση με προτεραιότητα λόγω ειδικής κατηγορίας."
+    interview_complete = True
+  else:
+    interview_complete = False
+---
+question: Είστε έγγαμος φοιτητής;
+yesno: is_married
+---
+question: |
+  ${ "Λαμβάνετε εσείς ή ο/η σύζυγός σας επίδομα ανεργίας;" if is_married else "Λαμβάνετε εσείς ή ένας από τους γονείς σας επίδομα ανεργίας;" }
+yesno: receives_unemployment
+---
+code: |
+  if receives_unemployment:
+    eligible = True
+    final_result = "Δικαιούστε δωρεάν σίτιση λόγω επιδόματος ανεργίας."
+    interview_complete = True
+  else:
+    interview_complete = False
+---
+question: Ποιο είναι το ετήσιο οικογενειακό σας εισόδημα (σε ευρώ);
+subquestion: |
+  ${ "Συμπεριλάβετε το εισόδημα σας, του/της συζύγου σας και των ανήλικων τέκνων σας." if is_married else "Συμπεριλάβετε το εισόδημα σας, των γονέων σας και των ανήλικων αδελφών σας." }
+fields:
+  - Εισόδημα: family_income
+    datatype: number
+---
+question: Εάν είστε άγαμος, είστε άνω των 25 ετών;
+yesno: over_25
+show if:
+  variable: is_married
+  is: False
+---
+question: Ποιο είναι το ατομικό σας εισόδημα (σε ευρώ);
+fields:
+  - Εισόδημα: individual_income
+    datatype: number
+show if:
+  variable: over_25
+  is: True
+---
+question: Πόσα τέκνα έχει η οικογένειά σας;
+subquestion: |
+  ${ "Αναφέρετε τον αριθμό των ανήλικων τέκνων σας." if is_married else "Αναφέρετε τον αριθμό των τέκνων στην οικογένεια των γονέων σας (συμπεριλαμβανομένου εσάς)." }
+fields:
+  - Αριθμός τέκνων: num_children
+    datatype: integer
+    min: 1
+---
+question: Πόσοι από τους αδελφούς σας είναι ενεργοί φοιτητές 1ου κύκλου;
+fields:
+  - Αριθμός: num_student_siblings
+    datatype: integer
+    min: 0
+show if:
+  variable: is_married
+  is: False
+---
+code: |
+  income_limit = 45000
+  if is_married:
+    income_limit += num_children * 5000
+    relevant_income = family_income
+  else:
+    if over_25:
+      income_limit = 25000
+      relevant_income = individual_income
+    else:
+      income_limit += (num_children - 1) * 5000
+      income_limit += num_student_siblings * 3000
+      relevant_income = family_income
+---
+question: Υποχρεούστε να υποβάλετε φορολογική δήλωση;
+subquestion: |
+  ${ "Εσείς ή ο/η σύζυγός σας;" if is_married else "Εσείς ή οι γονείς σας;" }
+yesno: tax_obligation
+show if: |
+  relevant_income > income_limit
+---
+question: Έχετε υποβάλει υπεύθυνη δήλωση ότι δεν υποχρεούστε να υποβάλετε φορολογική δήλωση;
+yesno: tax_exemption_declaration
+show if: |
+  relevant_income > income_limit and not tax_obligation
+---
+question: Κατοικείτε μόνιμα στον Δήμο που έχει την έδρα η Λέσχη ή το Ίδρυμα (αν δεν υπάρχει Λέσχη);
+yesno: lives_locally
+---
+code: |
+  if lives_locally:
+    adjusted_income_limit = income_limit * 0.9
+  else:
+    adjusted_income_limit = income_limit
+
+  if relevant_income <= adjusted_income_limit:
+    eligible = True
+  elif not tax_obligation and tax_exemption_declaration:
+    eligible = True
+  else:
+    eligible = False
+---
+question: Η Λέσχη ή η Επιτροπή Φοιτητικής Μέριμνας ζητά επιπλέον αποδεικτικά στοιχεία;
+yesno: additional_evidence_required
+---
+question: Τα επιπλέον αποδεικτικά στοιχεία επιβεβαιώνουν τις προϋποθέσεις;
+yesno: evidence_confirmed
+show if: additional_evidence_required
+---
+code: |
+  if additional_evidence_required:
+    eligible = evidence_confirmed
+
+  if eligible:
+    final_result = "Δικαιούστε δωρεάν σίτιση."
+  else:
+    final_result = "Δεν δικαιούστε δωρεάν σίτιση."
+
+  interview_complete = True
+---
+question: Αποτέλεσμα
+subquestion: |
+  ${ final_result }
+buttons:
+  - Έξοδος: exit
+---
