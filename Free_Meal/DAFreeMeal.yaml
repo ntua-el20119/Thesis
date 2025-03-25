@@ -1,161 +1,327 @@
 ---
 metadata:
-  title: Determination of Free Meal Eligibility
-  short title: Free Meals for Students
-  description: An interview to determine if a student is eligible for free meals based on Article 1.
+  title: Determination of Eligibility for Free Student Meals
+  author: Legal Service
+  version: 2.1
+  date: ${ today() }
 ---
-mandatory: True
+
+# INITIALIZATION BLOCK
+
+initial: True
 code: |
-  # Initialization of variables
   eligible = False
   priority = False
-  interview_complete = False  # Ensure the interview doesn’t end prematurely
----
-question: Are you an active student at a domestic Higher Education Institution (A.E.I.), a hosted student, or a foreign scholarship recipient of the Ministry of Education?
-yesno: is_student
----
-question: Do you already hold a degree, master’s, or doctoral title corresponding to your current study cycle?
-yesno: has_degree
----
-code: |
-  if not is_student or has_degree:
+  interview_complete = False
+  show_result = False
+  result_message = "Eligibility has not yet been evaluated."
+
+  def mark_ineligible(reason):
+    global eligible, interview_complete, result_message, show_result
     eligible = False
-    final_result = "You are not eligible for free meals."
     interview_complete = True
----
-question: Do you belong to any of the following special categories?
-subquestion: |
-  - Parent or child of a large family (polýteknoi)
-  - Parent or child of a family with 3 living children
-  - Have a sibling who is an active first-cycle student in a different city from your parents’ permanent residence
-  - Orphaned by one or both parents and under 25 years old
-  - Child of an unmarried mother with an unrecognized child under 25 years old
-  - Have parents, children, siblings, or a spouse with a severe disability
-  - Suffer from serious illnesses (Law 3794/2009)
-  - Child of a terrorism victim and under 25 years old
-yesno: special_category
----
-code: |
-  if special_category:
+    show_result = True
+    result_message = reason
+
+  def mark_eligible(reason, set_priority=False):
+    global eligible, interview_complete, priority, result_message, show_result
     eligible = True
-    priority = True
-    final_result = "You are eligible for free meals with priority due to a special category."
+    priority = set_priority
     interview_complete = True
+    show_result = True
+    result_message = reason
 ---
-question: Are you a married student?
-yesno: is_married
----
+
+# SECTION 1: BASIC ELIGIBILITY QUESTIONS
+mandatory: True
 question: |
-  ${ "Do you or your spouse receive unemployment benefits?" if is_married else "Do you or one of your parents receive unemployment benefits?" }
-yesno: receives_unemployment
+  Are you an active student at a domestic Higher Education Institution (A.E.I.), a hosted student, or a foreign scholarship recipient of the Ministry of Education?
+fields:
+  - Active student: is_active_student
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+    required: True
 ---
+
 code: |
-  if receives_unemployment:
-    eligible = True
-    final_result = "You are eligible for free meals due to unemployment benefits."
-    interview_complete = True
+  if not is_active_student:
+    mark_ineligible("You are not eligible because you are not an active university student.")
 ---
-question: What is your annual family income (in euros)?
-subquestion: |
-  ${ "Include your income, your spouse’s income, and that of your minor children." if is_married else "Include your income, your parents’ income, and that of your minor siblings." }
+mandatory: True
+question: |
+  Do you already hold a degree, postgraduate, or doctoral qualification corresponding to your current cycle of studies?
 fields:
-  - Income: family_income
-    datatype: number
+  - Has equivalent degree: has_degree
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+    required: True
 ---
-question: If you are unmarried, are you over 25 years old?
-yesno: over_25
-show if:
-  variable: is_married
-  is: False
+
+code: |
+  if has_degree:
+    mark_ineligible("You are not eligible because you already hold an equivalent degree.")
 ---
-question: What is your individual income (in euros)?
+mandatory: True
+question: |
+  Do you belong to any of the following special categories?
 fields:
-  - Income: individual_income
-    datatype: number
-show if:
-  variable: over_25
-  is: True
+  - Member of large family: is_polyteknos
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+  - Family with 3 children: has_3_children
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+  - Student sibling in other city: has_student_sibling
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+  - Orphaned and under 25: is_orphan
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+  - Child of single mother under 25: child_of_single_mother
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+  - Has family member with serious disability: family_with_disability
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+  - Has serious illness: has_serious_illness
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+  - Victim of terrorism (under 25): victim_of_terrorism
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
 ---
-question: How many children does your family have?
-subquestion: |
-  ${ "Indicate the number of your minor children." if is_married else "Indicate the number of children in your parents’ family (including yourself)." }
+
+code: |
+  if any([
+    is_polyteknos, has_3_children, has_student_sibling, is_orphan,
+    child_of_single_mother, family_with_disability, has_serious_illness,
+    victim_of_terrorism
+  ]):
+    mark_eligible("You are eligible because you belong to a priority category.", set_priority=True)
+---
+
+question: |
+  Are you, or your parent/spouse, receiving unemployment benefits?
+fields:
+  - Receives unemployment benefits: receives_unemployment_benefit
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+    required: True
+---
+
+code: |
+  if receives_unemployment_benefit:
+    mark_eligible("You are eligible because you or a family member receives unemployment benefits.")
+---
+
+# SECTION 2: MARITAL STATUS AND AGE
+
+question: |
+  What is your marital status?
+fields:
+  - Marital status: marital_status
+    datatype: radio
+    choices:
+      - Single: single
+      - Married: married
+    required: True
+---
+
+question: |
+  Are you under 25 years old?
+fields:
+  - Under 25: under_25
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+    required: True
+show if: marital_status == 'single'
+---
+
+# SECTION 3: INCOME INFORMATION
+
+question: |
+  What is your family income (in euros)?
+fields:
+  - Family income: family_income
+    datatype: number
+    required: True
+show if: marital_status == 'married' or (marital_status == 'single' and under_25)
+---
+
+question: |
+  What is your personal income (in euros)?
+fields:
+  - Personal income: personal_income
+    datatype: number
+    required: True
+show if: marital_status == 'single' and not under_25
+---
+
+question: |
+  How many children are in the family?
 fields:
   - Number of children: num_children
     datatype: integer
     min: 1
+    required: True
+show if: marital_status == 'married' or (marital_status == 'single' and under_25)
 ---
-question: How many of your siblings are active first-cycle students?
+
+question: |
+  How many of your siblings are active students?
 fields:
-  - Number: num_student_siblings
+  - Student siblings: num_student_siblings
     datatype: integer
     min: 0
-show if:
-  variable: is_married
-  is: False
+    required: True
+show if: marital_status == 'single' and under_25
 ---
+
 code: |
-  income_limit = 45000
-  if is_married:
-    income_limit += num_children * 5000
+  if marital_status == 'married':
+    income_limit = 45000 + num_children * 5000
+    relevant_income = family_income
+  elif under_25:
+    income_limit = 45000 + (num_children - 1) * 5000 + num_student_siblings * 3000
     relevant_income = family_income
   else:
-    if over_25:
-      income_limit = 25000
-      relevant_income = individual_income
-    else:
-      income_limit += (num_children - 1) * 5000
-      income_limit += num_student_siblings * 3000
-      relevant_income = family_income
+    income_limit = 25000
+    relevant_income = personal_income
 ---
-question: Are you required to submit a tax return?
-subquestion: |
-  ${ "You or your spouse?" if is_married else "You or your parents?" }
-yesno: tax_obligation
-show if: |
-  relevant_income > income_limit
----
-question: Have you submitted a declaration stating that you are not required to file a tax return?
-yesno: tax_exemption_declaration
-show if: |
-  relevant_income > income_limit and not tax_obligation
----
-question: Do you permanently reside in the municipality where the canteen or institution (if no canteen exists) is located?
-yesno: lives_locally
----
-code: |
-  if lives_locally:
-    adjusted_income_limit = income_limit * 0.9
-  else:
-    adjusted_income_limit = income_limit
 
+# SECTION 4: RESIDENCY & TAX
+
+question: |
+  Do you live in the municipality where the university is located?
+fields:
+  - Lives in municipality: lives_in_municipality
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+    required: True
+---
+
+code: |
+  adjusted_income_limit = income_limit * 0.9 if lives_in_municipality else income_limit
+---
+
+question: |
+  Do you or your parent/spouse file tax returns?
+fields:
+  - Files tax return: files_tax_return
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+    required: True
+show if: relevant_income > adjusted_income_limit
+---
+
+question: |
+  Have you submitted a tax exemption declaration?
+fields:
+  - Tax exemption declaration: tax_exemption_declaration
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+    required: True
+show if: relevant_income > adjusted_income_limit and not files_tax_return
+---
+
+code: |
   if relevant_income <= adjusted_income_limit:
-    eligible = True
-  elif not tax_obligation and tax_exemption_declaration:
-    eligible = True
+    mark_eligible("You are eligible because your income is under the threshold.")
+  elif not files_tax_return and tax_exemption_declaration:
+    mark_eligible("You are eligible due to tax exemption declaration.")
   else:
-    eligible = False
+    mark_ineligible("Your income is over the limit and no tax exemption was provided.")
 ---
-question: Does the canteen or the Student Welfare Committee request additional evidence?
-yesno: additional_evidence_required
+
+# SECTION 5: FINAL ELIGIBILITY FACTORS
+
+question: |
+  Was additional documentation requested?
+fields:
+  - Documentation requested: requires_additional_docs
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+    required: True
 ---
-question: Does the additional evidence confirm the eligibility conditions?
-yesno: evidence_confirmed
-show if: additional_evidence_required
+
+question: |
+  Did the additional documentation confirm eligibility?
+fields:
+  - Docs confirmed: docs_confirmed
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+    required: True
+show if: requires_additional_docs
 ---
+
 code: |
-  if additional_evidence_required:
-    eligible = evidence_confirmed
-
-  if eligible:
-    final_result = "You are eligible for free meals."
-  else:
-    final_result = "You are not eligible for free meals."
-
-  interview_complete = True
+  if requires_additional_docs and not docs_confirmed:
+    mark_ineligible("Additional documents did not confirm eligibility.")
+  elif requires_additional_docs and docs_confirmed:
+    mark_eligible("Eligibility confirmed by additional documentation.")
 ---
-question: Result
+
+question: |
+  Is there sufficient funding available?
+fields:
+  - Funding available: sufficient_funding
+    datatype: radio
+    choices:
+      - Yes: True
+      - No: False
+    required: True
+---
+
+code: |
+  if not sufficient_funding:
+    if priority:
+      mark_eligible("You are still eligible because you belong to a priority category.")
+    else:
+      mark_ineligible("You are not eligible due to limited funding and no priority status.")
+---
+
+# ✅ FINAL BLOCK
+mandatory: True
+question: |
+  Eligibility Evaluation Result
 subquestion: |
-  ${ final_result }
+  ${ result_message }
+
+  Thank you for using the eligibility checker.
 buttons:
   - Exit: exit
----
+show if: show_result
