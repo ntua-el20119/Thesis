@@ -1,0 +1,686 @@
+{
+  "contentType": "application/vnd.gorules.decision",
+  "nodes": [
+    {
+      "type": "inputNode",
+      "content": {
+        "schema": ""
+      },
+      "id": "3e3f5093-c969-4c3a-97e1-560e4b769a12",
+      "name": "Request",
+      "position": {
+        "x": 55,
+        "y": 210
+      }
+    },
+    {
+      "type": "decisionTableNode",
+      "content": {
+        "hitPolicy": "first",
+        "rules": [
+          {
+            "_id": "rule-1",
+            "reason": "",
+            "is_eligible": "true",
+            "is_active_student": "true",
+            "is_foreign_scholarship_recipient": "false",
+            "is_enrolled_in_eligible_institution": "true"
+          },
+          {
+            "_id": "rule-2",
+            "reason": "\"Student is not active\"",
+            "is_eligible": "false",
+            "is_active_student": "false",
+            "is_foreign_scholarship_recipient": "",
+            "is_enrolled_in_eligible_institution": ""
+          },
+          {
+            "_id": "rule-3",
+            "reason": "\"Institution is not eligible\"",
+            "is_eligible": "false",
+            "is_active_student": "",
+            "is_foreign_scholarship_recipient": "",
+            "is_enrolled_in_eligible_institution": "false"
+          },
+          {
+            "_id": "rule-4",
+            "reason": "\"Student receives foreign scholarship\"",
+            "is_eligible": "false",
+            "is_active_student": "",
+            "is_foreign_scholarship_recipient": "true",
+            "is_enrolled_in_eligible_institution": ""
+          }
+        ],
+        "inputs": [
+          {
+            "id": "is_active_student",
+            "name": "Is Active Student",
+            "field": "student.isActive"
+          },
+          {
+            "id": "is_enrolled_in_eligible_institution",
+            "name": "Is Enrolled in Eligible Institution",
+            "field": "student.institution.isEligible"
+          },
+          {
+            "id": "is_foreign_scholarship_recipient",
+            "name": "Is Foreign Scholarship Recipient",
+            "field": "student.hasForeignScholarship"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "is_eligible",
+            "name": "Result",
+            "field": "basicEligibility.result",
+            "defaultValue": "false"
+          },
+          {
+            "id": "reason",
+            "name": "Reason",
+            "field": "basicEligibility.reason",
+            "defaultValue": " "
+          }
+        ],
+        "passThrough": false,
+        "inputField": null,
+        "outputPath": null,
+        "executionMode": "single"
+      },
+      "id": "0624d5fd-1944-4781-92bb-e32873ce91e2",
+      "name": "basicEligibility",
+      "position": {
+        "x": 350,
+        "y": 100
+      }
+    },
+    {
+      "type": "decisionTableNode",
+      "content": {
+        "hitPolicy": "first",
+        "rules": [
+          {
+            "_id": "income-rule-1",
+            "age": "< 25",
+            "family_income": "< 45000",
+            "marital_status": "\"SINGLE\"",
+            "adjusted_threshold": "45000",
+            "family_child_count": "1",
+            "meets_income_threshold": "true",
+            "0b738230-605f-4302-94fc-66553c6421ac": ""
+          },
+          {
+            "_id": "income-rule-2",
+            "age": "< 25",
+            "family_income": "< 48000",
+            "marital_status": "\"SINGLE\"",
+            "adjusted_threshold": "48000",
+            "family_child_count": "2",
+            "meets_income_threshold": "true",
+            "0b738230-605f-4302-94fc-66553c6421ac": ""
+          },
+          {
+            "_id": "income-rule-3",
+            "age": "< 25",
+            "family_income": "< 51000",
+            "marital_status": "\"SINGLE\"",
+            "adjusted_threshold": "51000",
+            "family_child_count": "3",
+            "meets_income_threshold": "true",
+            "0b738230-605f-4302-94fc-66553c6421ac": ""
+          },
+          {
+            "_id": "income-rule-4",
+            "age": "< 25",
+            "family_income": "< 51000 + (family.childCount - 3) * 3000",
+            "marital_status": "\"SINGLE\"",
+            "adjusted_threshold": "51000 + (family.childCount - 3) * 3000",
+            "family_child_count": "> 3",
+            "meets_income_threshold": "true",
+            "0b738230-605f-4302-94fc-66553c6421ac": ""
+          },
+          {
+            "_id": "income-rule-5",
+            "age": ">= 25",
+            "family_income": "< 30000",
+            "marital_status": "\"SINGLE\"",
+            "adjusted_threshold": "30000",
+            "family_child_count": "",
+            "meets_income_threshold": "true",
+            "0b738230-605f-4302-94fc-66553c6421ac": ""
+          },
+          {
+            "_id": "income-rule-6",
+            "age": "",
+            "family_income": "< 60000",
+            "marital_status": "\"MARRIED\"",
+            "adjusted_threshold": "60000",
+            "family_child_count": "0",
+            "meets_income_threshold": "true",
+            "0b738230-605f-4302-94fc-66553c6421ac": ""
+          },
+          {
+            "_id": "income-rule-7",
+            "age": "",
+            "family_income": "< 63000",
+            "marital_status": "\"MARRIED\"",
+            "adjusted_threshold": "63000",
+            "family_child_count": "1",
+            "meets_income_threshold": "true",
+            "0b738230-605f-4302-94fc-66553c6421ac": ""
+          },
+          {
+            "_id": "income-rule-8",
+            "age": "",
+            "family_income": "< 66000",
+            "marital_status": "\"MARRIED\"",
+            "adjusted_threshold": "66000",
+            "family_child_count": "2",
+            "meets_income_threshold": "true",
+            "0b738230-605f-4302-94fc-66553c6421ac": ""
+          },
+          {
+            "_id": "income-rule-9",
+            "age": "",
+            "family_income": "< 66000 + (family.childCount - 2) * 3000",
+            "marital_status": "\"MARRIED\"",
+            "adjusted_threshold": "66000 + (family.childCount - 2) * 3000",
+            "family_child_count": "> 2",
+            "meets_income_threshold": "true",
+            "0b738230-605f-4302-94fc-66553c6421ac": ""
+          },
+          {
+            "_id": "income-rule-10",
+            "age": "",
+            "family_income": "",
+            "marital_status": "",
+            "adjusted_threshold": "0",
+            "family_child_count": "",
+            "meets_income_threshold": "false",
+            "0b738230-605f-4302-94fc-66553c6421ac": "\"Does not meet the income criteria\""
+          },
+          {
+            "_id": "income-rule-11",
+            "age": "",
+            "family_income": "",
+            "marital_status": "",
+            "adjusted_threshold": "0",
+            "family_child_count": "",
+            "meets_income_threshold": "false",
+            "0b738230-605f-4302-94fc-66553c6421ac": ""
+          }
+        ],
+        "inputs": [
+          {
+            "id": "marital_status",
+            "name": "Marital Status",
+            "field": "student.maritalStatus"
+          },
+          {
+            "id": "age",
+            "name": "Age",
+            "field": "student.age"
+          },
+          {
+            "id": "family_child_count",
+            "name": "Family Child Count",
+            "field": "family.childCount"
+          },
+          {
+            "id": "family_income",
+            "name": "Family Income",
+            "field": "family.income"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "meets_income_threshold",
+            "name": "Meets Income Threshold",
+            "field": "incomeThreshold.result",
+            "defaultValue": "false"
+          },
+          {
+            "id": "adjusted_threshold",
+            "name": "Adjusted Threshold",
+            "field": "incomeThreshold.adjustedThreshold"
+          },
+          {
+            "id": "0b738230-605f-4302-94fc-66553c6421ac",
+            "name": "Reason",
+            "field": "incomeThreshold.reason",
+            "defaultValue": "Does not meet the income criteria"
+          }
+        ],
+        "passThrough": false,
+        "inputField": null,
+        "outputPath": null,
+        "executionMode": "single"
+      },
+      "id": "a5b8c7d6-e9f0-4a1b-8c2d-3e4f5a6b7c8d",
+      "name": "incomeThreshold",
+      "position": {
+        "x": 350,
+        "y": 210
+      }
+    },
+    {
+      "type": "decisionTableNode",
+      "content": {
+        "hitPolicy": "first",
+        "rules": [
+          {
+            "_id": "doc-rule-1",
+            "has_id_document": "true",
+            "missing_documents": "",
+            "documents_verified": "true",
+            "has_income_documentation": "true",
+            "has_enrollment_certificate": "true"
+          },
+          {
+            "_id": "doc-rule-2",
+            "has_id_document": "false",
+            "missing_documents": "\"ID Document\"",
+            "documents_verified": "false",
+            "has_income_documentation": "",
+            "has_enrollment_certificate": ""
+          },
+          {
+            "_id": "doc-rule-3",
+            "has_id_document": "true",
+            "missing_documents": "\"Enrollment Certificate\"",
+            "documents_verified": "false",
+            "has_income_documentation": "",
+            "has_enrollment_certificate": "false"
+          },
+          {
+            "_id": "doc-rule-4",
+            "has_id_document": "true",
+            "missing_documents": "\"Income Documentation\"",
+            "documents_verified": "false",
+            "has_income_documentation": "false",
+            "has_enrollment_certificate": "true"
+          },
+          {
+            "_id": "doc-rule-5",
+            "has_id_document": "false",
+            "missing_documents": "\"ID Document, Enrollment Certificate\"",
+            "documents_verified": "false",
+            "has_income_documentation": "",
+            "has_enrollment_certificate": "false"
+          },
+          {
+            "_id": "doc-rule-6",
+            "has_id_document": "false",
+            "missing_documents": "\"ID Document, Income Documentation\"",
+            "documents_verified": "false",
+            "has_income_documentation": "false",
+            "has_enrollment_certificate": "true"
+          },
+          {
+            "_id": "doc-rule-7",
+            "has_id_document": "true",
+            "missing_documents": "\"Enrollment Certificate, Income Documentation\"",
+            "documents_verified": "false",
+            "has_income_documentation": "false",
+            "has_enrollment_certificate": "false"
+          },
+          {
+            "_id": "doc-rule-8",
+            "has_id_document": "false",
+            "missing_documents": "\"ID Document, Enrollment Certificate, Income Documentation\"",
+            "documents_verified": "false",
+            "has_income_documentation": "false",
+            "has_enrollment_certificate": "false"
+          }
+        ],
+        "inputs": [
+          {
+            "id": "has_id_document",
+            "name": "Has ID Document",
+            "field": "documents.hasIdDocument"
+          },
+          {
+            "id": "has_enrollment_certificate",
+            "name": "Has Enrollment Certificate",
+            "field": "documents.hasEnrollmentCertificate"
+          },
+          {
+            "id": "has_income_documentation",
+            "name": "Has Income Documentation",
+            "field": "documents.hasIncomeDocumentation"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "documents_verified",
+            "name": "Result",
+            "field": "documentVerification.result",
+            "defaultValue": "false"
+          },
+          {
+            "id": "missing_documents",
+            "name": "Missing Documents",
+            "field": "documentVerification.reason"
+          }
+        ],
+        "passThrough": false,
+        "inputField": null,
+        "outputPath": null,
+        "executionMode": "single"
+      },
+      "id": "b1c2d3e4-f5g6-7h8i-9j0k-l1m2n3o4p5q6",
+      "name": "documentVerification",
+      "position": {
+        "x": 350,
+        "y": 320
+      }
+    },
+    {
+      "type": "decisionTableNode",
+      "content": {
+        "hitPolicy": "first",
+        "rules": [
+          {
+            "_id": "priority-rule-1",
+            "is_orphan": "true",
+            "_description": "",
+            "priority_score": "100",
+            "is_single_parent": "",
+            "priority_category": "\"ORPHAN\"",
+            "has_serious_illness": "",
+            "has_student_siblings": "",
+            "is_from_large_family": "",
+            "has_family_disability": "",
+            "is_from_multi_child_family": "",
+            "is_child_of_terrorism_victim": "",
+            "is_child_of_unmarried_mother": ""
+          },
+          {
+            "_id": "priority-rule-2",
+            "is_orphan": "",
+            "_description": "",
+            "priority_score": "95",
+            "is_single_parent": "",
+            "priority_category": "\"TERRORISM_VICTIM\"",
+            "has_serious_illness": "",
+            "has_student_siblings": "",
+            "is_from_large_family": "",
+            "has_family_disability": "",
+            "is_from_multi_child_family": "",
+            "is_child_of_terrorism_victim": "true",
+            "is_child_of_unmarried_mother": ""
+          },
+          {
+            "_id": "priority-rule-3",
+            "is_orphan": "",
+            "_description": "",
+            "priority_score": "90",
+            "is_single_parent": "",
+            "priority_category": "\"SERIOUS_ILLNESS\"",
+            "has_serious_illness": "true",
+            "has_student_siblings": "",
+            "is_from_large_family": "",
+            "has_family_disability": "",
+            "is_from_multi_child_family": "",
+            "is_child_of_terrorism_victim": "",
+            "is_child_of_unmarried_mother": ""
+          },
+          {
+            "_id": "priority-rule-4",
+            "is_orphan": "",
+            "_description": "",
+            "priority_score": "85",
+            "is_single_parent": "",
+            "priority_category": "\"FAMILY_DISABILITY\"",
+            "has_serious_illness": "",
+            "has_student_siblings": "",
+            "is_from_large_family": "",
+            "has_family_disability": "true",
+            "is_from_multi_child_family": "",
+            "is_child_of_terrorism_victim": "",
+            "is_child_of_unmarried_mother": ""
+          },
+          {
+            "_id": "priority-rule-5",
+            "is_orphan": "",
+            "_description": "",
+            "priority_score": "80",
+            "is_single_parent": "true",
+            "priority_category": "\"SINGLE_PARENT\"",
+            "has_serious_illness": "",
+            "has_student_siblings": "",
+            "is_from_large_family": "",
+            "has_family_disability": "",
+            "is_from_multi_child_family": "",
+            "is_child_of_terrorism_victim": "",
+            "is_child_of_unmarried_mother": ""
+          },
+          {
+            "_id": "priority-rule-6",
+            "is_orphan": "",
+            "_description": "",
+            "priority_score": "75",
+            "is_single_parent": "",
+            "priority_category": "\"SINGLE_MOTHER\"",
+            "has_serious_illness": "",
+            "has_student_siblings": "",
+            "is_from_large_family": "",
+            "has_family_disability": "",
+            "is_from_multi_child_family": "",
+            "is_child_of_terrorism_victim": "",
+            "is_child_of_unmarried_mother": "true"
+          },
+          {
+            "_id": "priority-rule-7",
+            "is_orphan": "",
+            "_description": "",
+            "priority_score": "70",
+            "is_single_parent": "",
+            "priority_category": "\"LARGE_FAMILY\"",
+            "has_serious_illness": "",
+            "has_student_siblings": "",
+            "is_from_large_family": "true",
+            "has_family_disability": "",
+            "is_from_multi_child_family": "",
+            "is_child_of_terrorism_victim": "",
+            "is_child_of_unmarried_mother": ""
+          },
+          {
+            "_id": "priority-rule-8",
+            "is_orphan": "",
+            "_description": "",
+            "priority_score": "65",
+            "is_single_parent": "",
+            "priority_category": "\"MULTI_CHILD_FAMILY\"",
+            "has_serious_illness": "",
+            "has_student_siblings": "",
+            "is_from_large_family": "",
+            "has_family_disability": "",
+            "is_from_multi_child_family": "true",
+            "is_child_of_terrorism_victim": "",
+            "is_child_of_unmarried_mother": ""
+          },
+          {
+            "_id": "priority-rule-9",
+            "is_orphan": "",
+            "_description": "",
+            "priority_score": "60",
+            "is_single_parent": "",
+            "priority_category": "\"STUDENT_SIBLINGS\"",
+            "has_serious_illness": "",
+            "has_student_siblings": "true",
+            "is_from_large_family": "",
+            "has_family_disability": "",
+            "is_from_multi_child_family": "",
+            "is_child_of_terrorism_victim": "",
+            "is_child_of_unmarried_mother": ""
+          },
+          {
+            "_id": "priority-rule-10",
+            "is_orphan": "false",
+            "_description": "",
+            "priority_score": "0",
+            "is_single_parent": "false",
+            "priority_category": "\"NONE\"",
+            "has_serious_illness": "false",
+            "has_student_siblings": "false",
+            "is_from_large_family": "false",
+            "has_family_disability": "false",
+            "is_from_multi_child_family": "false",
+            "is_child_of_terrorism_victim": "false",
+            "is_child_of_unmarried_mother": "false"
+          }
+        ],
+        "inputs": [
+          {
+            "id": "is_orphan",
+            "name": "Is Orphan",
+            "field": "student.isOrphan"
+          },
+          {
+            "id": "is_child_of_terrorism_victim",
+            "name": "Is Child of Terrorism Victim",
+            "field": "student.isChildOfTerrorismVictim"
+          },
+          {
+            "id": "has_serious_illness",
+            "name": "Has Serious Illness",
+            "field": "student.hasSeriousIllness"
+          },
+          {
+            "id": "has_family_disability",
+            "name": "Has Family Disability",
+            "field": "student.hasFamilyDisability"
+          },
+          {
+            "id": "is_single_parent",
+            "name": "Is Single Parent",
+            "field": "student.isSingleParent"
+          },
+          {
+            "id": "is_child_of_unmarried_mother",
+            "name": "Is Child of Unmarried Mother",
+            "field": "student.isChildOfUnmarriedMother"
+          },
+          {
+            "id": "is_from_large_family",
+            "name": "Is From Large Family",
+            "field": "student.isFromLargeFamily"
+          },
+          {
+            "id": "is_from_multi_child_family",
+            "name": "Is From Multi-Child Family",
+            "field": "student.isFromMultiChildFamily"
+          },
+          {
+            "id": "has_student_siblings",
+            "name": "Has Student Siblings",
+            "field": "student.hasStudentSiblings"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "priority_category",
+            "name": "Priority Category",
+            "field": "priorityCategory.result"
+          },
+          {
+            "id": "priority_score",
+            "name": "Priority Score",
+            "field": "priorityCategory.score"
+          }
+        ],
+        "passThrough": false,
+        "inputField": null,
+        "outputPath": null,
+        "executionMode": "single"
+      },
+      "id": "c1d2e3f4-g5h6-i7j8-k9l0-m1n2o3p4q5r6",
+      "name": "priorityCategory",
+      "position": {
+        "x": 350,
+        "y": 430
+      }
+    },
+    {
+      "type": "outputNode",
+      "content": {
+        "schema": ""
+      },
+      "id": "e0438c6b-dee0-405e-a941-9b4c3d9c4b83",
+      "name": "Response",
+      "position": {
+        "x": 1020,
+        "y": 195
+      }
+    },
+    {
+      "type": "functionNode",
+      "content": {
+        "source": "import zen from 'zen';\r\n\r\n/** @type {Handler} **/\r\nexport const handler = async (input) => {\r\n\r\n  // Log input for debugging\r\n  //console.log('Input to function node:', JSON.stringify(input));\r\n  //console.log('output from function basicEligibility: ', JSON.stringify(input.basicEligibility));\r\n  //console.log('output from function incomeThreshold: ', JSON.stringify(input.incomeThreshold));\r\n  //console.log('output from function documentVerification: ', JSON.stringify(input.documentVerification));\r\n\r\n  // Determine overall eligibility based on all three criteria\r\n  const isEligible = (input.basicEligibility?.result === true) && (input.incomeThreshold?.result === true) && (input.documentVerification?.result === true);\r\n  let reason2 = (isEligible) ? \"Student passes all criteria\" : \"- \";\r\n  if (!isEligible) {\r\n    if (input.basicEligibility?.result !== true) reason2 = input.basicEligibility?.reason;\r\n    else if  (input.incomeThreshold?.result !== true) reason2 = input.incomeThreshold?.reason;\r\n    else if  (input.documentVerification?.result !== true) reason2 = input.documentVerification?.reason;\r\n  }\r\n  const reason = reason2;\r\n  const priorityCategory_result = input.priorityCategory?.result\r\n  const priorityCategory_score = input.priorityCategory?.score\r\n  \r\n\r\n  return {\r\n    \"result\": isEligible,\r\n    \"reason\": reason,\r\n    \"priorityCategory_result\":  priorityCategory_result,\r\n    \"priorityCategory_score\":  priorityCategory_score,\r\n    \"input\": input.$nodes.Request\r\n  };\r\n};\r\n"
+      },
+      "id": "e1b73da0-d72e-48d9-a2f5-0e1c850ef1b2",
+      "name": "finalResult",
+      "position": {
+        "x": 720,
+        "y": 300
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "86a409a2-655b-43d3-8bcf-c7851fbb4581",
+      "sourceId": "3e3f5093-c969-4c3a-97e1-560e4b769a12",
+      "targetId": "0624d5fd-1944-4781-92bb-e32873ce91e2",
+      "type": "edge"
+    },
+    {
+      "id": "6a67c722-6f3c-47c5-b5d3-d0f963468a86",
+      "sourceId": "0624d5fd-1944-4781-92bb-e32873ce91e2",
+      "targetId": "e1b73da0-d72e-48d9-a2f5-0e1c850ef1b2",
+      "type": "edge"
+    },
+    {
+      "id": "f7890efa-2f26-4075-b727-09a3de1eef9b",
+      "sourceId": "e1b73da0-d72e-48d9-a2f5-0e1c850ef1b2",
+      "targetId": "e0438c6b-dee0-405e-a941-9b4c3d9c4b83",
+      "type": "edge"
+    },
+    {
+      "id": "3ffa3449-711a-4837-a777-2959ec772bdf",
+      "sourceId": "3e3f5093-c969-4c3a-97e1-560e4b769a12",
+      "targetId": "a5b8c7d6-e9f0-4a1b-8c2d-3e4f5a6b7c8d",
+      "type": "edge"
+    },
+    {
+      "id": "6f874c07-568e-4b26-b097-035e31f79bf9",
+      "sourceId": "a5b8c7d6-e9f0-4a1b-8c2d-3e4f5a6b7c8d",
+      "targetId": "e1b73da0-d72e-48d9-a2f5-0e1c850ef1b2",
+      "type": "edge"
+    },
+    {
+      "id": "6b5193ed-b150-44b3-ae95-69bbf662b799",
+      "sourceId": "3e3f5093-c969-4c3a-97e1-560e4b769a12",
+      "targetId": "b1c2d3e4-f5g6-7h8i-9j0k-l1m2n3o4p5q6",
+      "type": "edge"
+    },
+    {
+      "id": "ab99a5c0-6be5-442d-8efd-6df7e2ae21b7",
+      "sourceId": "b1c2d3e4-f5g6-7h8i-9j0k-l1m2n3o4p5q6",
+      "targetId": "e1b73da0-d72e-48d9-a2f5-0e1c850ef1b2",
+      "type": "edge"
+    },
+    {
+      "id": "260beeef-da09-477c-9493-ce219aa51d8c",
+      "sourceId": "3e3f5093-c969-4c3a-97e1-560e4b769a12",
+      "targetId": "c1d2e3f4-g5h6-i7j8-k9l0-m1n2o3p4q5r6",
+      "type": "edge"
+    },
+    {
+      "id": "65a0cae8-acdb-4ed9-9c03-9bcaa1396cdb",
+      "sourceId": "c1d2e3f4-g5h6-i7j8-k9l0-m1n2o3p4q5r6",
+      "targetId": "e1b73da0-d72e-48d9-a2f5-0e1c850ef1b2",
+      "type": "edge"
+    }
+  ]
+}

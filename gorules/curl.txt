@@ -1,0 +1,34 @@
+curl --request POST \
+  --url https://mkoniari.gorules.io/api/projects/4770b37f-1139-48d1-b433-81ad62d94e86/evaluate/students \
+  --header 'accept: application/json' \
+  --header 'content-type: application/json' \
+  --header 'x-access-token: qbXNSWTbbkKqaHHPTQwJSFh6' \
+  --data '{"context": {
+    "student": {
+      "isActive": true,
+      "institution": {
+        "isEligible": true
+      },
+      "hasForeignScholarship": false,
+      "maritalStatus": "SINGLE",
+      "age": 20,
+      "isOrphan": false,
+      "isChildOfTerrorismVictim": false,
+      "hasSeriousIllness": false,
+      "hasFamilyDisability": false,
+      "isSingleParent": false,
+      "isChildOfUnmarriedMother": false,
+      "isFromLargeFamily": false,
+      "isFromMultiChildFamily": false,
+      "hasStudentSiblings": false
+    },
+    "family": {
+      "childCount": 1,
+      "income": 30000
+    },
+    "documents": {
+      "hasIdDocument": true,
+      "hasEnrollmentCertificate": true,
+      "hasIncomeDocumentation": true
+    }
+  },"trace":false}'
