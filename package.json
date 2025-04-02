@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@gorules/zen-engine": "^0.39.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.17"
+  }
+}

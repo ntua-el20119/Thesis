@@ -1,0 +1,50 @@
+Object: Student
+  Attribute: registration_date (date)
+  Attribute: program_duration (integer, in semesters)
+  Attribute: maximum_duration (integer, in semesters)
+  Attribute: adjusted_maximum_duration (integer, in semesters)
+  Attribute: part_time_status (boolean)
+  Attribute: interruption_duration (integer, in semesters)
+  Attribute: health_exception (boolean)
+  Attribute: completion_date (date)
+  Attribute: deletion_decision (boolean)
+
+Constants:
+  - current_date (date, set to March 26, 2025 for testing)
+
+# Rule 1: Determine Minimum Duration of Studies (Step 2)
+IF Student.program_type = "first_cycle"
+THEN Student.program_duration = 8
+
+IF Student.program_type = "applied_sciences"
+THEN Student.program_duration = 10
+
+# Rule 2: Calculate Maximum Duration of Studies (Step 3)
+IF Student.program_duration = 8
+THEN Student.maximum_duration = 12
+
+IF Student.program_duration > 8
+THEN Student.maximum_duration = Student.program_duration + 6
+
+# Rule 3: Initial Completion Date Calculation (Step 3)
+Student.completion_date = Student.registration_date + (Student.maximum_duration / 2) years
+
+# Rule 4: Adjust Maximum Duration for Part-Time Status (Step 4)
+IF Student.part_time_status = true
+THEN Student.adjusted_maximum_duration = Student.maximum_duration * 2
+AND Student.completion_date = Student.registration_date + (Student.adjusted_maximum_duration / 2) years
+
+# Rule 5: Adjust Maximum Duration for Study Interruptions (Step 5)
+IF Student.interruption_duration ≤ 4
+THEN Student.adjusted_maximum_duration = Student.maximum_duration + Student.interruption_duration
+AND Student.completion_date = Student.registration_date + (Student.adjusted_maximum_duration / 2) years
+
+# Rule 6: Adjust Maximum Duration for Health Exceptions (Step 6)
+IF Student.health_exception = true
+THEN Student.adjusted_maximum_duration = Student.maximum_duration + 2
+AND Student.completion_date = Student.registration_date + (Student.adjusted_maximum_duration / 2) years
+
+# Rule 7: Determine Deletion Decision (Step 7)
+IF current_date > Student.completion_date
+THEN Student.deletion_decision = true
+ELSE Student.deletion_decision = false
