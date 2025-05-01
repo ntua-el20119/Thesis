@@ -1,7 +1,0 @@
-let salary = 10000;
-fetch('https://api.demo.openfisca.org/latest/parameter/taxes.income_tax_rate')
-  .then(response => response.json())
-  .then(historicalTaxRates => {
-    for (const [date, taxRate] of Object.entries(historicalTaxRates.values)) {
-      console.log(`In year ${date}, earning ${salary} meant paying ${salary * taxRate} in tax`)
-    }});
