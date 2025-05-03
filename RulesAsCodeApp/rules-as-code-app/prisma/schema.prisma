@@ -1,0 +1,21 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MethodologyStep {
+  id        Int      @id @default(autoincrement())
+  phase     String
+  stepName  String
+  content   Json
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([phase, stepName])
+}
