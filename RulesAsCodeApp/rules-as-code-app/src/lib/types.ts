@@ -1,9 +1,5 @@
-
-// This file contains the type definitions for the application.
-
-
 // src/lib/types.ts
-export type JsonValue =
+type JsonValue =
   | string
   | number
   | boolean
@@ -14,6 +10,12 @@ export type JsonValue =
 export type Step = {
   phase: string;
   stepName: string;
-  content: any; // Use JsonValue instead of unknown
+  content: JsonValue;
   approved: boolean;
+};
+
+export const methodology = {
+  Preparation: ["SegmentText"],
+  Analysis: ["ExtractEntities", "FormalizeRules"],
+  Implementation: ["GenerateCode"],
 };

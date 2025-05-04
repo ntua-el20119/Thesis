@@ -10,19 +10,37 @@ export async function POST(request: NextRequest) {
   }
 
   const prompt = `
-    You are processing legal text as part of a Rules as Code implementation methodology. Your task is to divide the legal text into logical sections.
+  You are processing legal text as part of a Rules as Code implementation methodology. Your task is to divide the legal text into logical sections.
 
-    [SYSTEM INSTRUCTIONS]
-    - Identify natural divisions in the text based on headings, numbering, and topic shifts.
-    - Create a unique ID for each section (e.g., "sec-1", "sec-2").
-    - Provide a descriptive title for each section that reflects its content.
-    - Ensure the entire text is segmented with no content lost.
-    - Return the result as a JSON array of objects, where each object has 'id', 'title', and 'content' fields.
+  [SYSTEM INSTRUCTIONS]
+  - Identify natural divisions in the text based on headings, numbering, and topic shifts.
+  - Create a unique ID for each section (e.g., "sec-1", "sec-2").
+  - Provide a descriptive title for each section that reflects its content.
+  - Ensure the entire text is segmented with no content lost.
+  - Return the result **ONLY** as a JSON string in the following format:
+    {
+      "result": {
+        "sections": [
+          {
+            "id": "[unique section identifier]",
+            "title": "[clear section title]",
+            "content": "[full section text]",
+            "referenceId": "[optional reference to section numbering in original document]"
+          }
+          // Additional sections...
+        ]
+      },
+      "confidence": [score between 0 and 1]
+    }
+  - Do NOT include any explanatory text, the prompt, instructions, or any content outside this JSON format in your response.
+  - Ensure the response is valid JSON; any deviation will result in rejection.
 
-    Text to segment: 
-    
-    ${text}
-  `;
+  [EXAMPLE]
+  For input: "Section 1: Rule A. Section 2: Rule B."
+  Output: {"result": {"sections": [{"id": "sec-1", "title": "Rule A", "content": "Rule A.", "referenceId": "Section 1"}, {"id": "sec-2", "title": "Rule B", "content": "Rule B.", "referenceId": "Section 2"}]}, "confidence": 0.95}
+
+  Text to segment: ${text}
+`;
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -33,9 +51,9 @@ export async function POST(request: NextRequest) {
         "X-Title": process.env.NEXT_PUBLIC_SITE_NAME || "Rules as Code Text Wizard", // Dynamic or default
       },
       body: JSON.stringify({
-        model: "deepseek/deepseek-v3-base:free",
+        model: "meta-llama/llama-3.1-8b-instruct:free",
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 4096, // Limit response length
+        max_tokens: 10000, // Limit response length
         temperature: 0.3, // Control randomness for structured output
       }),
     });
@@ -48,6 +66,8 @@ export async function POST(request: NextRequest) {
 
     const data = await response.json();
     let sections = data.choices[0].message.content;
+
+    console.log("Raw LLM response:", sections);
 
     // Attempt to parse the response as JSON if the model followed the instruction
     try {
