@@ -17,23 +17,12 @@ export async function POST(request: NextRequest) {
   - Create a unique ID for each section (e.g., "sec-1", "sec-2").
   - Provide a descriptive title for each section that reflects its content.
   - Ensure the entire text is segmented with no content lost.
-  - Return the result **ONLY** as a JSON string in the following format:
-    {
-      "result": {
-        "sections": [
-          {
-            "id": "[unique section identifier]",
-            "title": "[clear section title]",
-            "content": "[full section text]",
-            "referenceId": "[optional reference to section numbering in original document]"
-          }
-          // Additional sections...
-        ]
-      },
-      "confidence": [score between 0 and 1]
-    }
-  - Do NOT include any explanatory text, the prompt, instructions, or any content outside this JSON format in your response.
-  - Ensure the response is valid JSON; any deviation will result in rejection.
+
+  [EXPECTED OUTPUT FORMAT] Your response must strictly follow this JSON format: 
+  { "result": { "sections": [ { "id": "[unique section identifier]", "title": "[clear section title]", "content": "[full section text]", "referenceId": "[optional reference to section numbering in original document]" } // Additional sections... ] }, "confidence": [score between 0 and 1] }
+  Dont include any other text or explanations outside of this JSON format.
+
+  IMPORTANT: Your response MUST include all content from the original document divided into appropriate sections. The confidence score should reflect your certainty in the segmentation quality. 
 
   [EXAMPLE]
   For input: "Section 1: Rule A. Section 2: Rule B."

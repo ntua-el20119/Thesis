@@ -2,6 +2,7 @@
 "use client";
 
 import { Step, JsonValue } from "@/lib/types";
+//import { useEffect } from "react";
 
 interface StepEditorProps {
   step: Step | null;
@@ -30,28 +31,59 @@ export default function StepEditor({ step, onEdit, onApprove }: StepEditorProps)
   };
 
   // Render sections if content is an array (from LLM response)
-  const renderSections = () => {
-    if (!content || typeof content !== "object" || !Array.isArray((content as any).result?.sections)) {
-      return <p>No sections to display. Please process text first.</p>;
+  const renderContent = () => {
+    if (!content) {
+      return <p>No content to display. Please process text first.</p>;
     }
-    const sections = (content as any).result.sections;
+
+    // Handle "Segment Text" output (sections)
+    if (stepName === "Segment Text" && typeof content === "object" && content !== null && "result" in content && Array.isArray((content as any).result?.sections)) {
+      const sections = (content as any).result.sections;
+      return (
+        <ul className="list-disc pl-5">
+          {sections.map((section: any, index: number) => (
+            <li key={index} className="mb-2">
+              <strong>{section.title} (ID: {section.id})</strong>
+              <p>{section.content}</p>
+              {section.referenceId && <p>Reference: {section.referenceId}</p>}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    // Handle "Normalize Terminology" output
+    if (stepName === "Normalize Terminology" && typeof content === "object" && content !== null && "normalized" in content) {
+      const { text, terminologyMap } = (content as any).normalized;
+      return (
+        <div>
+          <h4 className="font-semibold">Normalized Text:</h4>
+          <p>{text}</p>
+          <h4 className="font-semibold mt-2">Terminology Map:</h4>
+          <ul className="list-disc pl-5">
+            {Object.entries(terminologyMap).map(([original, standardized], index) => (
+              <li key={index}>
+                {original} → {standardized}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    // Fallback: Display raw content
     return (
-      <ul className="list-disc pl-5">
-        {sections.map((section: any, index: number) => (
-          <li key={index} className="mb-2">
-            <strong>{section.title} (ID: {section.id})</strong>
-            <p>{section.content}</p>
-            {section.referenceId && <p>Reference: {section.referenceId}</p>}
-          </li>
-        ))}
-      </ul>
+      <div>
+        <p className="text-yellow-500">Content format not recognized. Showing raw output:</p>
+        <pre className="p-2 bg-gray-100 rounded">{typeof content === "string" ? content : JSON.stringify(content, null, 2)}</pre>
+      </div>
     );
   };
 
   return (
     <div className="mb-4">
       <h2 className="text-xl">{`${phase} - ${stepName}`}</h2>
-      {renderSections()}
+      {renderContent()}
       <textarea
         value={JSON.stringify(content, null, 2)}
         onChange={handleEdit}
@@ -62,7 +94,7 @@ export default function StepEditor({ step, onEdit, onApprove }: StepEditorProps)
       <button
         onClick={handleApprove}
         className="mt-2 px-4 py-2 bg-green-500 text-white rounded"
-        disabled={!content || !content.result?.sections?.length}
+        disabled={!content}
       >
         Approve
       </button>

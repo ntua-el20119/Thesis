@@ -9,12 +9,12 @@ interface WizardState {
   setStepContent: (phase: string, stepName: string, content: JsonValue) => void;
   approveStep: (phase: string, stepName: string) => Promise<void>;
   setCurrentStep: (phase: string, stepName: string | null) => void;
-  nextStep: () => Promise<void>; // Make async to handle API calls
+  nextStep: () => Promise<void>;
 }
 
 export const useWizardStore = create<WizardState>((set, get) => ({
   currentPhase: "Preparation",
-  currentStep: "SegmentText",
+  currentStep: "Segment Text",
   steps: {},
   setStepContent: (phase, stepName, content) =>
     set((state) => ({
@@ -43,7 +43,7 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         [`${phase}-${stepName}`]: { ...state.steps[`${phase}-${stepName}`], approved: true },
       },
     }));
-    await get().nextStep(); // Wait for next step initialization
+    await get().nextStep();
   },
   setCurrentStep: (phase, stepName) =>
     set({ currentPhase: phase, currentStep: stepName }),
@@ -54,12 +54,34 @@ export const useWizardStore = create<WizardState>((set, get) => ({
     if (currentIndex < steps.length - 1) {
       const nextStepName = steps[currentIndex + 1];
       set({ currentStep: nextStepName });
-      // Initialize content for the next step if it’s an LLM-based step
-      if (nextStepName === "ExtractEntities") {
+
+      // Handle "Normalize Terminology" step
+      if (nextStepName === "Normalize Terminology") {
+        const previousContent = (get().steps[`${currentPhase}-${currentStep}`]?.content as any)?.result?.sections || [];
+        const textToNormalize = previousContent.map((s: any) => s.content).join("\n");
+        const response = await fetch("/api/llm/normalize-terminology", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: textToNormalize }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          set((state) => ({
+            steps: {
+              ...state.steps,
+              [`${currentPhase}-${nextStepName}`]: { phase: currentPhase, stepName: nextStepName, content: data.normalized, approved: false },
+            },
+          }));
+        }
+      }
+      // Handle "Extract Entities" step (already implemented)
+      else if (nextStepName === "Extract Entities") {
+        const previousContent = (get().steps[`${currentPhase}-${currentStep}`]?.content as any)?.result?.sections || [];
+        const text = previousContent.map((s: any) => s.content).join("\n");
         const response = await fetch("/api/llm/extract-entities", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: (get().steps[`${currentPhase}-${currentStep}`]?.content as any)?.result?.sections?.map((s: any) => s.content).join(" ") || "" }),
+          body: JSON.stringify({ text }),
         });
         if (response.ok) {
           const data = await response.json();
@@ -78,12 +100,12 @@ export const useWizardStore = create<WizardState>((set, get) => ({
         const nextPhase = phases[currentPhaseIndex + 1];
         const nextStepName = methodology[nextPhase][0];
         set({ currentPhase: nextPhase, currentStep: nextStepName });
-        // Initialize content for the first step of the new phase if needed
-        if (nextStepName === "ExtractEntities") {
+
+        if (nextStepName === "Extract Entities") {
           const response = await fetch("/api/llm/extract-entities", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: "" }), // Adjust text source as needed
+            body: JSON.stringify({ text: "" }),
           });
           if (response.ok) {
             const data = await response.json();

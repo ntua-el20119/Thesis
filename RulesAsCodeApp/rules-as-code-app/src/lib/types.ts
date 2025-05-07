@@ -1,5 +1,5 @@
 // src/lib/types.ts
-type JsonValue =
+export type JsonValue =
   | string
   | number
   | boolean
@@ -15,7 +15,34 @@ export type Step = {
 };
 
 export const methodology = {
-  Preparation: ["SegmentText"],
-  Analysis: ["ExtractEntities", "FormalizeRules"],
+  Preparation: 
+    [
+      "Segment Text", 
+      "Normalize Terminology", 
+      "Key Sections", 
+      "Inconsistency Scan",
+      "Inconsistency Categorization",
+    ],
+  
+  Analysis: 
+    [
+      "Extract Entities",
+      "Entity Refinement",
+      "Data Requirement Identification",
+      "Data Types and Validation Rules",
+      "Ambiguity Tagging",
+      "Uncertainty Modeling",
+      "Entity Relationship Mapping",
+      "Rule Extraction",
+      "Rule Formalisation",
+      "Rule Depencies Mapping",
+      "Decision Requirement Diagram Creation",
+      "Incosistency Detection",
+      "Execution Path Conflicts Analysis",
+      "Rule Categorisation",
+      "Conflict Resolution Modeling"
+    ],
   Implementation: ["GenerateCode"],
+  Testing:[],
+  Documentation:[]
 };
