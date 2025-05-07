@@ -9,30 +9,51 @@ export async function POST(request: NextRequest) {
   }
 
   const prompt = `
-    You are processing legal text as part of a Rules as Code implementation methodology. Your task is to normalize terminology in the provided text by identifying synonyms, abbreviations, or variations of terms, and standardizing them to a consistent form.
+  You are normalizing terminology in legal text as part of a Rules as Code implementation methodology. Your task is to standardize terms throughout the document for consistency.
 
-    [SYSTEM INSTRUCTIONS]
-    - Identify terms that may have synonyms or variations (e.g., "installation" vs. "facility", "emission limit values" vs. "limits").
-    - Choose a standard form for each term and replace all variations with the standard form.
-    - Return the result **ONLY** as a JSON object in the following format:
-      {
-        "normalized": {
-          "text": "[normalized text with standardized terms]",
-          "terminologyMap": {
-            "[original term]": "[standardized term]",
-            ...
-          }
-        },
-        "confidence": [score between 0 and 1]
-      }
-    - Do NOT include any explanatory text, the prompt, instructions, or any content outside this JSON format in your response.
-    - Ensure the response is valid JSON.
+  [SYSTEM INSTRUCTIONS]
 
-    [EXAMPLE]
-    For input: "The installation emits pollutants. The facility must comply with limits."
-    Output: {"normalized": {"text": "The installation emits pollutants. The installation must comply with limits.", "terminologyMap": {"facility": "installation", "limits": "emission limit values"}}, "confidence": 0.92}
+  Identify all terms that have variations or synonyms across different sections
+  Create a consistent terminology map that standardizes these variations
+  Update the text to use the standardized terminology consistently
+  Record each normalization (original term → normalized term)
+  Prioritize terminology normalization in the following order:
+  Technical regulatory terms (e.g., "emissions", "installation", "authority")
+  Abbreviations and their full forms (e.g., BAT vs. "best available techniques")
+  Grammatical variations (singular/plural forms) ONLY when they affect clarity
+  DO NOT change the meaning of the text
+  If you identify no terminology variations to normalize, explain your reasoning and re-examine the text
+  Your confidence score should directly reflect the comprehensiveness of your normalization effort
+  [NORMALIZATION GUIDELINES]
 
-    Text to normalize: ${text}
+  Regulatory terms should use consistent forms throughout the document
+  Abbreviations should be introduced properly (full term followed by abbreviation in parentheses) and then used consistently
+  Terms with the same meaning should use identical wording
+  Technical legal terms should maintain singular or plural form consistently
+  When terms are used in different contexts, evaluate whether they should be treated as distinct terms
+  [EXAMPLE NORMALIZATION] Original segment: "The operator must monitor all discharges quarterly. Emission monitoring results must be reported..."
+
+  Normalized segment: "The operator must monitor all emissions quarterly. Emission monitoring results must be reported..."
+
+  Normalization recorded: {"original": "discharges", "normalized": "emissions", "occurrences": 1}
+  
+  [EXPECTED OUTPUT FORMAT] Your response must strictly follow this JSON format: { "result": { "sections": [ { "id": "[section id from input]", "title": "[section title]", "content": "[section content with normalized terminology]", "referenceId": "[reference identifier if present in input]", "normalizations": [ { "original": "[original term]", "normalized": "[standardized term]", "occurrences": [number of replacements in this section] } // Additional normalizations... ] } // Additional sections... ], "terminologyMap": { "[original term 1]": "[normalized term 1]", "[original term 2]": "[normalized term 2]" // Additional mappings... }, "normalizationStrategy": "[brief explanation of your approach to terminology standardization]" }, "confidence": [score between 0 and 1], "normalizationSummary": "[summary of key normalizations performed and their impact on regulatory interpretation]" }
+
+  [SUCCESS CRITERIA] Your response will be evaluated based on:
+
+  Identification of all terminology variations that impact rule interpretation
+  Consistent application of the normalized terms throughout the document
+  Proper handling of technical terms and abbreviations
+  Appropriate confidence score that reflects the quality of normalization
+  Your confidence score should be below 0.5 if you identify zero normalizations
+
+  IMPORTANT: Keep all sections from the input intact, changing only terminology where needed for consistency. 
+  The terminologyMap must contain ALL normalizations performed. 
+  If you find no terminology to normalize after thorough examination, your confidence score should reflect this limitation.
+
+  Only include the JSON response without any additional text or explanations.
+
+  This is the sections that you have to normalise: ${text}
   `;
 
   try {

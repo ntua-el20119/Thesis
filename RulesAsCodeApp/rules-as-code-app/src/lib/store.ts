@@ -55,21 +55,14 @@ export const useWizardStore = create<WizardState>((set, get) => ({
       const nextStepName = steps[currentIndex + 1];
       set({ currentStep: nextStepName });
 
-      // Handle "Normalize Terminology" step
+      // Pass the previous step's content to "Normalize Terminology" without API call
       if (nextStepName === "Normalize Terminology") {
-        const previousContent = (get().steps[`${currentPhase}-${currentStep}`]?.content as any)?.result?.sections || [];
-        const textToNormalize = previousContent.map((s: any) => s.content).join("\n");
-        const response = await fetch("/api/llm/normalize-terminology", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: textToNormalize }),
-        });
-        if (response.ok) {
-          const data = await response.json();
+        const previousContent = get().steps[`${currentPhase}-${currentStep}`]?.content;
+        if (previousContent) {
           set((state) => ({
             steps: {
               ...state.steps,
-              [`${currentPhase}-${nextStepName}`]: { phase: currentPhase, stepName: nextStepName, content: data.normalized, approved: false },
+              [`${currentPhase}-${nextStepName}`]: { phase: currentPhase, stepName: nextStepName, content: previousContent, approved: false },
             },
           }));
         }
