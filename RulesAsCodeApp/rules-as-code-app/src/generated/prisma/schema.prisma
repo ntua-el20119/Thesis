@@ -12,7 +12,9 @@ model MethodologyStep {
   id        Int      @id @default(autoincrement())
   phase     String
   stepName  String
-  content   Json
+  input     String   @default("")
+  output    String   @default("")
+  content   Json // Full LLM response (e.g., normalized sections, terminology map)
   approved  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

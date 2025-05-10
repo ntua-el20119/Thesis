@@ -24,41 +24,17 @@ export default function Home() {
 
   const handleTextSubmit = async () => {
     setError(null);
-    console.log("Submitting text to /api/llm/segment-text:", inputText);
     try {
       const response = await fetch("/api/llm/segment-text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: inputText }),
       });
-      console.log("Response status:", response.status, "OK:", response.ok);
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error response:", errorData);
-        setError(errorData.error || "Failed to process text");
-        return;
-      }
+      if (!response.ok) throw new Error("Failed to process text");
       const data = await response.json();
-      console.log("API response data:", data);
-      let content: JsonValue = data.sections;
-
-      if (Array.isArray(content)) {
-        content = {
-          result: {
-            sections: content,
-          },
-          confidence: 0.9,
-        };
-      } else if (typeof content === "string") {
-        content = { sections: content };
-      } else if (content?.result?.sections) {
-        content = content;
-      }
-
-      setStepContent("Preparation", "Segment Text", content);
+      setStepContent("Preparation", "Segment Text", data, inputText, null);
     } catch (err) {
-      console.error("Fetch error:", err);
-      setError("Network error: Unable to reach the API");
+      setError(err instanceof Error ? err.message : "Unknown error");
     }
   };
 

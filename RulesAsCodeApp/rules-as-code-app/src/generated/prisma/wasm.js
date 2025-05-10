@@ -124,6 +124,8 @@ exports.Prisma.MethodologyStepScalarFieldEnum = {
   id: 'id',
   phase: 'phase',
   stepName: 'stepName',
+  input: 'input',
+  output: 'output',
   content: 'content',
   approved: 'approved',
   createdAt: 'createdAt',

@@ -70,27 +70,41 @@ export async function POST(request: NextRequest) {
         temperature: 0.3,
       }),
     });
-
+  
     if (!response.ok) {
       const errorData = await response.json();
-      return NextResponse.json({ error: errorData.error || "Failed to process request" }, { status: response.status });
+      return NextResponse.json(
+        { error: errorData.error || "Failed to process request" },
+        { status: response.status }
+      );
     }
-
+  
     const data = await response.json();
-    let normalized = data.choices[0].message.content;
-
-    console.log("Raw LLM response:", normalized);
-
+    const rawText = data.choices[0].message.content;
+  
+    console.log("Raw LLM response:", rawText);
+  
+    let parsed;
     try {
-      normalized = JSON.parse(normalized);
+      parsed = JSON.parse(rawText);
     } catch (parseError) {
-      console.warn("Response is not valid JSON, returning as text:", normalized);
-      return NextResponse.json({ error: "Invalid response format from LLM" }, { status: 500 });
+      console.warn("Response is not valid JSON:", rawText);
+      return NextResponse.json(
+        { error: "Invalid response format from LLM" },
+        { status: 500 }
+      );
     }
-
-    return NextResponse.json({ normalized });
+  
+    return NextResponse.json(parsed);
   } catch (error) {
-    console.error("Error processing request:", error instanceof Error ? error.message : error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    console.error(
+      "Error processing request:",
+      error instanceof Error ? error.message : error
+    );
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    );
   }
 }
+  

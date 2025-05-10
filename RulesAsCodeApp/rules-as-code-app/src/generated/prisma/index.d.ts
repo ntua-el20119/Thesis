@@ -893,6 +893,8 @@ export namespace Prisma {
     id: number | null
     phase: string | null
     stepName: string | null
+    input: string | null
+    output: string | null
     approved: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -902,6 +904,8 @@ export namespace Prisma {
     id: number | null
     phase: string | null
     stepName: string | null
+    input: string | null
+    output: string | null
     approved: boolean | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -911,6 +915,8 @@ export namespace Prisma {
     id: number
     phase: number
     stepName: number
+    input: number
+    output: number
     content: number
     approved: number
     createdAt: number
@@ -931,6 +937,8 @@ export namespace Prisma {
     id?: true
     phase?: true
     stepName?: true
+    input?: true
+    output?: true
     approved?: true
     createdAt?: true
     updatedAt?: true
@@ -940,6 +948,8 @@ export namespace Prisma {
     id?: true
     phase?: true
     stepName?: true
+    input?: true
+    output?: true
     approved?: true
     createdAt?: true
     updatedAt?: true
@@ -949,6 +959,8 @@ export namespace Prisma {
     id?: true
     phase?: true
     stepName?: true
+    input?: true
+    output?: true
     content?: true
     approved?: true
     createdAt?: true
@@ -1046,6 +1058,8 @@ export namespace Prisma {
     id: number
     phase: string
     stepName: string
+    input: string
+    output: string
     content: JsonValue
     approved: boolean
     createdAt: Date
@@ -1075,6 +1089,8 @@ export namespace Prisma {
     id?: boolean
     phase?: boolean
     stepName?: boolean
+    input?: boolean
+    output?: boolean
     content?: boolean
     approved?: boolean
     createdAt?: boolean
@@ -1085,6 +1101,8 @@ export namespace Prisma {
     id?: boolean
     phase?: boolean
     stepName?: boolean
+    input?: boolean
+    output?: boolean
     content?: boolean
     approved?: boolean
     createdAt?: boolean
@@ -1095,6 +1113,8 @@ export namespace Prisma {
     id?: boolean
     phase?: boolean
     stepName?: boolean
+    input?: boolean
+    output?: boolean
     content?: boolean
     approved?: boolean
     createdAt?: boolean
@@ -1105,13 +1125,15 @@ export namespace Prisma {
     id?: boolean
     phase?: boolean
     stepName?: boolean
+    input?: boolean
+    output?: boolean
     content?: boolean
     approved?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type MethodologyStepOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "phase" | "stepName" | "content" | "approved" | "createdAt" | "updatedAt", ExtArgs["result"]["methodologyStep"]>
+  export type MethodologyStepOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "phase" | "stepName" | "input" | "output" | "content" | "approved" | "createdAt" | "updatedAt", ExtArgs["result"]["methodologyStep"]>
 
   export type $MethodologyStepPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "MethodologyStep"
@@ -1120,6 +1142,8 @@ export namespace Prisma {
       id: number
       phase: string
       stepName: string
+      input: string
+      output: string
       content: Prisma.JsonValue
       approved: boolean
       createdAt: Date
@@ -1550,6 +1574,8 @@ export namespace Prisma {
     readonly id: FieldRef<"MethodologyStep", 'Int'>
     readonly phase: FieldRef<"MethodologyStep", 'String'>
     readonly stepName: FieldRef<"MethodologyStep", 'String'>
+    readonly input: FieldRef<"MethodologyStep", 'String'>
+    readonly output: FieldRef<"MethodologyStep", 'String'>
     readonly content: FieldRef<"MethodologyStep", 'Json'>
     readonly approved: FieldRef<"MethodologyStep", 'Boolean'>
     readonly createdAt: FieldRef<"MethodologyStep", 'DateTime'>
@@ -1938,6 +1964,8 @@ export namespace Prisma {
     id: 'id',
     phase: 'phase',
     stepName: 'stepName',
+    input: 'input',
+    output: 'output',
     content: 'content',
     approved: 'approved',
     createdAt: 'createdAt',
@@ -2071,6 +2099,8 @@ export namespace Prisma {
     id?: IntFilter<"MethodologyStep"> | number
     phase?: StringFilter<"MethodologyStep"> | string
     stepName?: StringFilter<"MethodologyStep"> | string
+    input?: StringFilter<"MethodologyStep"> | string
+    output?: StringFilter<"MethodologyStep"> | string
     content?: JsonFilter<"MethodologyStep">
     approved?: BoolFilter<"MethodologyStep"> | boolean
     createdAt?: DateTimeFilter<"MethodologyStep"> | Date | string
@@ -2081,6 +2111,8 @@ export namespace Prisma {
     id?: SortOrder
     phase?: SortOrder
     stepName?: SortOrder
+    input?: SortOrder
+    output?: SortOrder
     content?: SortOrder
     approved?: SortOrder
     createdAt?: SortOrder
@@ -2095,6 +2127,8 @@ export namespace Prisma {
     NOT?: MethodologyStepWhereInput | MethodologyStepWhereInput[]
     phase?: StringFilter<"MethodologyStep"> | string
     stepName?: StringFilter<"MethodologyStep"> | string
+    input?: StringFilter<"MethodologyStep"> | string
+    output?: StringFilter<"MethodologyStep"> | string
     content?: JsonFilter<"MethodologyStep">
     approved?: BoolFilter<"MethodologyStep"> | boolean
     createdAt?: DateTimeFilter<"MethodologyStep"> | Date | string
@@ -2105,6 +2139,8 @@ export namespace Prisma {
     id?: SortOrder
     phase?: SortOrder
     stepName?: SortOrder
+    input?: SortOrder
+    output?: SortOrder
     content?: SortOrder
     approved?: SortOrder
     createdAt?: SortOrder
@@ -2123,6 +2159,8 @@ export namespace Prisma {
     id?: IntWithAggregatesFilter<"MethodologyStep"> | number
     phase?: StringWithAggregatesFilter<"MethodologyStep"> | string
     stepName?: StringWithAggregatesFilter<"MethodologyStep"> | string
+    input?: StringWithAggregatesFilter<"MethodologyStep"> | string
+    output?: StringWithAggregatesFilter<"MethodologyStep"> | string
     content?: JsonWithAggregatesFilter<"MethodologyStep">
     approved?: BoolWithAggregatesFilter<"MethodologyStep"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"MethodologyStep"> | Date | string
@@ -2132,6 +2170,8 @@ export namespace Prisma {
   export type MethodologyStepCreateInput = {
     phase: string
     stepName: string
+    input?: string
+    output?: string
     content: JsonNullValueInput | InputJsonValue
     approved?: boolean
     createdAt?: Date | string
@@ -2142,6 +2182,8 @@ export namespace Prisma {
     id?: number
     phase: string
     stepName: string
+    input?: string
+    output?: string
     content: JsonNullValueInput | InputJsonValue
     approved?: boolean
     createdAt?: Date | string
@@ -2151,6 +2193,8 @@ export namespace Prisma {
   export type MethodologyStepUpdateInput = {
     phase?: StringFieldUpdateOperationsInput | string
     stepName?: StringFieldUpdateOperationsInput | string
+    input?: StringFieldUpdateOperationsInput | string
+    output?: StringFieldUpdateOperationsInput | string
     content?: JsonNullValueInput | InputJsonValue
     approved?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -2161,6 +2205,8 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     phase?: StringFieldUpdateOperationsInput | string
     stepName?: StringFieldUpdateOperationsInput | string
+    input?: StringFieldUpdateOperationsInput | string
+    output?: StringFieldUpdateOperationsInput | string
     content?: JsonNullValueInput | InputJsonValue
     approved?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -2171,6 +2217,8 @@ export namespace Prisma {
     id?: number
     phase: string
     stepName: string
+    input?: string
+    output?: string
     content: JsonNullValueInput | InputJsonValue
     approved?: boolean
     createdAt?: Date | string
@@ -2180,6 +2228,8 @@ export namespace Prisma {
   export type MethodologyStepUpdateManyMutationInput = {
     phase?: StringFieldUpdateOperationsInput | string
     stepName?: StringFieldUpdateOperationsInput | string
+    input?: StringFieldUpdateOperationsInput | string
+    output?: StringFieldUpdateOperationsInput | string
     content?: JsonNullValueInput | InputJsonValue
     approved?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -2190,6 +2240,8 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     phase?: StringFieldUpdateOperationsInput | string
     stepName?: StringFieldUpdateOperationsInput | string
+    input?: StringFieldUpdateOperationsInput | string
+    output?: StringFieldUpdateOperationsInput | string
     content?: JsonNullValueInput | InputJsonValue
     approved?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -2270,6 +2322,8 @@ export namespace Prisma {
     id?: SortOrder
     phase?: SortOrder
     stepName?: SortOrder
+    input?: SortOrder
+    output?: SortOrder
     content?: SortOrder
     approved?: SortOrder
     createdAt?: SortOrder
@@ -2284,6 +2338,8 @@ export namespace Prisma {
     id?: SortOrder
     phase?: SortOrder
     stepName?: SortOrder
+    input?: SortOrder
+    output?: SortOrder
     approved?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -2293,6 +2349,8 @@ export namespace Prisma {
     id?: SortOrder
     phase?: SortOrder
     stepName?: SortOrder
+    input?: SortOrder
+    output?: SortOrder
     approved?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
