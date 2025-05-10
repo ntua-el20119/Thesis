@@ -16,6 +16,18 @@ export type JsonValue =
     approved: boolean;
   };
 
+  export interface StepEditorProps {
+    step: Step | null;
+    onEdit: (
+      phase: string,
+      stepName: string,
+      content: JsonValue,
+      input?: string,
+      output?: string
+    ) => void;
+    onApprove: (phase: string, stepName: string) => Promise<void>;
+  }
+
 export const methodology = {
   Preparation: 
     [

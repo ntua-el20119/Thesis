@@ -14,7 +14,7 @@ model MethodologyStep {
   stepName  String
   input     String   @default("")
   output    String   @default("")
-  content   Json // Full LLM response (e.g., normalized sections, terminology map)
+  content   Json // Full LLM response 
   approved  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

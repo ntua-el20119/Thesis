@@ -4,11 +4,19 @@
 import { useState, useEffect } from "react";
 import { useWizardStore } from "@/lib/store";
 import TextArea from "@/components/TextArea";
-import StepEditor from "@/components/StepEditor";
+import StepRenderer from "@/components/stages/StepRenderer";
 import { JsonValue, methodology } from "@/lib/types";
 
 export default function Home() {
-  const { currentPhase, currentStep, steps, setStepContent, approveStep, setCurrentStep } = useWizardStore();
+  const {
+    currentPhase,
+    currentStep,
+    steps,
+    setStepContent,
+    approveStep,
+    setCurrentStep,
+  } = useWizardStore();
+
   const [inputText, setInputText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isApproving, setIsApproving] = useState(false);
@@ -18,7 +26,10 @@ export default function Home() {
     if (!currentStep) {
       setCurrentStep("Preparation", "Segment Text");
     }
-    const initialExpanded = Object.keys(methodology).reduce((acc, phase) => ({ ...acc, [phase]: false }), {});
+    const initialExpanded = Object.keys(methodology).reduce(
+      (acc, phase) => ({ ...acc, [phase]: false }),
+      {}
+    );
     setExpandedChapters(initialExpanded);
   }, [currentStep, setCurrentStep]);
 
@@ -38,11 +49,19 @@ export default function Home() {
     }
   };
 
-  const showTextArea = currentStep === "Segment Text" && !steps["Preparation-Segment Text"]?.content;
+  const showTextArea =
+    currentStep === "Segment Text" &&
+    !steps["Preparation-Segment Text"]?.content;
 
   const toggleChapter = (phase: string) => {
-    setExpandedChapters((prev) => ({ ...prev, [phase]: !prev[phase] }));
+    setExpandedChapters((prev) => ({
+      ...prev,
+      [phase]: !prev[phase],
+    }));
   };
+
+  const currentStepKey = `${currentPhase}-${currentStep}`;
+  const currentStepData = steps[currentStepKey];
 
   return (
     <div className="container mx-auto p-4">
@@ -53,9 +72,7 @@ export default function Home() {
         {Object.entries(methodology).map(([phase, stepsList], phaseIndex) => (
           <div key={phaseIndex} className="mb-2">
             <div className="flex items-center justify-between bg-gray-200 p-2 rounded-t">
-              <h3
-                className={`font-semibold ${currentPhase === phase ? "text-blue-600" : "text-black"}`}
-              >
+              <h3 className={`font-semibold ${currentPhase === phase ? "text-blue-600" : "text-black"}`}>
                 {phase} {currentPhase === phase ? "(Current)" : ""}
               </h3>
               <button
@@ -67,25 +84,26 @@ export default function Home() {
             </div>
             {expandedChapters[phase] && (
               <ul className="list-disc pl-5 bg-gray-100 p-2 rounded-b">
-                {stepsList.map((step, stepIndex) => (
-                  <li
-                    key={stepIndex}
-                    className={`${
-                      currentPhase === phase && currentStep === step
-                        ? "text-green-600"
-                        : steps[`${phase}-${step}`]?.approved
-                        ? "text-gray-500 line-through"
-                        : "text-black"
-                    }`}
-                  >
-                    {step}{" "}
-                    {currentPhase === phase && currentStep === step
-                      ? "(Current)"
-                      : steps[`${phase}-${step}`]?.approved
-                      ? "(Approved)"
-                      : ""}
-                  </li>
-                ))}
+                {stepsList.map((step, stepIndex) => {
+                  const stepKey = `${phase}-${step}`;
+                  const isCurrent = currentPhase === phase && currentStep === step;
+                  const isApproved = steps[stepKey]?.approved;
+
+                  return (
+                    <li
+                      key={stepIndex}
+                      className={`${
+                        isCurrent
+                          ? "text-green-600"
+                          : isApproved
+                          ? "text-gray-500 line-through"
+                          : "text-black"
+                      }`}
+                    >
+                      {step} {isCurrent ? "(Current)" : isApproved ? "(Approved)" : ""}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -98,9 +116,9 @@ export default function Home() {
       )}
       {error && <p className="text-red-500 mt-2">{error}</p>}
       {isApproving && <p className="text-blue-500 mt-2">Processing approval...</p>}
-      {currentPhase && currentStep && steps[`${currentPhase}-${currentStep}`] && (
-        <StepEditor
-          step={steps[`${currentPhase}-${currentStep}`]}
+      {currentStepData && (
+        <StepRenderer
+          step={currentStepData}
           onEdit={setStepContent}
           onApprove={async (phase, stepName) => {
             setIsApproving(true);
