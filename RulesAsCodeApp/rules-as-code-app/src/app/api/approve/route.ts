@@ -9,8 +9,8 @@ export async function POST(request: NextRequest) {
   try {
     await prisma.methodologyStep.upsert({
       where: { phase_stepName: { phase, stepName } },
-      update: { content: content as Prisma.JsonValue, approved: true, updatedAt: new Date() },
-      create: { phase, stepName, content: content as Prisma.InputJsonValue, approved: true },
+      update: { content: content as Prisma.JsonValue, updatedAt: new Date() },
+      create: { phase, stepName, content: content as Prisma.InputJsonValue},
     });
     return NextResponse.json({ success: true });
   } catch (error) {

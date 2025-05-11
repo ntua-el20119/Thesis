@@ -119,7 +119,6 @@ export default function PreparationNormaliseTerminology({
 
   return (
     <div className="mb-4">
-      <h2 className="text-xl font-semibold mb-2">{`${phase} - ${stepName}`}</h2>
 
       <div
         contentEditable

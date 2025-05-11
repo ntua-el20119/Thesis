@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     const rawText = data.choices[0].message.content;
 
-    console.log("Raw LLM response:", data);
+    console.log("Raw LLM response:", rawText);
 
     let parsed;
     try {
