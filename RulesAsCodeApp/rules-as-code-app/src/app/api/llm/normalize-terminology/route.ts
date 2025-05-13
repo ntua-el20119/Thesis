@@ -69,11 +69,16 @@ export async function POST(request: NextRequest) {
   - Appropriate confidence score that reflects the quality of normalization
 
   Only include the JSON response without any additional text or explanations.
+  !!! IMPORTANT !!!
+  Every newline that appears **inside a JSON string value** must be written as the two characters “\n”.  
+  Do NOT insert literal carriage-returns or line-feeds inside any JSON string.
+
 
   This is the sections that you have to normalise: ${text}
   `;
 
   try {
+    /* ---------------- LLM Call ---------------- */
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -87,7 +92,7 @@ export async function POST(request: NextRequest) {
         temperature: 0.3,
       }),
     });
-
+  
     if (!response.ok) {
       const errorData = await response.json();
       return NextResponse.json(
@@ -95,81 +100,97 @@ export async function POST(request: NextRequest) {
         { status: response.status }
       );
     }
-
+  
+    /* ---------------- Parse LLM Response ---------------- */
     const data = await response.json();
-    const rawText = data.choices[0].message.content;
-
-    console.log("Raw LLM response:", rawText);
-
-    let parsed;
+    const rawText: string = data.choices[0].message.content.trim();
+    console.log("Raw LLM response:", rawText)
+    let parsed: any;
+  
+    // 1️⃣  fast-path parse
     try {
       parsed = JSON.parse(rawText);
-    } catch (parseError) {
-      console.warn("Response is not valid JSON:", rawText);
-      return NextResponse.json(
-        { error: "Invalid response format from LLM" },
-        { status: 500 }
-      );
+    } catch {
+      /* 2️⃣  graceful repair: escape bare LF inside JSON string literals */
+      try {
+        const repaired = rawText.replace(
+          /"(?:[^"\\]|\\.)*?"/gs,                // every JSON string literal
+          (m) => m.replace(/\n/g, "\\n")         // turn LF → \n
+        );
+        parsed = JSON.parse(repaired);          // second attempt
+      } catch {
+        console.warn("Response is not valid JSON even after repair:", rawText);
+        return NextResponse.json(
+          { error: "Invalid response format from LLM" },
+          { status: 500 }
+        );
+      }
     }
 
-    // Construct readable output
+    console.log("Parsed LLM response:", parsed)
+  
+    /* ---------------- Build readable output ---------------- */
     const sections = parsed.result?.sections || [];
     const terminologyMap = parsed.result?.terminologyMap || {};
-    const strategy = parsed.normalizationStrategy || "No strategy";
-    const confidence = parsed.confidence ?? "N/A";
-    const summary = parsed.normalizationSummary || "No summary";
-
-    let output = sections.map((s: any) => {
-      const norm = s.normalizations?.map(
-        (n: any) => `- ${n.original} → ${n.normalized} (${n.occurrences})`
-      ).join("\n") || "None";
-
-      return [
-        `ID: ${s.id}`,
-        `Title: ${s.title}`,
-        `Content:\n${s.content}`,
-        `Reference ID: ${s.referenceId ?? "None"}`,
-        `Normalizations:\n${norm}`,
-      ].join("\n");
-    }).join("\n\n");
-
+    const strategy = parsed.result?.normalizationStrategy || {};
+    const confidence = parsed.result?.confidence ?? {};
+    const summary = parsed.result?.normalizationSummary || {};
+  
+    let output = sections
+      .map((s: any) => {
+        const norm = s.normalizations?.map(
+          (n: any) => `- ${n.original} → ${n.normalized} (${n.occurrences})`
+        ).join("\n") || "None";
+  
+        return [
+          `ID: ${s.id}`,
+          `Title: ${s.title}`,
+          `Content:\n${s.content}`,
+          `Reference ID: ${s.referenceId ?? "None"}`,
+          `Normalizations:\n${norm}`,
+        ].join("\n");
+      })
+      .join("\n\n");
+  
     output += "\n\n=== Terminology Map ===\n";
-    const terms = Object.entries(terminologyMap);
-    output += terms.length ? terms.map(([o, n]) => `- ${o} → ${n}`).join("\n") : "None";
-
+    output += Object.entries(terminologyMap).length
+      ? Object.entries(terminologyMap)
+          .map(([o, n]) => `- ${o} → ${n}`)
+          .join("\n")
+      : "None";
+  
     output += "\n\n=== Strategy ===\n" + strategy;
     output += "\n\n=== Confidence ===\n" + confidence;
     output += "\n\n=== Summary ===\n" + summary;
-
-    // Save or update in the database
+  
+    /* ---------------- Persist to DB ---------------- */
     await prisma.methodologyStep.upsert({
       where: {
-        phase_stepName: {
-          phase: "Preparation",
-          stepName: "Normalize Terminology",
-        },
+        phase_stepName: { phase: "Preparation", stepName: "Normalize Terminology" },
       },
-      update: {
-        input: text,
-        output: output,
-        content: parsed,
-      },
+      update: { input: text, output, content: parsed },
       create: {
         phase: "Preparation",
         stepName: "Normalize Terminology",
         input: text,
-        output: output,
+        output,
         content: parsed,
         approved: false,
       },
     });
-
+  
+    /* ---------------- Return JSON ---------------- */
     return NextResponse.json(parsed);
+  
   } catch (error) {
-    console.error("Error processing request:", error instanceof Error ? error.message : error);
+    console.error(
+      "normalize-terminology route error:",
+      error instanceof Error ? error.message : error
+    );
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }
+  
 }
