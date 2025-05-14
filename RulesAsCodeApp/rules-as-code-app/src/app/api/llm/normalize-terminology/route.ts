@@ -1,7 +1,7 @@
 // src/app/api/llm/normalize-terminology/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // make sure this exists
+import { prisma } from "@/lib/prisma"; 
 
 export async function POST(request: NextRequest) {
   const { text } = await request.json();
@@ -132,9 +132,9 @@ export async function POST(request: NextRequest) {
     /* ---------------- Build readable output ---------------- */
     const sections = parsed.result?.sections || [];
     const terminologyMap = parsed.result?.terminologyMap || {};
-    const strategy = parsed.result?.normalizationStrategy || {};
-    const confidence = parsed.result?.confidence ?? {};
-    const summary = parsed.result?.normalizationSummary || {};
+    const strategy = parsed.normalizationStrategy || {};
+    const confidence = parsed.confidence ?? {};
+    const summary = parsed.normalizationSummary || {};
   
     let output = sections
       .map((s: any) => {

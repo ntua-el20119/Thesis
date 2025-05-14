@@ -4,16 +4,16 @@ import { useState, useEffect } from "react";
 import { StepEditorProps } from "@/lib/types";
 import { useWizardStore } from "@/lib/store";
 
-export default function PreparationNormaliseTerminology({
+export default function PreparationKeySections({
   step,
   onEdit,
   onApprove,
 }: StepEditorProps) {
   /* -------------------------------------------------- */
-  /*  Previous step (Segment-Text) approved output       */
+  /*  Pull NORMALISE-TERMINOLOGY output to pre-fill      */
   /* -------------------------------------------------- */
   const previousOutput = useWizardStore(
-    (s) => s.steps["Preparation-Segment Text"]?.output ?? ""
+    (s) => s.steps["Preparation-Normalize Terminology"]?.output ?? ""
   );
 
   /* -------------------------------------------------- */
@@ -25,80 +25,32 @@ export default function PreparationNormaliseTerminology({
     content: {},
   };
 
-  const [inputText, setInputText]       = useState("");
+  const [inputText, setInputText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isApproving, setIsApproving]   = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
   const [processError, setProcessError] = useState<string | null>(null);
   const [hasProcessedThisSession, setHasProcessedThisSession] = useState(false);
 
-  const parsed        = content as any;
-  const resultSecs    = parsed?.result?.sections ?? [];
-  const terminology   = parsed?.result?.terminologyMap ?? {};
-  const strategy      = parsed?.result?.normalizationStrategy ?? "No strategy";
-  const confidence    = parsed?.result?.confidence ?? "N/A";
-  const summary       = parsed?.result?.normalizationSummary ?? "No summary";
+  /* Use raw JSON (pretty-printed) for display */
+  const rawJson   = JSON.stringify(content, null, 2);
+  const hasLlmRes = !!content?.result?.sections; // simple presence check
 
   /* -------------------------------------------------- */
-  /*  Initial textarea – always previous approved text  */
+  /*  Initialise textarea – always previous step output */
   /* -------------------------------------------------- */
   useEffect(() => {
-    setInputText(previousOutput);
+    setInputText(previousOutput); // ignore stored input
   }, [previousOutput]);
 
   /* -------------------------------------------------- */
-  /*  Helpers                                           */
-  /* -------------------------------------------------- */
-  const sectionReadable = (s: any) => {
-    const normList =
-      s.normalizations && s.normalizations.length
-        ? s.normalizations
-            .map(
-              (n: any) =>
-                `- ${n.original} → ${n.normalized} (${n.occurrences})`
-            )
-            .join("\n")
-        : "None";
-
-    return [
-      `ID: ${s.id}`,
-      `Title: ${s.title}`,
-      `Content:\n${s.content}`,
-      `Reference ID: ${s.referenceId || "None"}`,
-      `Normalizations:\n${normList}`,
-    ].join("\n");
-  };
-
-  /** Build full readable doc (sections + meta) */
-  const buildFullReadable = () => {
-    const secPart = resultSecs.map(sectionReadable).join("\n\n") || "";
-    const mapPart =
-      Object.keys(terminology).length > 0
-        ? Object.entries(terminology)
-            .map(([o, n]) => `- ${o} → ${n}`)
-            .join("\n")
-        : "None";
-
-    return (
-      secPart +
-      "\n\n=== Terminology Map ===\n" +
-      mapPart +
-      "\n\n=== Strategy ===\n" +
-      strategy +
-      "\n\n=== Confidence ===\n" +
-      confidence +
-      "\n\n=== Summary ===\n" +
-      summary
-    );
-  };
-
-  /* -------------------------------------------------- */
-  /*  PROCESS TEXT                                      */
+  /*  PROCESS                                            */
   /* -------------------------------------------------- */
   const handleProcessText = async () => {
     setIsProcessing(true);
     setProcessError(null);
+
     try {
-      /* Save raw input before call */
+      /* Persist user input immediately (optional) */
       await fetch("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -106,49 +58,25 @@ export default function PreparationNormaliseTerminology({
           phase,
           stepName,
           input: inputText,
-          content: step.content ?? {},
+          content: step?.content ?? {},
         }),
       });
 
-      const res = await fetch("/api/llm/normalize-terminology", {
+      /* Call LLM */
+      const res = await fetch("/api/llm/key-sections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: inputText }),
       });
-      if (!res.ok) throw new Error(await res.text());
+
+      if (!res.ok) {
+        throw new Error(`LLM error ${res.status}: ${await res.text()}`);
+      }
 
       const data = await res.json();
 
-      /* Build readable and persist via onEdit */
-      const readable = (() => {
-        const secs = data.result?.sections ?? [];
-        const tMap = data.result?.terminologyMap ?? {};
-        const strat = data.normalizationStrategy ?? "No strategy";
-        const conf  = data.confidence ?? "N/A";
-        const summ  = data.normalizationSummary ?? "No summary";
-
-        const secTxt = secs.map(sectionReadable).join("\n\n");
-        const mapTxt =
-          Object.keys(tMap).length
-            ? Object.entries(tMap)
-                .map(([o, n]) => `- ${o} → ${n}`)
-                .join("\n")
-            : "None";
-
-        return (
-          secTxt +
-          "\n\n=== Terminology Map ===\n" +
-          mapTxt +
-          "\n\n=== Strategy ===\n" +
-          strat +
-          "\n\n=== Confidence ===\n" +
-          conf +
-          "\n\n=== Summary ===\n" +
-          summ
-        );
-      })();
-
-      onEdit(phase, stepName, data, inputText, readable);
+      /* Save to store – raw JSON as output for now */
+      onEdit(phase, stepName, data, inputText, JSON.stringify(data, null, 2));
       setHasProcessedThisSession(true);
     } catch (err) {
       setProcessError(err instanceof Error ? err.message : "Unknown error");
@@ -158,10 +86,11 @@ export default function PreparationNormaliseTerminology({
   };
 
   /* -------------------------------------------------- */
-  /*  APPROVE                                           */
+  /*  APPROVE                                            */
   /* -------------------------------------------------- */
   const handleApprove = async () => {
     setIsApproving(true);
+
     try {
       await fetch("/api/approve", {
         method: "POST",
@@ -170,10 +99,11 @@ export default function PreparationNormaliseTerminology({
           phase,
           stepName,
           input: inputText,
-          output: buildFullReadable(),
-          content: step?.content,
+          output: step.output,
+          content: step.content,
         }),
       });
+
       await onApprove(phase, stepName);
     } finally {
       setIsApproving(false);
@@ -181,18 +111,18 @@ export default function PreparationNormaliseTerminology({
   };
 
   /* -------------------------------------------------- */
-  /*  Layout selection (one- vs two-column)             */
+  /*  Layout switch                                     */
   /* -------------------------------------------------- */
-  const twoColumn = hasProcessedThisSession || step?.approved; // becomes true only after first process
+  const twoColumn = hasProcessedThisSession;
 
-  /* ---------------- ONE-COLUMN --------------------- */
+  /* ---------------- ONE-COLUMN ---------------- */
   if (!twoColumn) {
     return (
       <div>
         <h3 className="text-lg font-semibold mb-1">User Input</h3>
         <p className="text-sm text-gray-400 mb-2">
-          Pre-filled with the approved output of “Segment Text”. Edit and click{" "}
-          <em>Process Text</em>.
+          Pre-filled with the approved output of “Normalize Terminology”. Edit and
+          click <em>Process&nbsp;Text</em>.
         </p>
 
         <textarea
@@ -215,14 +145,14 @@ export default function PreparationNormaliseTerminology({
     );
   }
 
-  /* ---------------- TWO-COLUMN --------------------- */
+  /* ---------------- TWO-COLUMN ---------------- */
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Left – user input */}
+      {/* Left column – user input */}
       <div>
         <h3 className="text-lg font-semibold mb-1">User Input</h3>
         <p className="text-sm text-gray-400 mb-2">
-          Edit and click <em>Process Again</em> to re-run normalization.
+          Edit and click <em>Process Again</em> to re-run identification.
         </p>
 
         <textarea
@@ -241,16 +171,15 @@ export default function PreparationNormaliseTerminology({
         </button>
       </div>
 
-      {/* Right – LLM output (raw readable) */}
+      {/* Right column – RAW LLM output */}
       <div>
-        <h3 className="text-lg font-semibold mb-2">LLM Output</h3>
+        <h3 className="text-lg font-semibold mb-2">LLM Raw Output</h3>
         <p className="text-sm text-gray-400 mb-2">
-          This is the output of the LLM, including per-section normalizations,
-          the terminology map and metadata.
+          Raw JSON returned by the LLM.
         </p>
 
         <textarea
-          value={buildFullReadable()}
+          value={step.output ?? rawJson}
           onChange={(e) =>
             onEdit(phase, stepName, content, inputText, e.target.value)
           }
@@ -260,7 +189,7 @@ export default function PreparationNormaliseTerminology({
 
         <button
           onClick={handleApprove}
-          disabled={isApproving}
+          disabled={isApproving || !hasLlmRes}
           className="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
         >
           {isApproving ? "Approving…" : "Approve"}
