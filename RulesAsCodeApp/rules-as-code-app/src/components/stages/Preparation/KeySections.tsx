@@ -33,10 +33,16 @@ export default function PreparationKeySections({
 
   /* Use raw JSON (pretty-printed) for display */
   const rawJson   = JSON.stringify(content, null, 2);
-  const hasLlmRes = !!content?.result?.sections; // simple presence check
+  const hasLlmRes =
+    typeof content === "object" &&
+    content !== null &&
+    "result" in content &&
+    typeof content.result === "object" &&
+    content.result !== null &&
+    "sections" in content.result;
 
   /* -------------------------------------------------- */
-  /*  Initialise textarea – always previous step output */
+  /*  Initialise textarea  */
   /* -------------------------------------------------- */
   useEffect(() => {
     setInputText(previousOutput); // ignore stored input
@@ -99,8 +105,8 @@ export default function PreparationKeySections({
           phase,
           stepName,
           input: inputText,
-          output: step.output,
-          content: step.content,
+          output: step?.output,
+          content: step?.content,
         }),
       });
 
@@ -179,7 +185,7 @@ export default function PreparationKeySections({
         </p>
 
         <textarea
-          value={step.output ?? rawJson}
+          value={step?.output ?? rawJson}
           onChange={(e) =>
             onEdit(phase, stepName, content, inputText, e.target.value)
           }

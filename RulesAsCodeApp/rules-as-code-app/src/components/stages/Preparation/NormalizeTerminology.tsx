@@ -106,7 +106,7 @@ export default function PreparationNormaliseTerminology({
           phase,
           stepName,
           input: inputText,
-          content: step.content ?? {},
+          content: step?.content ?? {},
         }),
       });
 

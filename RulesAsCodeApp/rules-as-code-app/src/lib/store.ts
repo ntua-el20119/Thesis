@@ -6,7 +6,7 @@ import { Step, JsonValue } from "./types";
 
 /* ========== Methodology definition ========== */
 export const methodology: Record<string, string[]> = {
-  Preparation: ["Segment Text", "Normalize Terminology", "Key Sections"],
+  Preparation: ["Segment Text", "Normalize Terminology", "Key Sections","Inconsistency Scan"],
   // …add Analysis, Implementation, etc. when ready
 };
 

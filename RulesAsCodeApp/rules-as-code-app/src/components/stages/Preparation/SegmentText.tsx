@@ -161,7 +161,7 @@ export default function PreparationSegmentText({
         <p className="text-sm text-gray-400 mb-2">This is the output of the LLM.</p>
 
         <textarea
-          value={step.output ?? readableOutput}
+          value={step?.output ?? readableOutput}
           onChange={(e) =>
             onEdit(phase, stepName, content, inputText, e.target.value)
           }
