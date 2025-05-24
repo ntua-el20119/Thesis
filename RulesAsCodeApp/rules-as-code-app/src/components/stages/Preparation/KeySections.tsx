@@ -9,16 +9,10 @@ export default function PreparationKeySections({
   onEdit,
   onApprove,
 }: StepEditorProps) {
-  /* -------------------------------------------------- */
-  /*  Pull NORMALISE-TERMINOLOGY output to pre-fill      */
-  /* -------------------------------------------------- */
   const previousOutput = useWizardStore(
     (s) => s.steps["Preparation-Normalize Terminology"]?.output ?? ""
   );
 
-  /* -------------------------------------------------- */
-  /*  Local state                                       */
-  /* -------------------------------------------------- */
   const { phase, stepName, content } = step ?? {
     phase: "",
     stepName: "",
@@ -31,8 +25,6 @@ export default function PreparationKeySections({
   const [processError, setProcessError] = useState<string | null>(null);
   const [hasProcessedThisSession, setHasProcessedThisSession] = useState(false);
 
-  /* Use raw JSON (pretty-printed) for display */
-  const rawJson   = JSON.stringify(content, null, 2);
   const hasLlmRes =
     typeof content === "object" &&
     content !== null &&
@@ -41,22 +33,32 @@ export default function PreparationKeySections({
     content.result !== null &&
     "sections" in content.result;
 
-  /* -------------------------------------------------- */
-  /*  Initialise textarea  */
-  /* -------------------------------------------------- */
+  const buildReadable = (src: any) => {
+    if (!src?.result?.sections) return JSON.stringify(src, null, 2);
+    const txt =
+      src.result.sections
+        .map(
+          (s: any) =>
+            `ID: ${s.id}\nTitle: ${s.title}\nContent:\n${s.content}\nImportance: ${s.importance}\nCategory: ${s.category}`
+        )
+        .join("\n\n") +
+      (typeof src.confidence !== "undefined"
+        ? `\n\n=== Confidence ===\n${src.confidence}`
+        : "");
+    return txt;
+  };
+
+  const initialReadable = buildReadable(content);
+
   useEffect(() => {
-    setInputText(previousOutput); // ignore stored input
+    setInputText(previousOutput);
   }, [previousOutput]);
 
-  /* -------------------------------------------------- */
-  /*  PROCESS                                            */
-  /* -------------------------------------------------- */
   const handleProcessText = async () => {
     setIsProcessing(true);
     setProcessError(null);
 
     try {
-      /* Persist user input immediately (optional) */
       await fetch("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,7 +70,6 @@ export default function PreparationKeySections({
         }),
       });
 
-      /* Call LLM */
       const res = await fetch("/api/llm/key-sections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -80,8 +81,6 @@ export default function PreparationKeySections({
       }
 
       const data = await res.json();
-
-      /* Save to store – raw JSON as output for now */
       onEdit(phase, stepName, data, inputText, JSON.stringify(data, null, 2));
       setHasProcessedThisSession(true);
     } catch (err) {
@@ -91,9 +90,6 @@ export default function PreparationKeySections({
     }
   };
 
-  /* -------------------------------------------------- */
-  /*  APPROVE                                            */
-  /* -------------------------------------------------- */
   const handleApprove = async () => {
     setIsApproving(true);
 
@@ -116,12 +112,8 @@ export default function PreparationKeySections({
     }
   };
 
-  /* -------------------------------------------------- */
-  /*  Layout switch                                     */
-  /* -------------------------------------------------- */
-  const twoColumn = hasProcessedThisSession;
+  const twoColumn = hasProcessedThisSession || step?.approved;
 
-  /* ---------------- ONE-COLUMN ---------------- */
   if (!twoColumn) {
     return (
       <div>
@@ -151,10 +143,19 @@ export default function PreparationKeySections({
     );
   }
 
-  /* ---------------- TWO-COLUMN ---------------- */
+  /* ---------- format whatever is in step.output ---------- */
+  let displayText = initialReadable;
+  if (step?.output) {
+    try {
+      const parsed = JSON.parse(step.output);
+      displayText = buildReadable(parsed);
+    } catch {
+      displayText = step.output;
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Left column – user input */}
       <div>
         <h3 className="text-lg font-semibold mb-1">User Input</h3>
         <p className="text-sm text-gray-400 mb-2">
@@ -177,15 +178,14 @@ export default function PreparationKeySections({
         </button>
       </div>
 
-      {/* Right column – RAW LLM output */}
       <div>
-        <h3 className="text-lg font-semibold mb-2">LLM Raw Output</h3>
+        <h3 className="text-lg font-semibold mb-2">Key Sections</h3>
         <p className="text-sm text-gray-400 mb-2">
-          Raw JSON returned by the LLM.
+          ID, title, content, importance, category and overall confidence.
         </p>
 
         <textarea
-          value={step?.output ?? rawJson}
+          value={displayText}
           onChange={(e) =>
             onEdit(phase, stepName, content, inputText, e.target.value)
           }

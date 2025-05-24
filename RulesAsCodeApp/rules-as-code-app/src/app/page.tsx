@@ -26,7 +26,11 @@ export default function Home() {
   /* ------------------------------------------------------------------ */
   /*  Helper: initialise & start                                        */
   /* ------------------------------------------------------------------ */
-  const handleStart = () => {
+  const handleStart = async () => {
+
+    /* erases the rows in the database every time we start over*/
+    await fetch("/api/reset", { method: "POST" });
+    
     setStarted(true);
     setCurrentStep("Preparation", "Segment Text");
 

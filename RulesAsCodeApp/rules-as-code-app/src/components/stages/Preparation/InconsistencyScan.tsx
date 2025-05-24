@@ -152,7 +152,7 @@ export default function PreparationInconsistencyScan({
         <textarea
           value={buildReadable()}
           onChange={(e) =>
-            onEdit(phase ?? "", stepName ?? "", content, inputText, e.target.value)
+            onEdit(phase ?? "", stepName ?? "", content ?? "", inputText, e.target.value)
           }
           rows={25}
           className="w-full p-2 border rounded bg-black text-white font-mono"
