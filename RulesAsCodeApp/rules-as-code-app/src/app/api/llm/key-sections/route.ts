@@ -1,23 +1,33 @@
-// src/app/api/llm/key-sections/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-/* ------------------------------------------------------------------ */
-/*  POST /api/llm/key-sections                                        */
-/* ------------------------------------------------------------------ */
-export async function POST(req: NextRequest) {
-  const { text } = await req.json();
+// Type definition for the request body
+interface KeySectionsBody {
+  text: string;
+}
 
-  /* ------------- API-key guard ------------- */
+/**
+ * POST Handler for Key Sections
+ * Analyzes legal text sections to identify and categorize key sections for code implementation
+ * using an external LLM API and stores the result in the database using Prisma's upsert.
+ * @param req - The incoming Next.js request containing the text to analyze
+ * @returns JSON response with categorized sections or error details
+ */
+export async function POST(req: NextRequest) {
+  // Parse request body
+  const { text }: KeySectionsBody = await req.json();
+
+  // Validate API key configuration
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
+    console.error("OPENROUTER_API_KEY is not set in environment variables");
     return NextResponse.json(
-      { error: "OPENROUTER_API_KEY is not set" },
+      { error: "Server configuration error: Missing OPENROUTER_API_KEY" },
       { status: 500 }
     );
   }
 
-  /* ------------- Prompt -------------------- */
+  // Construct prompt for LLM to identify and categorize key sections
   const prompt = `
 You are processing legal text to identify the most important sections for implementation as code. Analyze the provided legal text sections and identify which ones are most important for implementation, focusing specifically on rules, definitions, and decision procedures.
 
@@ -59,7 +69,7 @@ ${text}
 `;
 
   try {
-    /* ------------- LLM call ---------------- */
+    // Call external LLM API to analyze and categorize sections
     const llm = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -78,19 +88,21 @@ ${text}
       }),
     });
 
-    /* forward OpenRouter error as-is */
+    // Handle non-200 responses from LLM API
     if (!llm.ok) {
       const e = await llm.json().catch(() => ({}));
+      console.error("LLM API error:", e);
       return NextResponse.json(
         { error: e.error || "LLM request failed" },
         { status: llm.status }
       );
     }
 
+    // Parse LLM response
     const raw: string = (await llm.json()).choices[0].message.content.trim();
     console.log("🔵 key-sections raw:", raw);
 
-    /* ------------- graceful JSON parse ----- */
+    // Utility function to attempt JSON parsing with error handling
     const tryJSON = (s: string) => {
       try {
         return JSON.parse(s);
@@ -99,34 +111,36 @@ ${text}
       }
     };
 
+    // Attempt to parse raw JSON response
     let parsed: any = tryJSON(raw);
 
+    // Fallback: Trim to outer braces if initial parse fails
     if (!parsed) {
-      // trim to outer braces
       const trimmed = raw.replace(/^[\s\S]*?{/, "{").replace(/}[\s\S]*$/, "}");
       parsed = tryJSON(trimmed);
     }
 
+    // Fallback: Repair JSON by escaping newlines inside quoted strings
     if (!parsed) {
-      // repair: escape bare LF inside quoted strings
-      const escaped = raw.replace(
-        /"(?:[^"\\]|\\.)*"/gs,
-        (m) => m.replace(/\n/g, "\\n")
+      const escaped = raw.replace(/"(?:[^"\\]|\\.)*"/gs, (m) =>
+        m.replace(/\n/g, "\\n")
       );
       parsed = tryJSON(escaped);
     }
 
+    // Return error if JSON parsing fails after all attempts
     if (!parsed) {
+      console.warn("Invalid JSON returned by LLM:", raw);
       return NextResponse.json(
         { error: "Invalid JSON returned by LLM" },
         { status: 500 }
       );
     }
 
-    /* ------------- build raw-JSON output ---- */
-    const output = JSON.stringify(parsed, null, 2); // raw, pretty-printed
+    // Format raw JSON output for storage
+    const output = JSON.stringify(parsed, null, 2); // Pretty-printed JSON
 
-    /* ------------- persist ------------------ */
+    // Store categorized sections in database using Prisma upsert
     await prisma.methodologyStep.upsert({
       where: {
         phase_stepName: {
@@ -145,9 +159,10 @@ ${text}
       },
     });
 
-    /* ------------- respond ------------------ */
-    return NextResponse.json(parsed);
-  } catch (err: any) {
+    // Return the categorized sections
+    return NextResponse.json(parsed, { status: 200 });
+  } catch (err) {
+    // Handle unexpected errors
     console.error("key-sections route error:", err);
     return NextResponse.json(
       { error: err?.message || "Unknown server error" },

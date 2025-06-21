@@ -1,21 +1,33 @@
-// ─────────────────────────────────────────────────────────────
-//  /src/app/api/llm/inconsistency-scan/route.ts
-// ─────────────────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req: NextRequest) {
-  const { text } = await req.json();
+// Type definition for the request body
+interface InconsistencyScanBody {
+  text: string;
+}
 
+/**
+ * POST Handler for Inconsistency Scan
+ * Analyzes legal text to identify inconsistencies, contradictions, ambiguities, gaps, and overlaps
+ * using an external LLM API and stores the result in the database using Prisma's upsert.
+ * @param req - The incoming Next.js request containing the text to analyze
+ * @returns JSON response with identified inconsistencies or error details
+ */
+export async function POST(req: NextRequest) {
+  // Parse request body
+  const { text }: InconsistencyScanBody = await req.json();
+
+  // Validate API key configuration
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
+    console.error("OPENROUTER_API_KEY is not set in environment variables");
     return NextResponse.json(
-      { error: "OPENROUTER_API_KEY is not set" },
+      { error: "Server configuration error: Missing OPENROUTER_API_KEY" },
       { status: 500 }
     );
   }
 
-  /* ---------------- Build the LLM prompt ------------------- */
+  // Construct prompt for LLM to identify inconsistencies
   const prompt = `
 You are analyzing legal text to identify inconsistencies as part of a Rules as Code implementation methodology. Your task is to detect contradictions, ambiguities, gaps, and overlaps in the legal text.
 
@@ -63,73 +75,101 @@ ${text}
 `;
 
   try {
-    /* ---------------- Call OpenRouter ---------------------- */
-    const llmRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method : "POST",
-      headers: {
-        Authorization : `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL  || "http://localhost:3000",
-        "X-Title"     : process.env.NEXT_PUBLIC_SITE_NAME || "Rules as Code Text Wizard",
-      },
-      body: JSON.stringify({
-        model      : "meta-llama/llama-3.1-8b-instruct:free",
-        messages   : [{ role: "user", content: prompt }],
-        max_tokens : 4096,
-        temperature: 0.3,
-      }),
-    });
+    // Call external LLM API to analyze text for inconsistencies
+    const llmRes = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer":
+            process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+          "X-Title":
+            process.env.NEXT_PUBLIC_SITE_NAME || "Rules as Code Text Wizard",
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-3.1-8b-instruct:free",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 4096,
+          temperature: 0.3,
+        }),
+      }
+    );
 
+    // Handle non-200 responses from LLM API
     if (!llmRes.ok) {
       const err = await llmRes.json().catch(() => ({}));
+      console.error("LLM API error:", err);
       return NextResponse.json(
         { error: err.error || "LLM request failed" },
         { status: llmRes.status }
       );
     }
 
+    // Parse LLM response
     const raw = (await llmRes.json()).choices[0].message.content.trim();
-    /* ------------- Graceful JSON parse -------------------- */
+
+    // Utility function to attempt JSON parsing with error handling
     const safeParse = (s: string) => {
-      try { return JSON.parse(s); } catch { return undefined; }
+      try {
+        return JSON.parse(s);
+      } catch {
+        return undefined;
+      }
     };
 
+    // Attempt to parse raw JSON response
     let parsed: any = safeParse(raw);
+
+    // Fallback: Trim to outer braces if initial parse fails
     if (!parsed) {
-      // remove everything before first “{” and after last “}”
       const salvaged = raw.replace(/^[\s\S]*?{/, "{").replace(/}[\s\S]*$/, "}");
       parsed = safeParse(salvaged);
     }
+
+    // Return error if JSON parsing fails after attempts
     if (!parsed) {
+      console.warn("Invalid JSON returned by LLM:", raw);
       return NextResponse.json(
         { error: "Invalid JSON returned by LLM" },
         { status: 500 }
       );
     }
 
-    /* ------------- Persist to DB -------------------------- */
+    // Format raw JSON output for storage
+    const output = JSON.stringify(parsed, null, 2); // Pretty-printed JSON
+
+    // Store analysis results in database using Prisma upsert
     await prisma.methodologyStep.upsert({
-      where : {
-        phase_stepName: { phase: "Preparation", stepName: "Inconsistency Scan" },
+      where: {
+        phase_stepName: {
+          phase: "Preparation",
+          stepName: "Inconsistency Scan",
+        },
       },
-      update: { input: text, output: JSON.stringify(parsed, null, 2), content: parsed },
+      update: {
+        input: text,
+        output,
+        content: parsed,
+        updatedAt: new Date(),
+      },
       create: {
-        phase    : "Preparation",
-        stepName : "Inconsistency Scan",
-        input    : text,
-        output   : JSON.stringify(parsed, null, 2),
-        content  : parsed,
-        approved : false,
+        phase: "Preparation",
+        stepName: "Inconsistency Scan",
+        input: text,
+        output,
+        content: parsed,
+        approved: false,
       },
     });
 
-    /* ------------- Return JSON to UI ---------------------- */
-    return NextResponse.json(parsed);
+    // Return the inconsistency analysis
+    return NextResponse.json(parsed, { status: 200 });
   } catch (err) {
-    console.error("inconsistency-scan route error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unknown server error" },
-      { status: 500 }
-    );
+    // Handle unexpected errors
+    const message = err instanceof Error ? err.message : "Unknown server error";
+    console.error("inconsistency-scan route error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -66,7 +66,8 @@ interface WizardState {
     stepName: string,
     content: JsonValue,
     input?: string,
-    output?: string
+    output?: string,
+    approved?: boolean
   ) => void;
 
   approveStep: (phase: string, stepName: string) => Promise<void>;
@@ -102,7 +103,14 @@ export const useWizardStore = create(
         }
       },
 
-      setStepContent: (phase, stepName, content, input, output) =>
+      setStepContent: (
+        phase,
+        stepName,
+        content,
+        input,
+        output,
+        approved = false
+      ) =>
         set((state) => {
           const key = `${phase}-${stepName}`;
           return {
@@ -115,7 +123,7 @@ export const useWizardStore = create(
                 content,
                 input,
                 output,
-                approved: state.steps[key]?.approved ?? false,
+                approved,
               },
             },
           };

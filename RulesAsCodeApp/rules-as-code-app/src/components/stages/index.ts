@@ -9,6 +9,6 @@ export const stepComponentMap: Record<string, React.FC<any>> = {
   PreparationSegmentText,
   PreparationNormalizeTerminology,
   PreparationKeySections,
-  PreparationInconsistencyScan
+  PreparationInconsistencyScan,
   // e.g., AnalysisExtractEntities: AnalysisExtractEntities,
 };

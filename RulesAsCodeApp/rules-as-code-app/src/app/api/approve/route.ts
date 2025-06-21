@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
-interface Body {
+// Type definition for the request body
+interface MethodologyStepBody {
   projectId: number;
   phase: string;
   stepName: string;
@@ -11,24 +12,30 @@ interface Body {
   content?: Prisma.JsonValue;
 }
 
+/**
+ * POST Handler for Methodology Step
+ * Creates or updates a methodology step in the database using Prisma's upsert.
+ * @param request - The incoming Next.js request containing project details
+ * @returns JSON response indicating success or failure
+ */
 export async function POST(request: NextRequest) {
   try {
-    const {
-      projectId,
-      phase,
-      stepName,
-      input,
-      output,
-      content = {},
-    }: Body = await request.json();
+    // Parse and validate request body
+    const body: MethodologyStepBody = await request.json();
+    const { projectId, phase, stepName, input, output, content = {} } = body;
 
+    // Validate required fields
     if (!projectId || !phase || !stepName) {
       return NextResponse.json(
-        { success: false, error: "Missing projectId, phase, or stepName" },
+        {
+          success: false,
+          error: "Missing required fields: projectId, phase, or stepName",
+        },
         { status: 400 }
       );
     }
 
+    // Upsert methodology step in the database
     await prisma.methodologyStep.upsert({
       where: {
         projectId_phase_stepName: {
@@ -55,10 +62,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true });
+    // Return success response
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
+    // Handle errors and return appropriate response
     const message =
       error instanceof Error ? error.message : "Unknown server error";
+    console.error("Error in POST /api/methodology-step:", message);
     return NextResponse.json(
       { success: false, error: message },
       { status: 500 }
