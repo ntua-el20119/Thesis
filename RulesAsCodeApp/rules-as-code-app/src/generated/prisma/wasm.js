@@ -120,8 +120,15 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
+exports.Prisma.ProjectScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.MethodologyStepScalarFieldEnum = {
   id: 'id',
+  projectId: 'projectId',
   phase: 'phase',
   stepName: 'stepName',
   input: 'input',
@@ -154,6 +161,7 @@ exports.Prisma.JsonNullValueFilter = {
 
 
 exports.Prisma.ModelName = {
+  Project: 'Project',
   MethodologyStep: 'MethodologyStep'
 };
 

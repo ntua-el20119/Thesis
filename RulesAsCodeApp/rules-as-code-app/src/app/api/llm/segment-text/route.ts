@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // Ensure you have this setup
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
-  const { text } = await request.json();
+  const { text, projectId } = await request.json();
+
+  if (!projectId || typeof projectId !== "number") {
+    return NextResponse.json(
+      { error: "Missing or invalid projectId" },
+      { status: 400 }
+    );
+  }
+
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     console.error("OPENROUTER_API_KEY is not set in environment variables");
-    return NextResponse.json({ error: "OPENROUTER_API_KEY is not set" }, { status: 500 });
+    return NextResponse.json(
+      { error: "OPENROUTER_API_KEY is not set" },
+      { status: 500 }
+    );
   }
 
   const prompt = `
@@ -33,21 +44,26 @@ export async function POST(request: NextRequest) {
   `;
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-        "X-Title": process.env.NEXT_PUBLIC_SITE_NAME || "Rules as Code Text Wizard",
-      },
-      body: JSON.stringify({
-        model: "meta-llama/llama-3.1-8b-instruct:free",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 10000,
-        temperature: 0.3,
-      }),
-    });
+    const response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer":
+            process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+          "X-Title":
+            process.env.NEXT_PUBLIC_SITE_NAME || "Rules as Code Text Wizard",
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-3.1-8b-instruct:free",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 10000,
+          temperature: 0.3,
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -65,13 +81,17 @@ export async function POST(request: NextRequest) {
       parsed = JSON.parse(rawText);
     } catch (err) {
       console.warn("Invalid LLM JSON:", rawText);
-      return NextResponse.json({ error: "Invalid JSON format from LLM" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Invalid JSON format from LLM" },
+        { status: 500 }
+      );
     }
 
-    // Save input and content (not output) in DB
+    // ✅ Upsert with projectId + phase + stepName as composite key
     await prisma.methodologyStep.upsert({
       where: {
-        phase_stepName: {
+        projectId_phase_stepName: {
+          projectId,
           phase: "Preparation",
           stepName: "Segment Text",
         },
@@ -81,6 +101,7 @@ export async function POST(request: NextRequest) {
         content: parsed,
       },
       create: {
+        projectId,
         phase: "Preparation",
         stepName: "Segment Text",
         input: text,

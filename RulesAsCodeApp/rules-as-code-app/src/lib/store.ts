@@ -2,19 +2,41 @@
 /*  store.ts – central wizard state                                   */
 /* ------------------------------------------------------------------ */
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { Step, JsonValue } from "./types";
 
 /* ========== Methodology definition ========== */
 export const methodology: Record<string, string[]> = {
-  Preparation: ["Segment Text", 
-      "Normalize Terminology", 
-      "Key Sections",
-      "Inconsistency Scan"],
-  // …add Analysis, Implementation, etc. when ready
+  Preparation: [
+    "Segment Text",
+    "Normalize Terminology",
+    "Key Sections",
+    "Inconsistency Scan",
+    "Inconsistency Categorization",
+  ],
+  Analysis: [
+    "Extract Entities",
+    "Entity Refinement",
+    "Data Requirement Identification",
+    "Data Types and Validation Rules",
+    "Ambiguity Tagging",
+    "Uncertainty Modeling",
+    "Entity Relationship Mapping",
+    "Rule Extraction",
+    "Rule Formalisation",
+    "Rule Depencies Mapping",
+    "Decision Requirement Diagram Creation",
+    "Incosistency Detection",
+    "Execution Path Conflicts Analysis",
+    "Rule Categorisation",
+    "Conflict Resolution Modeling",
+  ],
+  Implementation: ["GenerateCode"],
+  Testing: [],
+  Documentation: [],
 };
 
-/* ========== Helper: linear traversal order ========== */
-const PHASE_ORDER = Object.keys(methodology);           // ["Preparation", …]
+const PHASE_ORDER = Object.keys(methodology);
 
 function* stepIterator() {
   for (const phase of PHASE_ORDER) {
@@ -24,16 +46,18 @@ function* stepIterator() {
   }
 }
 
-/* ========== Zustand store ========== */
 interface WizardState {
-  /* current position */
+  projectId: number | null;
+  projectName: string | null;
+
   currentPhase: string;
   currentStep: string;
 
-  /* map "Phase-Step" → Step object */
   steps: Record<string, Step>;
 
-  /* helpers / actions */
+  setProjectId: (id: number) => void;
+  setProjectName: (name: string) => void;
+
   canNavigateTo: (phase: string, step: string) => boolean;
   setCurrentStep: (phase: string, step: string) => void;
 
@@ -49,97 +73,104 @@ interface WizardState {
   nextStep: () => void;
 }
 
-export const useWizardStore = create<WizardState>((set, get) => ({
-  /* ­------------ state ------------ */
-  currentPhase: "Preparation",
-  currentStep : "Segment Text",
-  steps       : {},
+export const useWizardStore = create(
+  persist<WizardState>(
+    (set, get) => ({
+      projectId: null,
+      projectName: null,
 
-  /* ­------------ navigation guard ------------ */
-  canNavigateTo: (phase, step) => {
-    const { steps } = get();
-    for (const { phase: p, step: s } of stepIterator()) {
-      if (p === phase && s === step) return true;      // reached target
-      const key = `${p}-${s}`;
-      if (!steps[key]?.approved) return false;         // found a gap
-    }
-    return false;                                     // target not found
-  },
+      currentPhase: "Preparation",
+      currentStep: "Segment Text",
+      steps: {},
 
-  setCurrentStep: (phase, step) => {
-    if (get().canNavigateTo(phase, step)) {
-      set({ currentPhase: phase, currentStep: step });
-    }
-  },
+      setProjectId: (id) => set({ projectId: id }),
+      setProjectName: (name) => set({ projectName: name }),
 
-  /* ­------------ content handling ------------ */
-  setStepContent: (phase, stepName, content, input, output) =>
-    set((state) => {
-      const key = `${phase}-${stepName}`;
-      return {
-        steps: {
-          ...state.steps,
-          [key]: {
-            phase,
-            stepName,
-            content,
-            input,
-            output,
-            approved: state.steps[key]?.approved ?? false,
-          },
-        },
-      };
-    }),
-
-  /* ­------------ approval ------------ */
-  approveStep: async (phase, stepName) => {
-    const key = `${phase}-${stepName}`;
-
-    set((state) => ({
-      steps: {
-        ...state.steps,
-        [key]: {
-          ...state.steps[key],
-          approved: true,
-        },
+      canNavigateTo: (phase, step) => {
+        const { steps } = get();
+        for (const { phase: p, step: s } of stepIterator()) {
+          if (p === phase && s === step) return true;
+          const key = `${p}-${s}`;
+          if (!steps[key]?.approved) return false;
+        }
+        return false;
       },
-    }));
 
-    // advance automatically
-    get().nextStep();
-  },
+      setCurrentStep: (phase, step) => {
+        if (get().canNavigateTo(phase, step)) {
+          set({ currentPhase: phase, currentStep: step });
+        }
+      },
 
-  /* ­------------ advance to next sequential step ------------ */
-  nextStep: () => {
-    const { 
-      currentPhase, 
-      currentStep, 
-      steps, 
-      setCurrentStep, 
-      setStepContent 
-    } = get();
+      setStepContent: (phase, stepName, content, input, output) =>
+        set((state) => {
+          const key = `${phase}-${stepName}`;
+          return {
+            steps: {
+              ...state.steps,
+              [key]: {
+                phase,
+                stepName,
+                projectId: state.projectId!,
+                content,
+                input,
+                output,
+                approved: state.steps[key]?.approved ?? false,
+              },
+            },
+          };
+        }),
 
-    // find current position in iterator
-    let advance = false;
-    for (const { phase, step } of stepIterator()) {
-      if (!advance) {
-        if (phase === currentPhase && step === currentStep) advance = true;
-        continue;
-      }
+      approveStep: async (phase, stepName) => {
+        const key = `${phase}-${stepName}`;
+        set((state) => ({
+          steps: {
+            ...state.steps,
+            [key]: {
+              ...state.steps[key],
+              approved: true,
+            },
+          },
+        }));
+        get().nextStep();
+      },
 
-      // next unvisited step
-      const nextKey = `${phase}-${step}`;
-      const prevKey = `${currentPhase}-${currentStep}`;
+      nextStep: () => {
+        const {
+          currentPhase,
+          currentStep,
+          steps,
+          setCurrentStep,
+          setStepContent,
+        } = get();
 
-      // carry forward previous content if desired
-      if (!steps[nextKey]) {
-        setStepContent(phase, step, steps[prevKey]?.content ?? null);
-      }
+        let advance = false;
+        for (const { phase, step } of stepIterator()) {
+          if (!advance) {
+            if (phase === currentPhase && step === currentStep) advance = true;
+            continue;
+          }
 
-      setCurrentStep(phase, step);
-      return;
+          const nextKey = `${phase}-${step}`;
+          const prevKey = `${currentPhase}-${currentStep}`;
+
+          if (!steps[nextKey]) {
+            setStepContent(phase, step, steps[prevKey]?.content ?? null);
+          }
+
+          setCurrentStep(phase, step);
+          return;
+        }
+
+        console.log("🚩  End of methodology reached.");
+      },
+    }),
+    {
+      name: "wizard-storage",
+      partialize: (state) => ({
+        projectId: state.projectId,
+        projectName: state.projectName,
+      }),
     }
-
-    console.log("🚩  End of methodology reached.");
-  },
-}));
+  )
+);

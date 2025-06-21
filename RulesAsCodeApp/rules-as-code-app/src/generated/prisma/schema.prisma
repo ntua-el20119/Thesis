@@ -8,16 +8,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/**
+ * ──────────────────────── NEW  ────────────────────────
+ */
+model Project {
+  id        Int               @id @default(autoincrement())
+  name      String            @unique // user-supplied, must be unique
+  createdAt DateTime          @default(now())
+  steps     MethodologyStep[] // 1-to-many relation
+}
+
+/**
+ * ───────────────────────────────────────────────────────
+ */
+
 model MethodologyStep {
   id        Int      @id @default(autoincrement())
+  projectId Int
+  project   Project  @relation(fields: [projectId], references: [id])
   phase     String
   stepName  String
   input     String   @default("")
   output    String   @default("")
-  content   Json // Full LLM response (e.g., normalized sections, terminology map)
+  content   Json
   approved  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([phase, stepName])
+  @@unique([projectId, phase, stepName]) // uniqueness is now per-project
 }

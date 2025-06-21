@@ -1,31 +1,42 @@
-// src/app/api/approve/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
 interface Body {
+  projectId: number;
   phase: string;
   stepName: string;
-  input?: string;               // raw user input
-  output?: string;              // human-readable LLM output
-  content?: Prisma.JsonValue;   // full LLM JSON
+  input?: string;
+  output?: string;
+  content?: Prisma.JsonValue;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { phase, stepName, input, output, content = {} }: Body =
-      await request.json();
+    const {
+      projectId,
+      phase,
+      stepName,
+      input,
+      output,
+      content = {},
+    }: Body = await request.json();
 
-    if (!phase || !stepName) {
+    if (!projectId || !phase || !stepName) {
       return NextResponse.json(
-        { success: false, error: "Missing phase or stepName" },
+        { success: false, error: "Missing projectId, phase, or stepName" },
         { status: 400 }
       );
     }
 
     await prisma.methodologyStep.upsert({
-      where: { phase_stepName: { phase, stepName } },
-
+      where: {
+        projectId_phase_stepName: {
+          projectId,
+          phase,
+          stepName,
+        },
+      },
       update: {
         input,
         output,
@@ -33,8 +44,8 @@ export async function POST(request: NextRequest) {
         approved: true,
         updatedAt: new Date(),
       },
-
       create: {
+        projectId,
         phase,
         stepName,
         input,
@@ -48,6 +59,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown server error";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 }
+    );
   }
 }

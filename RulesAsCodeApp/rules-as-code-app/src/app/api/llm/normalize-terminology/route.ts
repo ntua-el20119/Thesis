@@ -1,13 +1,22 @@
-// src/app/api/llm/normalize-terminology/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; 
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
-  const { text } = await request.json();
+  const { text, projectId } = await request.json();
+
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: "OPENROUTER_API_KEY is not set" }, { status: 500 });
+    return NextResponse.json(
+      { error: "OPENROUTER_API_KEY is not set" },
+      { status: 500 }
+    );
+  }
+
+  if (!projectId || typeof projectId !== "number") {
+    return NextResponse.json(
+      { error: "Missing or invalid projectId" },
+      { status: 400 }
+    );
   }
 
   const prompt = `
@@ -37,9 +46,9 @@ export async function POST(request: NextRequest) {
   Original segment: "The operator must monitor all discharges quarterly. Emission monitoring results must be reported..."
   Normalized segment: "The operator must monitor all emissions quarterly. Emission monitoring results must be reported..."
   Normalization recorded: {"original": "discharges", "normalized": "emissions", "occurrences": 1}
-  
- [EXPECTED OUTPUT FORMAT] Your response must strictly follow this JSON format: 
- { "result": 
+
+  [EXPECTED OUTPUT FORMAT] Your response must strictly follow this JSON format: 
+  { "result": 
     { "sections": [ 
       { "id": "[section id from input]", 
         "title": "[section title]", 
@@ -50,16 +59,17 @@ export async function POST(request: NextRequest) {
         // Additional normalizations... ] } 
         // // Additional sections... ],
       } 
-    
+
       "terminologyMap": { 
       "[original term 1]": "[normalized term 1]", 
-      "[original term 2]": "[normalized term 2]" // Additional mappings... 
-      // },
+      "[original term 2]": "[normalized term 2]" 
+      },
       
-      "normalizationStrategy": "[brief explanation of your approach to terminology standardization]" }, 
-      "confidence": [score between 0 and 1], 
-      "normalizationSummary": "[summary of key normalizations performed and their impact on regulatory interpretation]" 
-      }
+      "normalizationStrategy": "[brief explanation of your approach to terminology standardization]" 
+    }, 
+    "confidence": [score between 0 and 1], 
+    "normalizationSummary": "[summary of key normalizations performed and their impact on regulatory interpretation]" 
+  }
 
   [SUCCESS CRITERIA]
   Your response will be evaluated based on:
@@ -70,29 +80,30 @@ export async function POST(request: NextRequest) {
 
   Only include the JSON response without any additional text or explanations.
   !!! IMPORTANT !!!
-  Every newline that appears **inside a JSON string value** must be written as the two characters “\n”.  
+  Every newline that appears **inside a JSON string value** must be written as the two characters “\\n”.  
   Do NOT insert literal carriage-returns or line-feeds inside any JSON string.
-
 
   This is the sections that you have to normalise: ${text}
   `;
 
   try {
-    /* ---------------- LLM Call ---------------- */
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "meta-llama/llama-3.1-8b-instruct:free",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 4096,
-        temperature: 0.3,
-      }),
-    });
-  
+    const response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-3.1-8b-instruct:free",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 4096,
+          temperature: 0.3,
+        }),
+      }
+    );
+
     if (!response.ok) {
       const errorData = await response.json();
       return NextResponse.json(
@@ -100,24 +111,20 @@ export async function POST(request: NextRequest) {
         { status: response.status }
       );
     }
-  
-    /* ---------------- Parse LLM Response ---------------- */
+
     const data = await response.json();
     const rawText: string = data.choices[0].message.content.trim();
-    console.log("Raw LLM response:", rawText)
+    console.log("Raw LLM response:", rawText);
     let parsed: any;
-  
-    // 1️⃣  fast-path parse
+
     try {
       parsed = JSON.parse(rawText);
     } catch {
-      /* 2️⃣  graceful repair: escape bare LF inside JSON string literals */
       try {
-        const repaired = rawText.replace(
-          /"(?:[^"\\]|\\.)*?"/gs,                // every JSON string literal
-          (m) => m.replace(/\n/g, "\\n")         // turn LF → \n
+        const repaired = rawText.replace(/"(?:[^"\\]|\\.)*?"/gs, (m) =>
+          m.replace(/\n/g, "\\n")
         );
-        parsed = JSON.parse(repaired);          // second attempt
+        parsed = JSON.parse(repaired);
       } catch {
         console.warn("Response is not valid JSON even after repair:", rawText);
         return NextResponse.json(
@@ -127,21 +134,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log("Parsed LLM response:", parsed)
-  
-    /* ---------------- Build readable output ---------------- */
+    console.log("Parsed LLM response:", parsed);
+
     const sections = parsed.result?.sections || [];
     const terminologyMap = parsed.result?.terminologyMap || {};
     const strategy = parsed.normalizationStrategy || {};
     const confidence = parsed.confidence ?? {};
     const summary = parsed.normalizationSummary || {};
-  
+
     let output = sections
       .map((s: any) => {
-        const norm = s.normalizations?.map(
-          (n: any) => `- ${n.original} → ${n.normalized} (${n.occurrences})`
-        ).join("\n") || "None";
-  
+        const norm =
+          s.normalizations
+            ?.map(
+              (n: any) => `- ${n.original} → ${n.normalized} (${n.occurrences})`
+            )
+            .join("\n") || "None";
+
         return [
           `ID: ${s.id}`,
           `Title: ${s.title}`,
@@ -151,25 +160,29 @@ export async function POST(request: NextRequest) {
         ].join("\n");
       })
       .join("\n\n");
-  
+
     output += "\n\n=== Terminology Map ===\n";
     output += Object.entries(terminologyMap).length
       ? Object.entries(terminologyMap)
           .map(([o, n]) => `- ${o} → ${n}`)
           .join("\n")
       : "None";
-  
+
     output += "\n\n=== Strategy ===\n" + strategy;
     output += "\n\n=== Confidence ===\n" + confidence;
     output += "\n\n=== Summary ===\n" + summary;
-  
-    /* ---------------- Persist to DB ---------------- */
+
     await prisma.methodologyStep.upsert({
       where: {
-        phase_stepName: { phase: "Preparation", stepName: "Normalize Terminology" },
+        projectId_phase_stepName: {
+          projectId,
+          phase: "Preparation",
+          stepName: "Normalize Terminology",
+        },
       },
       update: { input: text, output, content: parsed },
       create: {
+        projectId,
         phase: "Preparation",
         stepName: "Normalize Terminology",
         input: text,
@@ -178,19 +191,13 @@ export async function POST(request: NextRequest) {
         approved: false,
       },
     });
-  
-    /* ---------------- Return JSON ---------------- */
+
     return NextResponse.json(parsed);
-  
   } catch (error) {
-    console.error(
-      "normalize-terminology route error:",
-      error instanceof Error ? error.message : error
-    );
+    console.error("normalize-terminology route error:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }
-  
 }

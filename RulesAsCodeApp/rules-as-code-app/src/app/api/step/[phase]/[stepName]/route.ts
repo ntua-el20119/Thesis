@@ -1,20 +1,42 @@
-// src/app/api/step/[phase]/[stepName]/route.ts
+import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";          // <- your existing Prisma helper
 
 export async function GET(
-  _req: NextRequest,
-  { params }: { params: { phase: string; stepName: string } }
+  request: NextRequest,
+  context: { params: { phase: string; stepName: string } }
 ) {
-  const { phase, stepName } = params;
+  const phase = await context.params.phase;
+  const stepName = await context.params.stepName;
 
-  // 1.  look-up
-  const row = await prisma.methodologyStep.findUnique({
-    where: { phase_stepName: { phase: phase, stepName: stepName } },
-  });
+  const { searchParams } = new URL(request.url);
+  const projectId = searchParams.get("projectId");
 
-  // 2.  return
-  return row
-    ? NextResponse.json(row)                   // 200 OK
-    : NextResponse.json({}, { status: 404 });  // not found
+  const pid = Number(projectId);
+  if (!pid || Number.isNaN(pid)) {
+    return NextResponse.json(
+      { error: "Missing or invalid projectId" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const step = await prisma.methodologyStep.findUnique({
+      where: {
+        projectId_phase_stepName: {
+          projectId: pid,
+          phase,
+          stepName,
+        },
+      },
+    });
+
+    if (!step) {
+      return NextResponse.json({ error: "Step not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(step);
+  } catch (err) {
+    console.error("GET step error:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
 }

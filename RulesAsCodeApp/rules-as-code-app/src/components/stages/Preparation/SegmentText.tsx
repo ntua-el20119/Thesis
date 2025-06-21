@@ -2,6 +2,7 @@
 
 import { StepEditorProps } from "@/lib/types";
 import { useState, useEffect } from "react";
+import { useWizardStore } from "@/lib/store";
 
 export default function PreparationSegmentText({
   step,
@@ -13,6 +14,8 @@ export default function PreparationSegmentText({
     stepName: "",
     content: {},
   };
+
+  const projectId = useWizardStore((s) => s.projectId); // ✅ Get current project ID from store
 
   const [inputText, setInputText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -38,9 +41,9 @@ export default function PreparationSegmentText({
     sections
       .map(
         (s: any) =>
-          `ID: ${s.id}\nTitle: ${s.title}\nContent:\n${s.content}\nReference ID: ${
-            s.referenceId || "None"
-          }`
+          `ID: ${s.id}\nTitle: ${s.title}\nContent:\n${
+            s.content
+          }\nReference ID: ${s.referenceId || "None"}`
       )
       .join("\n\n");
 
@@ -50,6 +53,11 @@ export default function PreparationSegmentText({
   /*  Handlers                                                           */
   /* ------------------------------------------------------------------ */
   const handleProcessText = async () => {
+    if (!projectId) {
+      alert("No project selected.");
+      return;
+    }
+
     setIsProcessing(true);
     setProcessError(null);
 
@@ -57,7 +65,7 @@ export default function PreparationSegmentText({
       const response = await fetch("/api/llm/segment-text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: inputText }),
+        body: JSON.stringify({ projectId, text: inputText }), // ✅ Send projectId
       });
 
       if (!response.ok) {
@@ -66,9 +74,8 @@ export default function PreparationSegmentText({
       }
 
       const data = await response.json();
-      const outputText = buildReadable(data.result.sections); // 👈 BUILD OUTPUT NOW
+      const outputText = buildReadable(data.result.sections);
 
-      // ⬇️ store input, raw content, AND readable output
       onEdit(phase, stepName, data, inputText, outputText);
     } catch (err) {
       setProcessError(err instanceof Error ? err.message : "Unknown error");
@@ -84,11 +91,12 @@ export default function PreparationSegmentText({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          projectId, // ✅ Include for approval if needed
           phase,
           stepName,
-          input: inputText,               // current input
-          output: step?.output ?? readableOutput, // current output
-          content: step?.content,         // full JSON
+          input: inputText,
+          output: step?.output ?? readableOutput,
+          content: step?.content,
         }),
       });
       await onApprove(phase, stepName);
@@ -101,7 +109,6 @@ export default function PreparationSegmentText({
   /*  UI                                                                 */
   /* ------------------------------------------------------------------ */
   if (!hasLlmResponse) {
-    /* ---------- one-column layout (before first processing) ---------- */
     return (
       <div>
         <h3 className="text-lg font-semibold mb-1">User Input</h3>
@@ -129,7 +136,6 @@ export default function PreparationSegmentText({
     );
   }
 
-  /* ---------- two-column layout (after LLM response) ---------- */
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Left column: editable input */}
@@ -158,7 +164,9 @@ export default function PreparationSegmentText({
       {/* Right column: editable LLM output */}
       <div>
         <h3 className="text-lg font-semibold mb-2">LLM Response</h3>
-        <p className="text-sm text-gray-400 mb-2">This is the output of the LLM.</p>
+        <p className="text-sm text-gray-400 mb-2">
+          This is the output of the LLM.
+        </p>
 
         <textarea
           value={step?.output ?? readableOutput}
