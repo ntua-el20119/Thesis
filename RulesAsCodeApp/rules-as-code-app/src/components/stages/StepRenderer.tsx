@@ -99,6 +99,7 @@ export default function StepRenderer(props: StepEditorProps) {
     step?.content,
     step?.input,
     step?.output,
+    step?.approved,
     projectId,
     step,
     onEdit,
