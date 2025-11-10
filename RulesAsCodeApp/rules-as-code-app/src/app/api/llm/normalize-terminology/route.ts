@@ -96,10 +96,9 @@ export async function POST(request: NextRequest) {
     - Appropriate confidence score that reflects the quality of normalization
 
     Only include the JSON response without any additional text or explanations.
-    !!! IMPORTANT !!!
     Every newline that appears **inside a JSON string value** must be written as the two characters “\\n”.  
     Do NOT insert literal carriage-returns or line-feeds inside any JSON string.
-
+    
     This is the sections that you have to normalise: ${text}
   `;
 
@@ -114,7 +113,7 @@ export async function POST(request: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "meta-llama/llama-3.1-8b-instruct:free",
+          model: "mistralai/mistral-small-3.1-24b-instruct:free",
           messages: [{ role: "user", content: prompt }],
           max_tokens: 4096,
           temperature: 0.3,
@@ -132,22 +131,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse LLM response
+    // Parse and validate LLM response
     const data = await response.json();
-    const rawText: string = data.choices[0].message.content.trim();
+    const rawText: string = data.choices?.[0]?.message?.content?.trim() || "";
     console.log("Raw LLM response:", rawText);
 
     let parsed: any;
+
     try {
-      parsed = JSON.parse(rawText);
+      // ------------------------------------------------------------------
+      // Step 1: Sanitize LLM output
+      // Some models return JSON wrapped in Markdown code fences (```json ... ```),
+      // or include extra whitespace. This removes such formatting before parsing.
+      // ------------------------------------------------------------------
+      const cleaned = rawText
+        .replace(/^```(?:json)?/i, "") // Remove leading ```json or ```
+        .replace(/```$/, "") // Remove trailing ```
+        .trim();
+
+      // ------------------------------------------------------------------
+      // Step 2: Attempt direct JSON parse
+      // ------------------------------------------------------------------
+      parsed = JSON.parse(cleaned);
     } catch {
-      // Attempt to repair JSON by escaping newlines
       try {
-        const repaired = rawText.replace(/"(?:[^"\\]|\\.)*?"/gs, (m) =>
-          m.replace(/\n/g, "\\n")
-        );
+        // ------------------------------------------------------------------
+        // Step 3: Attempt to repair malformed JSON
+        // This replaces unescaped newlines inside quoted strings,
+        // which are a common cause of JSON parsing errors.
+        // ------------------------------------------------------------------
+        const repaired = rawText
+          .replace(/^```(?:json)?/i, "")
+          .replace(/```$/, "")
+          .replace(/"(?:[^"\\]|\\.)*?"/gs, (m) => m.replace(/\n/g, "\\n"))
+          .trim();
+
         parsed = JSON.parse(repaired);
       } catch {
+        // ------------------------------------------------------------------
+        // Step 4: Handle irreparable JSON responses
+        // If the response cannot be parsed even after repair attempts,
+        // log the raw output for debugging and return a 500 error.
+        // ------------------------------------------------------------------
         console.warn("Response is not valid JSON even after repair:", rawText);
         return NextResponse.json(
           { error: "Invalid response format from LLM" },

@@ -1,59 +1,125 @@
 "use client";
 
+/*
+|--------------------------------------------------------------------------
+| Imports
+|--------------------------------------------------------------------------
+| Keep framework hooks and project-specific types/stores up top.
+*/
 import { useState, useEffect } from "react";
 import { StepEditorProps } from "@/lib/types";
 import { useWizardStore } from "@/lib/store";
 
+/*
+|--------------------------------------------------------------------------
+| Component: PreparationNormaliseTerminology
+|--------------------------------------------------------------------------
+| Renders the "Normalize Terminology" step UI. It:
+|  - Prefills user input from the approved output of "Segment Text"
+|  - Calls the normalize-terminology API
+|  - Renders a readable view of the LLM output
+|  - Persists approval
+*/
 export default function PreparationNormaliseTerminology({
   step,
   onEdit,
   onApprove,
 }: StepEditorProps) {
+  /*
+  |--------------------------------------------------------------------------
+  | Store Selectors
+  |--------------------------------------------------------------------------
+  | Pull previously approved output to prefill the user input and the projectId
+  | used for server-side association.
+  */
   const previousOutput = useWizardStore(
     (s) => s.steps["Preparation-Segment Text"]?.output ?? ""
   );
+  const { projectId } = useWizardStore();
 
-  const {
-    projectId, // ✅ pull from store
-  } = useWizardStore();
-
+  /*
+  |--------------------------------------------------------------------------
+  | Props Deconstruction & Defaults
+  |--------------------------------------------------------------------------
+  | Maintain robust defaults to avoid undefined access when the step is not set.
+  */
   const { phase, stepName, content } = step ?? {
     phase: "",
     stepName: "",
     content: {},
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | Local State
+  |--------------------------------------------------------------------------
+  | - inputText: editable user input (prefilled from "Segment Text")
+  | - isProcessing / isApproving: button/loading management
+  | - processError: user-visible error from processing action
+  | - hasProcessedThisSession: governs one- vs two-column layout
+  */
   const [inputText, setInputText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [processError, setProcessError] = useState<string | null>(null);
   const [hasProcessedThisSession, setHasProcessedThisSession] = useState(false);
 
+  /*
+  |--------------------------------------------------------------------------
+  | Derived Model From Step Content
+  |--------------------------------------------------------------------------
+  | The server persists the parsed LLM output in `step.content`.
+  | Shape (from your logs):
+  | {
+  |   result: {
+  |     sections: [...],
+  |     terminologyMap: {...},
+  |     normalizationStrategy: string   // (if nested in result; prefer root below)
+  |   },
+  |   confidence: number,
+  |   normalizationStrategy: string,    // top-level (preferred)
+  |   normalizationSummary: string      // top-level (preferred)
+  | }
+  */
   const parsed = content as any;
   const resultSecs = parsed?.result?.sections ?? [];
   const terminology = parsed?.result?.terminologyMap ?? {};
   const strategy = parsed?.result?.normalizationStrategy ?? "No strategy";
-  const confidence = parsed?.result?.confidence ?? "N/A";
-  const summary = parsed?.result?.normalizationSummary ?? "No summary";
+  const confidence = parsed?.confidence ?? "N/A";
+  const summary = parsed?.normalizationSummary ?? "No summary";
 
+  /*
+  |--------------------------------------------------------------------------
+  | Effects
+  |--------------------------------------------------------------------------
+  | Prefill user input when the upstream "Segment Text" approved output changes.
+  */
   useEffect(() => {
     setInputText(previousOutput);
   }, [previousOutput]);
 
+  /*
+  |--------------------------------------------------------------------------
+  | View Helpers (Formatting)
+  |--------------------------------------------------------------------------
+  | - sectionReadable: produces a single-section readable text block
+  | - buildFullReadable: produces the composite text block with all metadata
+  */
   const sectionReadable = (s: any) => {
     const normList =
       s.normalizations && s.normalizations.length
         ? s.normalizations
             .map(
-              (n: any) => `- ${n.original} → ${n.normalized} (${n.occurrences})`
+              (n: any) =>
+                `- ${n.original} → ${n.normalized} (${n.occurrences ?? "?"})`
             )
             .join("\n")
         : "None";
 
     return [
-      `ID: ${s.id}`,
-      `Title: ${s.title}`,
-      `Content:\n${s.content}`,
+      `ID: ${s.id ?? "—"}`,
+      `Title: ${s.title ?? "—"}`,
+      `Content:\n${s.content ?? "—"}`,
       `Reference ID: ${s.referenceId || "None"}`,
       `Normalizations:\n${normList}`,
     ].join("\n");
@@ -81,10 +147,24 @@ export default function PreparationNormaliseTerminology({
     );
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | Action Handlers
+  |--------------------------------------------------------------------------
+  | - handleProcessText:
+  |     1) Upfront save of the input via /api/approve (draft context)
+  |     2) Calls /api/llm/normalize-terminology
+  |     3) Builds a human-readable version and emits onEdit with parsed data
+  |
+  | - handleApprove:
+  |     1) Persists the final readable output via /api/approve
+  |     2) Triggers onApprove to mark the step as approved
+  */
   const handleProcessText = async () => {
     setIsProcessing(true);
     setProcessError(null);
     try {
+      // Upfront draft save of current input and any prior content
       await fetch("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -93,22 +173,34 @@ export default function PreparationNormaliseTerminology({
           stepName,
           input: inputText,
           content: step?.content ?? {},
-          projectId, // optional safeguard
+          projectId, // safeguard association
         }),
       });
 
+      // Call the normalization API
       const res = await fetch("/api/llm/normalize-terminology", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: inputText,
-          projectId, // ✅ pass it here
+          projectId,
         }),
       });
-      if (!res.ok) throw new Error(await res.text());
+
+      if (!res.ok) {
+        // Provide actionable error information
+        const text = await res.text();
+        try {
+          const j = JSON.parse(text);
+          throw new Error(j.error || text);
+        } catch {
+          throw new Error(text);
+        }
+      }
 
       const data = await res.json();
 
+      // Build a readable composite from the fresh response (note: read root fields)
       const readable = (() => {
         const secs = data.result?.sections ?? [];
         const tMap = data.result?.terminologyMap ?? {};
@@ -136,6 +228,7 @@ export default function PreparationNormaliseTerminology({
         );
       })();
 
+      // Persist in the client store (and possibly server in your onEdit implementation)
       onEdit(phase, stepName, data, inputText, readable);
       setHasProcessedThisSession(true);
     } catch (err) {
@@ -148,6 +241,7 @@ export default function PreparationNormaliseTerminology({
   const handleApprove = async () => {
     setIsApproving(true);
     try {
+      // Persist the current readable output and mark as approved
       await fetch("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -160,14 +254,28 @@ export default function PreparationNormaliseTerminology({
           projectId,
         }),
       });
+
       await onApprove(phase, stepName);
     } finally {
       setIsApproving(false);
     }
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | Layout Logic
+  |--------------------------------------------------------------------------
+  | If we have just processed in this session or the step is approved, show
+  | the two-column layout (input left, output right). Otherwise, show only
+  | a single input column with a Process action.
+  */
   const twoColumn = hasProcessedThisSession || step?.approved;
 
+  /*
+  |--------------------------------------------------------------------------
+  | Render: Single-Column (pre-first-run)
+  |--------------------------------------------------------------------------
+  */
   if (!twoColumn) {
     return (
       <div>
@@ -197,8 +305,14 @@ export default function PreparationNormaliseTerminology({
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Render: Two-Column (after processing or when approved)
+  |--------------------------------------------------------------------------
+  */
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Left: User Input and re-run */}
       <div>
         <h3 className="text-lg font-semibold mb-1">User Input</h3>
         <p className="text-sm text-gray-400 mb-2">
@@ -221,6 +335,7 @@ export default function PreparationNormaliseTerminology({
         </button>
       </div>
 
+      {/* Right: LLM Output and approval */}
       <div>
         <h3 className="text-lg font-semibold mb-2">LLM Output</h3>
         <p className="text-sm text-gray-400 mb-2">

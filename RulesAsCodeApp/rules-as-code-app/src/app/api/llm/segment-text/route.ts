@@ -1,21 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// Type definition for the request body
+// -----------------------------------------------------------------------------
+// Type: SegmentTextBody
+// -----------------------------------------------------------------------------
+// Defines the expected shape of the request body received by this route.
+// Fields:
+//   - text: Raw legal text that will be segmented by the LLM.
+//   - projectId: Numeric identifier linking the segmentation to a specific project.
+//
 interface SegmentTextBody {
   text: string;
   projectId: number;
 }
 
 /**
- * POST Handler for Segment Text
- * Processes legal text by segmenting it into logical sections using an external LLM API
- * and stores the result in the database using Prisma's upsert.
- * @param request - The incoming Next.js request containing text and projectId
- * @returns JSON response with segmented text or error details
+ * POST /api/llm/segment-text
+ * -----------------------------------------------------------------------------
+ * Purpose:
+ *   - Segment legal text into logical sections (rules, clauses, paragraphs)
+ *     using an external LLM API.
+ *   - Serve as the first stage of the "Preparation" phase in the Rules-as-Code
+ *     methodology.
+ *   - Persist results in the database via Prisma for later use by subsequent
+ *     steps (e.g., normalization, categorization).
+ *
+ * Workflow:
+ *   1. Validate request parameters and environment configuration.
+ *   2. Construct a precise prompt instructing the LLM to segment text.
+ *   3. Submit a chat completion request via the OpenRouter API.
+ *   4. Parse and validate JSON response from the model.
+ *   5. Store results using Prisma’s upsert pattern for idempotency.
+ *   6. Return the structured segmentation result to the client.
+ *
+ * Input:
+ *   - JSON body containing { text, projectId }
+ *
+ * Output:
+ *   - 200: Structured JSON result of segmented sections.
+ *   - 400: Invalid/missing projectId.
+ *   - 500: Internal errors or malformed LLM response.
  */
 export async function POST(request: NextRequest) {
-  // Parse and validate request body
+  // ---------------------------------------------------------------------------
+  // 1. Parse and validate request payload
+  // ---------------------------------------------------------------------------
   const body: SegmentTextBody = await request.json();
   const { text, projectId } = body;
 
@@ -26,7 +55,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Validate API key configuration
+  // ---------------------------------------------------------------------------
+  // 2. Validate OpenRouter API key configuration
+  // ---------------------------------------------------------------------------
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     console.error("OPENROUTER_API_KEY is not set in environment variables");
@@ -36,7 +67,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Construct prompt for LLM to segment legal text
+  // ---------------------------------------------------------------------------
+  // 3. Construct LLM prompt
+  // ---------------------------------------------------------------------------
+  // The prompt defines:
+  //   - How to segment the text (by structure, headings, numbering, etc.).
+  //   - Expected schema for each section (id, title, content, referenceId).
+  //   - JSON-only output requirement to support deterministic parsing.
+  //   - An example for the model to mimic expected behavior.
   const prompt = `
     You are processing legal text as part of a Rules as Code implementation methodology. Your task is to divide the legal text into logical sections.
 
@@ -61,7 +99,14 @@ export async function POST(request: NextRequest) {
   `;
 
   try {
-    // Call external LLM API to segment the text
+    // -------------------------------------------------------------------------
+    // 4. Execute API call to external LLM
+    // -------------------------------------------------------------------------
+    // Model: Meta Llama 3.3 8B Instruct (free tier)
+    // Configuration:
+    //   - max_tokens: ensures large outputs are captured.
+    //   - temperature: 0.3 for stability (minimize randomness).
+    //   - Referer/X-Title headers identify the application context to OpenRouter.
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {
@@ -75,7 +120,7 @@ export async function POST(request: NextRequest) {
             process.env.NEXT_PUBLIC_SITE_NAME || "Rules as Code Text Wizard",
         },
         body: JSON.stringify({
-          model: "meta-llama/llama-3.1-8b-instruct:free",
+          model: "meta-llama/llama-3.3-8b-instruct:free",
           messages: [{ role: "user", content: prompt }],
           max_tokens: 10000,
           temperature: 0.3,
@@ -83,7 +128,10 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // Handle non-200 responses from LLM API
+    // -------------------------------------------------------------------------
+    // 5. Handle non-200 responses from OpenRouter
+    // -------------------------------------------------------------------------
+    // Logs and forwards the error, preserving upstream context and status.
     if (!response.ok) {
       const errorData = await response.json();
       console.error("LLM API error:", errorData);
@@ -93,10 +141,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse LLM response
+    // -------------------------------------------------------------------------
+    // 6. Parse LLM response
+    // -------------------------------------------------------------------------
+    // Extract the message content containing JSON-formatted segmentation data.
     const data = await response.json();
     const rawText = data.choices[0].message.content;
 
+    // Attempt strict JSON parsing; invalid responses trigger 500 for debugging.
     let parsed;
     try {
       parsed = JSON.parse(rawText);
@@ -108,7 +160,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Store segmented text in database using Prisma upsert
+    // -------------------------------------------------------------------------
+    // 7. Persist segmentation result
+    // -------------------------------------------------------------------------
+    // Uses Prisma’s `upsert` to achieve idempotent writes:
+    //   - If this step exists for the given project, update it.
+    //   - Otherwise, create a new record.
+    // Stores the raw `content` JSON to preserve structure for later steps.
     await prisma.methodologyStep.upsert({
       where: {
         projectId_phase_stepName: {
@@ -132,10 +190,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Return the segmented text
+    // -------------------------------------------------------------------------
+    // 8. Send structured response to client
+    // -------------------------------------------------------------------------
+    // Returns LLM-structured JSON as-is for rendering in the UI.
     return NextResponse.json(parsed, { status: 200 });
   } catch (error) {
-    // Handle unexpected errors
+    // -------------------------------------------------------------------------
+    // 9. Catch-all error handling
+    // -------------------------------------------------------------------------
+    // Captures network, Prisma, or runtime errors with consistent reporting.
     const message =
       error instanceof Error ? error.message : "Unknown server error";
     console.error("Segment-text route error:", message);

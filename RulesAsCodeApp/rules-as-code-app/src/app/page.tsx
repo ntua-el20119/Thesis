@@ -35,7 +35,31 @@ function Modal({ open, onClose, children }: ModalProps) {
   );
 }
 
+// ============================================================================
+// Component: Home
+// Responsibility:
+//   - Orchestrates the Rules-as-Code wizard shell (project lifecycle, phase/step
+//     navigation, persistence integration, and rendering of the active step).
+// Design Notes:
+//   - State is split between a global store (wizard/navigation, step data) and
+//     local UI state (modals, input controls, expansion toggles).
+//   - I/O side-effects are performed via fetch() against API routes, with
+//     defensive logging and conservative failure handling.
+//   - Rendering branches handle two main modes: pre-start (project picker)
+//     and active workflow (stage/step explorer and step renderer).
+// ============================================================================
 export default function Home() {
+  // --------------------------------------------------------------------------
+  // Global wizard state (Zustand store)
+  // - projectId / projectName: current project identity (persisted server-side).
+  // - setProjectId / setProjectName: mutations for identity.
+  // - currentPhase / currentStep: navigation cursor in methodology.
+  // - steps: canonical in-memory cache of step records keyed by `${phase}-${step}`.
+  // - setStepContent: central mutator to upsert step content and status.
+  // - approveStep: domain action to mark a step as approved (server/store-coordinated).
+  // - setCurrentStep: navigation action updating the cursor.
+  // - canNavigateTo: policy gate controlling step reachability based on business rules.
+  // --------------------------------------------------------------------------
   const {
     projectId,
     projectName,
@@ -50,6 +74,15 @@ export default function Home() {
     canNavigateTo,
   } = useWizardStore();
 
+  // --------------------------------------------------------------------------
+  // Local UI state
+  // - started: toggles between onboarding view and workspace view.
+  // - isApproving: shows a transient "processing" state while awaiting approval.
+  // - expanded: per-phase disclosure state for stage/step list UI.
+  // - showCreate / showLoad: modal visibility for project creation/loading UX.
+  // - newName: controlled input model for project creation.
+  // - projects: client-side list for "Load Project" modal.
+  // --------------------------------------------------------------------------
   const [started, setStarted] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -58,8 +91,16 @@ export default function Home() {
   const [newName, setNewName] = useState("");
   const [projects, setProjects] = useState<Project[]>([]);
 
+  // --------------------------------------------------------------------------
+  // Diagnostics: component mount trace for timeline correlation in logs.
+  // --------------------------------------------------------------------------
   console.log("[DEBUG] Home component mounted at", new Date().toISOString());
 
+  // --------------------------------------------------------------------------
+  // Helper: initialize phase disclosure map
+  // - Initializes all methodology phases to "collapsed" in the UI.
+  // - Called after project creation/selection to reset the navigator affordance.
+  // --------------------------------------------------------------------------
   const initPhaseExpansion = () => {
     console.log(
       "[DEBUG] Initializing phase expansion state at",
@@ -72,6 +113,17 @@ export default function Home() {
     );
   };
 
+  // --------------------------------------------------------------------------
+  // Action: submitCreate
+  // - Creates a new project via POST /api/projects.
+  // - On success, hydrates the store with the new project identity, marks the
+  //   wizard as started, sets the initial navigation cursor, resets UI state.
+  // - On failure, provides user feedback and avoids partial state updates.
+  // Trust/Validation:
+  //   - Validates non-empty name client-side; server enforces uniqueness.
+  // Error Handling:
+  //   - Logs failures and preserves UX continuity (modals/state).
+  // --------------------------------------------------------------------------
   const submitCreate = async () => {
     if (!newName.trim()) {
       console.log("[DEBUG] Create project skipped: Empty project name");
@@ -103,6 +155,12 @@ export default function Home() {
     }
   };
 
+  // --------------------------------------------------------------------------
+  // Effect: fetch project list when the "Load Project" modal opens
+  // - Lazy-loads available projects (GET /api/projects) upon modal visibility.
+  // - Ensures network work is not performed unless UX requires it.
+  // - Populates `projects` used by the selection list.
+  // --------------------------------------------------------------------------
   useEffect(() => {
     if (!showLoad) return;
     console.log(
@@ -126,6 +184,20 @@ export default function Home() {
     fetchProjects();
   }, [showLoad]);
 
+  // --------------------------------------------------------------------------
+  // Action: selectProject
+  // - Binds the chosen project to the global store (identity and UX state).
+  // - Fetches persisted steps (GET /api/saved_steps?projectId=…) and rehydrates
+  //   the in-memory store via setStepContent() to ensure continuity of work.
+  // - Navigation policy:
+  //     1) If "Preparation → Normalize Terminology" is approved, jump there.
+  //     2) Else, jump to the last approved step, if any.
+  //     3) Else, default to "Preparation → Segment Text".
+  // - Robustness:
+  //     - On fetch errors or non-OK responses, falls back to initial step.
+  // - Observability:
+  //     - Rich logs of inputs, transitions, and post-conditions for debugging.
+  // --------------------------------------------------------------------------
   const selectProject = async (project: Project) => {
     console.log("[DEBUG] Selecting project:", {
       id: project.id,
@@ -179,56 +251,104 @@ export default function Home() {
         stepsKeys: Object.keys(steps),
       });
 
-      // Force navigation to the last approved step
-      const approvedSteps = loadedSteps.filter((s) => s.approved);
-      if (
-        approvedSteps.some(
-          (s) =>
-            s.phase === "Preparation" && s.stepName === "Normalize Terminology"
+      // --------------------------------------------------------------------------
+      // Build linear methodology order: [{ phase, stepName }, ...]
+      // --------------------------------------------------------------------------
+      const orderedSteps = Object.entries(methodology).flatMap(
+        ([phase, stepsInPhase]) =>
+          (stepsInPhase as string[]).map((stepName) => ({ phase, stepName }))
+      );
+
+      // Map approved DB steps to their indices in the global order
+      const approvedIndexes = loadedSteps
+        .filter((s) => s.approved)
+        .map((s) =>
+          orderedSteps.findIndex(
+            (os) => os.phase === s.phase && os.stepName === s.stepName
+          )
         )
-      ) {
+        .filter((idx) => idx >= 0);
+
+      // If none approved, target is the first step (index 0), backfill nothing.
+      if (approvedIndexes.length === 0) {
+        const target = orderedSteps[0] ?? {
+          phase: "Preparation",
+          stepName: "Segment Text",
+        };
+
+        // Ensure target exists in store as not approved (create minimal if missing)
+        const tKey = `${target.phase}-${target.stepName}`;
+        const tExisting = useWizardStore.getState().steps[tKey];
+        if (!tExisting) {
+          setStepContent(target.phase, target.stepName, {}, "", "", false);
+        }
+
         console.log(
-          "[DEBUG] Navigating to Normalize Terminology at",
-          new Date().toISOString()
+          "[DEBUG] No approvals; navigating to first step as current:",
+          target
         );
-        setCurrentStep("Preparation", "Normalize Terminology");
+        setCurrentStep(target.phase, target.stepName);
         console.log("[DEBUG] After setCurrentStep, store state:", {
           currentPhase: useWizardStore.getState().currentPhase,
           currentStep: useWizardStore.getState().currentStep,
-          stepExists:
-            !!useWizardStore.getState().steps[
-              "Preparation-NormalizeTerminology"
-            ],
+          stepExists: !!useWizardStore.getState().steps[tKey],
         });
-      } else if (approvedSteps.length > 0) {
-        const lastApproved = approvedSteps[approvedSteps.length - 1];
-        console.log("[DEBUG] Navigating to last approved step:", {
-          phase: lastApproved.phase,
-          step: lastApproved.stepName,
-          time: new Date().toISOString(),
-        });
-        setCurrentStep(lastApproved.phase, lastApproved.stepName);
-        console.log("[DEBUG] After setCurrentStep, store state:", {
-          currentPhase: useWizardStore.getState().currentPhase,
-          currentStep: useWizardStore.getState().currentStep,
-          stepExists:
-            !!useWizardStore.getState().steps[
-              `${lastApproved.phase}-${lastApproved.stepName}`
-            ],
-        });
-      } else {
-        console.log(
-          "[DEBUG] No approved steps found, defaulting to first step at",
-          new Date().toISOString()
-        );
-        setCurrentStep("Preparation", "Segment Text");
-        console.log("[DEBUG] After setCurrentStep, store state:", {
-          currentPhase: useWizardStore.getState().currentPhase,
-          currentStep: useWizardStore.getState().currentStep,
-          stepExists:
-            !!useWizardStore.getState().steps["Preparation-Segment Text"],
-        });
+        return;
       }
+
+      // Furthest approved index
+      const furthestIdx = Math.max(...approvedIndexes);
+
+      // Next step after the furthest approved (or clamp to last if none)
+      const targetIdx = Math.min(furthestIdx + 1, orderedSteps.length - 1);
+      const target = orderedSteps[targetIdx];
+
+      // --------------------------------------------------------------------------
+      // Backfill: mark ALL previous steps (<= furthestIdx) as approved in the store.
+      // Create minimal records if missing to ensure UI shows "(Approved)" and access.
+      // --------------------------------------------------------------------------
+      for (let i = 0; i <= furthestIdx; i++) {
+        const { phase, stepName } = orderedSteps[i];
+        const key = `${phase}-${stepName}`;
+        const existing = useWizardStore.getState().steps[key];
+
+        if (!existing || !existing.approved) {
+          setStepContent(
+            phase,
+            stepName,
+            existing?.content ?? {}, // preserve if present
+            existing?.input ?? "",
+            existing?.output ?? "",
+            true // mark as approved
+          );
+        }
+      }
+
+      // Ensure the target step itself exists (should be not approved by definition)
+      const tKey = `${target.phase}-${target.stepName}`;
+      const tExisting = useWizardStore.getState().steps[tKey];
+      if (!tExisting) {
+        setStepContent(target.phase, target.stepName, {}, "", "", false);
+      }
+
+      console.log(
+        "[DEBUG] Backfill complete; navigating to NEXT after latest approved:",
+        {
+          furthestApprovedIndex: furthestIdx,
+          targetIndex: targetIdx,
+          target,
+        }
+      );
+
+      // Navigate to target (the "current" step)
+      setCurrentStep(target.phase, target.stepName);
+
+      // Post-condition diagnostics
+      console.log("[DEBUG] After setCurrentStep, store state:", {
+        currentPhase: useWizardStore.getState().currentPhase,
+        currentStep: useWizardStore.getState().currentStep,
+        stepExists: !!useWizardStore.getState().steps[tKey],
+      });
     } catch (err) {
       console.error("[DEBUG] Error loading steps:", err);
       console.log(
@@ -245,6 +365,13 @@ export default function Home() {
     }
   };
 
+  // --------------------------------------------------------------------------
+  // Onboarding / Pre-start Mode
+  // - Renders a non-interactive methodology summary and entry points for:
+  //     * Creating a new project (modal with text input)
+  //     * Loading an existing project (modal with selectable list)
+  // - UX principle: minimize initial friction; explain stages before starting.
+  // --------------------------------------------------------------------------
   if (!started) {
     return (
       <div className="container mx-auto p-6 text-white">
@@ -287,6 +414,7 @@ export default function Home() {
           To get started, create a new project or load an existing one below.
         </p>
         <div className="flex gap-4 justify-center">
+          {/* Entry points: create or load workflows */}
           <button
             onClick={() => setShowCreate(true)}
             className="px-6 py-3 bg-green-500 rounded hover:bg-green-600"
@@ -300,6 +428,8 @@ export default function Home() {
             Load Project
           </button>
         </div>
+
+        {/* Modal: Create Project (controlled by showCreate) */}
         <Modal open={showCreate} onClose={() => setShowCreate(false)}>
           <h2 className="text-xl font-semibold mb-4">Create New Project</h2>
           <input
@@ -315,6 +445,8 @@ export default function Home() {
             Save
           </button>
         </Modal>
+
+        {/* Modal: Load Project (controlled by showLoad) */}
         <Modal open={showLoad} onClose={() => setShowLoad(false)}>
           <h2 className="text-xl font-semibold mb-4">Load Project</h2>
           {projects.length ? (
@@ -345,6 +477,14 @@ export default function Home() {
     );
   }
 
+  // --------------------------------------------------------------------------
+  // Derived rendering context for the active workspace
+  // - stepKey: canonical key for current step lookup.
+  // - currentStepData: store-backed record (if loaded), else undefined.
+  // - firstSegment: sentinel indicating the very first step (no data yet) to
+  //   enable initial rendering of the StepRenderer with defaults.
+  // - Extensive debug log: traces current rendering state and data preview.
+  // --------------------------------------------------------------------------
   const stepKey = `${currentPhase}-${currentStep}`;
   const currentStepData = steps[stepKey];
   const firstSegment =
@@ -374,11 +514,26 @@ export default function Home() {
     time: new Date().toISOString(),
   });
 
+  // --------------------------------------------------------------------------
+  // Active Workspace Rendering
+  // - Header: displays project identity.
+  // - Stage Navigator:
+  //     * Lists all methodology phases with per-phase expand/collapse.
+  //     * Indicates current/approved states and enforces reachability policy.
+  // - Step Title: reflects currentPhase/currentStep for user awareness.
+  // - Approval Status: transient indicator during approval side-effect.
+  // - StepRenderer:
+  //     * Renders the active step either from store or first-step defaults.
+  //     * onEdit bridges child edits to the store write API (setStepContent).
+  //     * onApprove triggers approveStep with optimistic UX signaling.
+  // --------------------------------------------------------------------------
   return (
     <div className="container mx-auto p-4 text-white">
       <h1 className="text-2xl font-bold mb-4">
         Project ID: {projectId} | Name: {projectName ?? "Unnamed"}
       </h1>
+
+      {/* Stage navigator with per-phase expansion and step list */}
       <div className="mb-4">
         <h2 className="text-xl font-semibold mb-2">Methodology Stages</h2>
         {Object.entries(methodology).map(([phase, list]) => (
@@ -400,6 +555,8 @@ export default function Home() {
                 {expanded[phase] ? "Hide Steps" : "Show Steps"}
               </button>
             </div>
+
+            {/* Per-phase step list with reachability and status styling */}
             {expanded[phase] && (
               <ul className="list-disc pl-5 bg-gray-900 p-2 rounded-b">
                 {list.map((step) => {
@@ -434,14 +591,20 @@ export default function Home() {
           </div>
         ))}
       </div>
+
+      {/* Current step title for context */}
       {currentPhase && currentStep && (
         <h2 className="text-xl font-bold text-center mt-8 mb-4">
           {currentPhase} – {currentStep}
         </h2>
       )}
+
+      {/* Approval progress indicator */}
       {isApproving && (
         <p className="text-blue-400 mt-2">Processing approval…</p>
       )}
+
+      {/* StepRenderer binds to either existing store data or first-step defaults */}
       {(currentStepData || firstSegment) && (
         <StepRenderer
           step={
