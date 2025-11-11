@@ -146,6 +146,11 @@ export default function Home() {
       setProjectId(proj.id);
       setProjectName(proj.name);
       setStarted(true);
+
+      // Ensure first step is present in the store for a brand-new project.
+      // This makes the navigator and guards consistent even before any edits.
+      setStepContent("Preparation", "Segment Text", {}, "", "", false);
+
       setCurrentStep("Preparation", "Segment Text");
       initPhaseExpansion();
       setShowCreate(false);

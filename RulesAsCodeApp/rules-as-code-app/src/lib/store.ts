@@ -185,21 +185,29 @@ export const useWizardStore = create(
         content,
         input,
         output,
-        approved = false
+        approved // <-- note: no default here in the signature
       ) =>
         set((state) => {
           const key = `${phase}-${stepName}`;
+          const prev = state.steps[key];
+
+          // Preserve previous approval if caller doesn't provide one
+          const nextApproved =
+            approved !== undefined ? approved : prev?.approved ?? false;
+
           return {
             steps: {
               ...state.steps,
               [key]: {
+                // keep prior record fields unless explicitly overwritten
+                ...prev,
                 phase,
                 stepName,
                 projectId: state.projectId!,
                 content,
                 input,
                 output,
-                approved,
+                approved: nextApproved,
               },
             },
           };
