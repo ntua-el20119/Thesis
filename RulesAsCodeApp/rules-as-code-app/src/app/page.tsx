@@ -4,35 +4,14 @@ import { useState, useEffect } from "react";
 import { useWizardStore } from "@/lib/store";
 import StepRenderer from "@/components/stages/StepRenderer";
 import { methodology, Step } from "@/lib/types";
+import StartingPage from "@/pages/StartingPage";
+import StageNavigator from "@/components/StageNavigator";
+import { usePhaseExpansion } from "@/pages/usePhaseExpansion";
+import ProjectStatus from "@/components/ProjectStatus";
 
 interface Project {
   id: number;
   name: string;
-}
-
-interface ModalProps {
-  open: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-}
-
-function Modal({ open, onClose, children }: ModalProps) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z50 flex items-center justify-center bg-black/60">
-      <div className="bg-gray-800 text-white rounded shadow-lg p-6 w-full max-w-md">
-        {children}
-        <div className="text-right mt-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-700"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ============================================================================
@@ -85,33 +64,31 @@ export default function Home() {
   // --------------------------------------------------------------------------
   const [started, setStarted] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [showCreate, setShowCreate] = useState(false);
   const [showLoad, setShowLoad] = useState(false);
   const [newName, setNewName] = useState("");
   const [projects, setProjects] = useState<Project[]>([]);
 
+  const { expanded, setExpanded, initPhaseExpansion } = usePhaseExpansion();
+
+  <ProjectStatus
+    showLoad={showLoad}
+    setProjects={setProjects}
+    setStarted={setStarted}
+    setShowLoad={setShowLoad}
+    setNewName={setNewName}
+    setShowCreate={setShowCreate}
+    setProjectId={setProjectId}
+    setProjectName={setProjectName}
+    initPhaseExpansion={initPhaseExpansion}
+    setCurrentStep={setCurrentStep}
+    setStepContent={setStepContent}
+  />;
+
   // --------------------------------------------------------------------------
   // Diagnostics: component mount trace for timeline correlation in logs.
   // --------------------------------------------------------------------------
   console.log("[DEBUG] Home component mounted at", new Date().toISOString());
-
-  // --------------------------------------------------------------------------
-  // Helper: initialize phase disclosure map
-  // - Initializes all methodology phases to "collapsed" in the UI.
-  // - Called after project creation/selection to reset the navigator affordance.
-  // --------------------------------------------------------------------------
-  const initPhaseExpansion = () => {
-    console.log(
-      "[DEBUG] Initializing phase expansion state at",
-      new Date().toISOString()
-    );
-    setExpanded(
-      Object.fromEntries(
-        Object.keys(methodology).map((phase) => [phase, false])
-      )
-    );
-  };
 
   // --------------------------------------------------------------------------
   // Action: submitCreate
@@ -371,7 +348,8 @@ export default function Home() {
   };
 
   // --------------------------------------------------------------------------
-  // Onboarding / Pre-start Mode
+  // StartingPage / Pre-start Mode
+  // imports class from @/ pages/StartingPage.tsx
   // - Renders a non-interactive methodology summary and entry points for:
   //     * Creating a new project (modal with text input)
   //     * Loading an existing project (modal with selectable list)
@@ -379,106 +357,17 @@ export default function Home() {
   // --------------------------------------------------------------------------
   if (!started) {
     return (
-      <div className="container mx-auto p-6 text-white">
-        <h1 className="text-3xl font-bold mb-6 text-center">
-          Rules as Code Text Wizard
-        </h1>
-        <p className="mb-6 leading-relaxed text-gray-300">
-          Welcome to the Rules as Code Text Wizard...
-        </p>
-        <h2 className="text-xl font-semibold mt-8 mb-4 text-white text-center">
-          Methodology Overview
-        </h2>
-        <div className="overflow-x-auto mb-6">
-          <table className="w-full table-auto border border-gray-700 text-left text-sm text-gray-300">
-            <thead className="bg-gray-800 text-white">
-              <tr>
-                <th className="px-4 py-2 w-1/5">Stage</th>
-                <th className="px-4 py-2">Description</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-700">
-              {Object.entries(methodology).map(([phase, _]) => (
-                <tr key={phase}>
-                  <td className="px-4 py-3 font-bold">{phase}</td>
-                  <td className="px-4 py-3">
-                    {phase === "Preparation" && "Break down the legal text..."}
-                    {phase === "Analysis" && "Extract legal entities..."}
-                    {phase === "Implementation" &&
-                      "Translate formalized rules..."}
-                    {phase === "Testing" && "Validate rule correctness..."}
-                    {phase === "Documentation" &&
-                      "Produce formal documentation..."}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="mb-6 leading-relaxed text-gray-300 text-center">
-          To get started, create a new project or load an existing one below.
-        </p>
-        <div className="flex gap-4 justify-center">
-          {/* Entry points: create or load workflows */}
-          <button
-            onClick={() => setShowCreate(true)}
-            className="px-6 py-3 bg-green-500 rounded hover:bg-green-600"
-          >
-            Create New Project
-          </button>
-          <button
-            onClick={() => setShowLoad(true)}
-            className="px-6 py-3 bg-blue-500 rounded hover:bg-blue-600"
-          >
-            Load Project
-          </button>
-        </div>
-
-        {/* Modal: Create Project (controlled by showCreate) */}
-        <Modal open={showCreate} onClose={() => setShowCreate(false)}>
-          <h2 className="text-xl font-semibold mb-4">Create New Project</h2>
-          <input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Project name"
-            className="w-full p-2 bg-gray-700 rounded"
-          />
-          <button
-            onClick={submitCreate}
-            className="mt-4 px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </Modal>
-
-        {/* Modal: Load Project (controlled by showLoad) */}
-        <Modal open={showLoad} onClose={() => setShowLoad(false)}>
-          <h2 className="text-xl font-semibold mb-4">Load Project</h2>
-          {projects.length ? (
-            <ul className="space-y-2">
-              {projects.map((p) => (
-                <li key={p.id}>
-                  <button
-                    className="w-full text-left px-4 py-2 bg-gray-700 rounded hover:bg-gray-600"
-                    onClick={() => {
-                      console.log("[DEBUG] Load project button clicked:", {
-                        id: p.id,
-                        name: p.name,
-                        time: new Date().toISOString(),
-                      });
-                      selectProject(p);
-                    }}
-                  >
-                    {p.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>You haven't created any projects.</p>
-          )}
-        </Modal>
-      </div>
+      <StartingPage
+        showCreate={showCreate}
+        setShowCreate={setShowCreate}
+        showLoad={showLoad}
+        setShowLoad={setShowLoad}
+        newName={newName}
+        setNewName={setNewName}
+        projects={projects}
+        submitCreate={submitCreate}
+        selectProject={selectProject}
+      />
     );
   }
 
@@ -538,64 +427,15 @@ export default function Home() {
         Project ID: {projectId} | Name: {projectName ?? "Unnamed"}
       </h1>
 
-      {/* Stage navigator with per-phase expansion and step list */}
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-2">Methodology Stages</h2>
-        {Object.entries(methodology).map(([phase, list]) => (
-          <div key={phase} className="mb-2">
-            <div className="flex items-center justify-between bg-gray-800 p-2 rounded-t">
-              <h3
-                className={`font-semibold ${
-                  currentPhase === phase ? "text-blue-400" : "text-white"
-                }`}
-              >
-                {phase} {currentPhase === phase && "(Current)"}
-              </h3>
-              <button
-                onClick={() =>
-                  setExpanded((prev) => ({ ...prev, [phase]: !prev[phase] }))
-                }
-                className="px-2 py-1 bg-blue-500 rounded hover:bg-blue-600"
-              >
-                {expanded[phase] ? "Hide Steps" : "Show Steps"}
-              </button>
-            </div>
-
-            {/* Per-phase step list with reachability and status styling */}
-            {expanded[phase] && (
-              <ul className="list-disc pl-5 bg-gray-900 p-2 rounded-b">
-                {list.map((step) => {
-                  const key = `${phase}-${step}`;
-                  const isCurrent =
-                    currentPhase === phase && currentStep === step;
-                  const isApproved = steps[key]?.approved;
-                  const reachable = canNavigateTo(phase, step);
-                  return (
-                    <li
-                      key={key}
-                      onClick={() => reachable && setCurrentStep(phase, step)}
-                      className={`
-                        cursor-${reachable ? "pointer" : "default"}
-                        ${
-                          isCurrent
-                            ? "text-green-400"
-                            : isApproved
-                            ? "text-gray-400"
-                            : reachable
-                            ? "text-white"
-                            : "text-gray-600"
-                        }`}
-                    >
-                      {step}{" "}
-                      {isCurrent ? "(Current)" : isApproved ? "(Approved)" : ""}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        ))}
-      </div>
+      <StageNavigator
+        steps={steps}
+        currentPhase={currentPhase}
+        currentStep={currentStep}
+        canNavigateTo={canNavigateTo}
+        onSelect={(phase, step) => setCurrentStep(phase, step)}
+        expanded={expanded}
+        setExpanded={setExpanded}
+      />
 
       {/* Current step title for context */}
       {currentPhase && currentStep && (
