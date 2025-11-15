@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
             process.env.NEXT_PUBLIC_SITE_NAME || "Rules as Code Text Wizard",
         },
         body: JSON.stringify({
-          model: "meta-llama/llama-3.3-8b-instruct:free",
+          model: "mistralai/mistral-small-3.1-24b-instruct:free",
           messages: [{ role: "user", content: prompt }],
           max_tokens: 10000,
           temperature: 0.3,
@@ -148,10 +148,29 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     const rawText = data.choices[0].message.content;
 
+    // ------------------------------------------------------------------
+    // Step 1: Sanitize LLM output
+    // Some models return JSON wrapped in Markdown code fences (```json ... ```),
+    // or include extra whitespace. This removes such formatting before parsing.
+    // ------------------------------------------------------------------
+
     // Attempt strict JSON parsing; invalid responses trigger 500 for debugging.
     let parsed;
     try {
-      parsed = JSON.parse(rawText);
+      // ------------------------------------------------------------------
+      // Step 1: Sanitize LLM output
+      // Some models return JSON wrapped in Markdown code fences (```json ... ```),
+      // or include extra whitespace. This removes such formatting before parsing.
+      // ------------------------------------------------------------------
+      const cleaned = rawText
+        .replace(/^```(?:json)?/i, "") // Remove leading ```json or ```
+        .replace(/```$/, "") // Remove trailing ```
+        .trim();
+
+      // ------------------------------------------------------------------
+      // Step 2: Attempt direct JSON parse
+      // ------------------------------------------------------------------
+      parsed = JSON.parse(cleaned);
     } catch (err) {
       console.warn("Invalid JSON from LLM:", rawText);
       return NextResponse.json(

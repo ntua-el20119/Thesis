@@ -3,6 +3,7 @@
 import { StepEditorProps } from "@/lib/types";
 import { useState, useEffect } from "react";
 import { useWizardStore } from "@/lib/store";
+import { StepLayout } from "@/components/stages/StepLayout";
 
 /**
  * PreparationSegmentText
@@ -25,6 +26,7 @@ import { useWizardStore } from "@/lib/store";
  * Dependencies:
  *   - `useWizardStore`: Provides the active project ID and maintains global state.
  *   - `StepEditorProps`: Supplies `step`, `onEdit`, and `onApprove` bindings.
+ *   - `StepLayout`: Shared UI shell for “input + process + output + approve”.
  */
 export default function PreparationSegmentText({
   step,
@@ -34,7 +36,6 @@ export default function PreparationSegmentText({
   // ---------------------------------------------------------------------------
   // 1. Context and base destructuring
   // ---------------------------------------------------------------------------
-  // Extract metadata from the current step or fallback to empty placeholders.
   const { phase, stepName, content } = step ?? {
     phase: "",
     stepName: "",
@@ -47,9 +48,6 @@ export default function PreparationSegmentText({
   // ---------------------------------------------------------------------------
   // 2. Local UI state
   // ---------------------------------------------------------------------------
-  // - inputText: user-provided or prefilled legal text
-  // - isProcessing / isApproving: indicate network or async state
-  // - processError: captures API errors for inline feedback
   const [inputText, setInputText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
@@ -62,8 +60,6 @@ export default function PreparationSegmentText({
   // ---------------------------------------------------------------------------
   // 3. Initialization effect
   // ---------------------------------------------------------------------------
-  // Auto-populate the input field from any existing `step.input` value
-  // when the step loads or updates.
   useEffect(() => {
     if (typeof step?.input === "string") {
       setInputText(step.input);
@@ -73,9 +69,6 @@ export default function PreparationSegmentText({
   // ---------------------------------------------------------------------------
   // 4. Helpers
   // ---------------------------------------------------------------------------
-  // buildReadable():
-  //   Converts the structured section array into a readable text format for display.
-  //   Each section includes its ID, title, content, and reference ID (if any).
   const buildReadable = (sections: any[]): string =>
     sections
       .map(
@@ -86,7 +79,6 @@ export default function PreparationSegmentText({
       )
       .join("\n\n");
 
-  // Readable version of the model output, used to populate the right-hand panel.
   const readableOutput = hasLlmResponse ? buildReadable(resultSections) : "";
 
   // ---------------------------------------------------------------------------
@@ -94,14 +86,7 @@ export default function PreparationSegmentText({
   // ---------------------------------------------------------------------------
 
   /**
-   * handleProcessText
-   * ----------------------------------------------------------
    * Invokes the LLM API to segment legal text into logical sections.
-   * Workflow:
-   *   1. Validates presence of active project ID.
-   *   2. Sends POST to `/api/llm/segment-text` with text and projectId.
-   *   3. Parses JSON response and updates store via `onEdit`.
-   *   4. Captures errors and toggles UI state accordingly.
    */
   const handleProcessText = async () => {
     if (!projectId) {
@@ -116,7 +101,7 @@ export default function PreparationSegmentText({
       const response = await fetch("/api/llm/segment-text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId, text: inputText }), // Include project ID for DB linkage.
+        body: JSON.stringify({ projectId, text: inputText }),
       });
 
       if (!response.ok) {
@@ -137,11 +122,7 @@ export default function PreparationSegmentText({
   };
 
   /**
-   * handleApprove
-   * ----------------------------------------------------------
    * Marks this step as approved in both backend and global state.
-   *   - Sends POST to `/api/approve` with step data.
-   *   - Invokes `onApprove` to trigger store update and navigation.
    */
   const handleApprove = async () => {
     setIsApproving(true);
@@ -165,94 +146,54 @@ export default function PreparationSegmentText({
   };
 
   // ---------------------------------------------------------------------------
-  // 6. UI Rendering
+  // 6. UI Rendering via shared StepLayout
   // ---------------------------------------------------------------------------
-  // The UI has two states:
-  //   - Before LLM processing: Single-column with text input + “Process Text”.
-  //   - After processing: Two-column layout (input + LLM output).
-  if (!hasLlmResponse) {
-    // --------------------------------------------------------------
-    // Pre-processing state: user provides input to feed into the LLM
-    // --------------------------------------------------------------
-    return (
-      <div>
-        <h3 className="text-lg font-semibold mb-1">User Input</h3>
-        <p className="text-sm text-gray-400 mb-2">
-          Paste or edit your legal text below, then press <em>Process Text</em>.
-        </p>
+  const showOutput = hasLlmResponse;
+  const outputValue = step?.output ?? readableOutput;
 
-        <textarea
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          rows={25}
-          className="w-full p-2 border rounded bg-black text-white font-mono"
-        />
-
-        <button
-          onClick={handleProcessText}
-          disabled={isProcessing || !inputText.trim()}
-          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          {isProcessing ? "Processing..." : "Process Text"}
-        </button>
-
-        {processError && <p className="text-red-500 mt-2">{processError}</p>}
-      </div>
-    );
-  }
-
-  // --------------------------------------------------------------
-  // Post-processing state: LLM output displayed alongside input
-  // --------------------------------------------------------------
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Left column: editable input */}
-      <div>
-        <h3 className="text-lg font-semibold mb-1">User Input</h3>
-        <p className="text-sm text-gray-400 mb-2">
-          Change text and click <em>Process Again</em> to re-segment it.
-        </p>
+    <div>
+      <StepLayout
+        showOutput={showOutput}
+        input={{
+          title: "User Input",
+          description: showOutput ? (
+            <>
+              Change text and click <em>Process Again</em> to re-segment it.
+            </>
+          ) : (
+            <>
+              Paste or edit your legal text below, then press{" "}
+              <em>Process Text</em>.
+            </>
+          ),
+          value: inputText,
+          onChange: setInputText,
+          processLabel: showOutput ? "Process Again" : "Process Text",
+          onProcess: handleProcessText,
+          isProcessing,
+          disabled: !inputText.trim(),
+          rows: 25,
+        }}
+        output={
+          showOutput
+            ? {
+                title: "LLM Response",
+                description: "This is the output of the LLM.",
+                value: outputValue,
+                onChange: (value: string) =>
+                  onEdit(phase, stepName, content, inputText, value),
+                onApprove: handleApprove,
+                isApproving,
+                rows: 25,
+              }
+            : undefined
+        }
+      />
 
-        <textarea
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          rows={25}
-          className="w-full p-2 border rounded bg-black text-white font-mono"
-        />
-
-        <button
-          onClick={handleProcessText}
-          disabled={isProcessing || !inputText.trim()}
-          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          {isProcessing ? "Processing..." : "Process Again"}
-        </button>
-      </div>
-
-      {/* Right column: editable LLM output */}
-      <div>
-        <h3 className="text-lg font-semibold mb-2">LLM Response</h3>
-        <p className="text-sm text-gray-400 mb-2">
-          This is the output of the LLM.
-        </p>
-
-        <textarea
-          value={step?.output ?? readableOutput}
-          onChange={(e) =>
-            onEdit(phase, stepName, content, inputText, e.target.value)
-          }
-          rows={25}
-          className="w-full p-2 border rounded bg-black text-white font-mono"
-        />
-
-        <button
-          onClick={handleApprove}
-          disabled={isApproving}
-          className="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-        >
-          {isApproving ? "Approving..." : "Approve"}
-        </button>
-      </div>
+      {processError && (
+        <p className="mt-2 text-sm text-red-500">{processError}</p>
+      )}
     </div>
   );
 }

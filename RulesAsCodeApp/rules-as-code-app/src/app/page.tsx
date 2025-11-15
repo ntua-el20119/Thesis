@@ -5,7 +5,7 @@ import { useWizardStore } from "@/lib/store";
 import StepRenderer from "@/components/stages/StepRenderer";
 import { methodology, Step } from "@/lib/types";
 import StartingPage from "@/pages/StartingPage";
-import StageNavigator from "@/components/StageNavigator";
+import StageNavigator from "@/components/stages/StageNavigator";
 import { usePhaseExpansion } from "@/pages/usePhaseExpansion";
 import ProjectStatus from "@/components/projects/ProjectStatus";
 
