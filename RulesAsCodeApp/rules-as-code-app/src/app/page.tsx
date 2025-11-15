@@ -7,7 +7,7 @@ import { methodology, Step } from "@/lib/types";
 import StartingPage from "@/pages/StartingPage";
 import StageNavigator from "@/components/StageNavigator";
 import { usePhaseExpansion } from "@/pages/usePhaseExpansion";
-import ProjectStatus from "@/components/ProjectStatus";
+import ProjectStatus from "@/components/projects/ProjectStatus";
 
 interface Project {
   id: number;
@@ -180,6 +180,7 @@ export default function Home() {
   // - Observability:
   //     - Rich logs of inputs, transitions, and post-conditions for debugging.
   // --------------------------------------------------------------------------
+
   const selectProject = async (project: Project) => {
     console.log("[DEBUG] Selecting project:", {
       id: project.id,

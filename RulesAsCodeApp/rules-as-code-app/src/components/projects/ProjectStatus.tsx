@@ -28,6 +28,11 @@ interface ProjectStatusProps {
     output?: string,
     approved?: boolean
   ) => void;
+
+  onActionsReady?: (actions: {
+    submitCreate: (newName: string) => Promise<void>;
+    selectProject: (project: Project) => Promise<void>;
+  }) => void;
 }
 
 /**
