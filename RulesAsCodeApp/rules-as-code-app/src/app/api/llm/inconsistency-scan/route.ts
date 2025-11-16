@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { callOpenRouterJson, LlmApiError } from "@/lib/openrouter";
 
 // Type definition for the request body
 interface InconsistencyScanBody {
   text: string;
+  projectId: number;
 }
 
 /**
@@ -15,15 +17,13 @@ interface InconsistencyScanBody {
  */
 export async function POST(req: NextRequest) {
   // Parse request body
-  const { text }: InconsistencyScanBody = await req.json();
+  const { text, projectId }: InconsistencyScanBody = await req.json();
 
-  // Validate API key configuration
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    console.error("OPENROUTER_API_KEY is not set in environment variables");
+  // Validate projectId (same pattern as other steps)
+  if (!projectId || typeof projectId !== "number") {
     return NextResponse.json(
-      { error: "Server configuration error: Missing OPENROUTER_API_KEY" },
-      { status: 500 }
+      { error: "Missing or invalid projectId" },
+      { status: 400 }
     );
   }
 
@@ -67,83 +67,31 @@ Look specifically for:
 [SUCCESS CRITERIA]
 • Include every inconsistency you can find, avoid false positives
 • Confidence < 0.4 if you found none
- only include the JSON output without any additional text or explanations.
-
+only include the JSON output without any additional text or explanations.
 
 Text to analyse:
 ${text}
 `;
 
   try {
-    // Call external LLM API to analyze text for inconsistencies
-    const llmRes = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer":
-            process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-          "X-Title":
-            process.env.NEXT_PUBLIC_SITE_NAME || "Rules as Code Text Wizard",
-        },
-        body: JSON.stringify({
-          model: "meta-llama/llama-3.1-8b-instruct:free",
-          messages: [{ role: "user", content: prompt }],
-          max_tokens: 4096,
-          temperature: 0.3,
-        }),
-      }
-    );
+    // 🔹 Common OpenRouter call with shared JSON cleaning
+    const { parsed } = await callOpenRouterJson({
+      prompt,
+      // model: you can override here if you want a different model for this step
+      maxTokens: 4096,
+      temperature: 0.3,
+    });
 
-    // Handle non-200 responses from LLM API
-    if (!llmRes.ok) {
-      const err = await llmRes.json().catch(() => ({}));
-      console.error("LLM API error:", err);
-      return NextResponse.json(
-        { error: err.error || "LLM request failed" },
-        { status: llmRes.status }
-      );
-    }
+    console.log("Parsed inconsistency-scan response:", parsed);
 
-    // Parse LLM response
-    const raw = (await llmRes.json()).choices[0].message.content.trim();
-
-    // Utility function to attempt JSON parsing with error handling
-    const safeParse = (s: string) => {
-      try {
-        return JSON.parse(s);
-      } catch {
-        return undefined;
-      }
-    };
-
-    // Attempt to parse raw JSON response
-    let parsed: any = safeParse(raw);
-
-    // Fallback: Trim to outer braces if initial parse fails
-    if (!parsed) {
-      const salvaged = raw.replace(/^[\s\S]*?{/, "{").replace(/}[\s\S]*$/, "}");
-      parsed = safeParse(salvaged);
-    }
-
-    // Return error if JSON parsing fails after attempts
-    if (!parsed) {
-      console.warn("Invalid JSON returned by LLM:", raw);
-      return NextResponse.json(
-        { error: "Invalid JSON returned by LLM" },
-        { status: 500 }
-      );
-    }
-
-    // Format raw JSON output for storage
-    const output = JSON.stringify(parsed, null, 2); // Pretty-printed JSON
+    // Format raw JSON output for storage (pretty-printed)
+    const output = JSON.stringify(parsed, null, 2);
 
     // Store analysis results in database using Prisma upsert
     await prisma.methodologyStep.upsert({
       where: {
-        phase_stepName: {
+        projectId_phase_stepName: {
+          projectId,
           phase: "Preparation",
           stepName: "Inconsistency Scan",
         },
@@ -155,6 +103,7 @@ ${text}
         updatedAt: new Date(),
       },
       create: {
+        projectId,
         phase: "Preparation",
         stepName: "Inconsistency Scan",
         input: text,
@@ -166,8 +115,11 @@ ${text}
 
     // Return the inconsistency analysis
     return NextResponse.json(parsed, { status: 200 });
-  } catch (err) {
-    // Handle unexpected errors
+  } catch (err: any) {
+    if (err instanceof LlmApiError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+
     const message = err instanceof Error ? err.message : "Unknown server error";
     console.error("inconsistency-scan route error:", message);
     return NextResponse.json({ error: message }, { status: 500 });

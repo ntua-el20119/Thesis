@@ -1,35 +1,17 @@
+// app/api/methodology/normalize-terminology/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { callOpenRouterJson, LlmApiError } from "@/lib/openrouter";
 
-// Type definition for the request body
 interface NormalizeTerminologyBody {
   text: string;
   projectId: number;
 }
 
-/**
- * POST Handler for Normalize Terminology
- * Normalizes terminology in legal text using an external LLM API and stores the result
- * in the database using Prisma's upsert.
- * @param request - The incoming Next.js request containing text and projectId
- * @returns JSON response with normalized terminology or error details
- */
 export async function POST(request: NextRequest) {
-  // Parse and validate request body
   const body: NormalizeTerminologyBody = await request.json();
   const { text, projectId } = body;
 
-  // Validate API key configuration
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) {
-    console.error("OPENROUTER_API_KEY is not set in environment variables");
-    return NextResponse.json(
-      { error: "Server configuration error: Missing OPENROUTER_API_KEY" },
-      { status: 500 }
-    );
-  }
-
-  // Validate projectId
   if (!projectId || typeof projectId !== "number") {
     return NextResponse.json(
       { error: "Missing or invalid projectId" },
@@ -37,7 +19,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Construct prompt for LLM to normalize terminology
   const prompt = `
     You are normalizing terminology in legal text as part of a Rules as Code implementation methodology. Your task is to standardize terms throughout the document for consistency.
 
@@ -103,87 +84,15 @@ export async function POST(request: NextRequest) {
   `;
 
   try {
-    // Call external LLM API to normalize terminology
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "mistralai/mistral-small-3.1-24b-instruct:free",
-          messages: [{ role: "user", content: prompt }],
-          max_tokens: 4096,
-          temperature: 0.3,
-        }),
-      }
-    );
-
-    // Handle non-200 responses from LLM API
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("LLM API error:", errorData);
-      return NextResponse.json(
-        { error: errorData.error || "Failed to process request with LLM" },
-        { status: response.status }
-      );
-    }
-
-    // Parse and validate LLM response
-    const data = await response.json();
-    const rawText: string = data.choices?.[0]?.message?.content?.trim() || "";
-    console.log("Raw LLM response:", rawText);
-
-    let parsed: any;
-
-    try {
-      // ------------------------------------------------------------------
-      // Step 1: Sanitize LLM output
-      // Some models return JSON wrapped in Markdown code fences (```json ... ```),
-      // or include extra whitespace. This removes such formatting before parsing.
-      // ------------------------------------------------------------------
-      const cleaned = rawText
-        .replace(/^```(?:json)?/i, "") // Remove leading ```json or ```
-        .replace(/```$/, "") // Remove trailing ```
-        .trim();
-
-      // ------------------------------------------------------------------
-      // Step 2: Attempt direct JSON parse
-      // ------------------------------------------------------------------
-      parsed = JSON.parse(cleaned);
-    } catch {
-      try {
-        // ------------------------------------------------------------------
-        // Step 3: Attempt to repair malformed JSON
-        // This replaces unescaped newlines inside quoted strings,
-        // which are a common cause of JSON parsing errors.
-        // ------------------------------------------------------------------
-        const repaired = rawText
-          .replace(/^```(?:json)?/i, "")
-          .replace(/```$/, "")
-          .replace(/"(?:[^"\\]|\\.)*?"/gs, (m) => m.replace(/\n/g, "\\n"))
-          .trim();
-
-        parsed = JSON.parse(repaired);
-      } catch {
-        // ------------------------------------------------------------------
-        // Step 4: Handle irreparable JSON responses
-        // If the response cannot be parsed even after repair attempts,
-        // log the raw output for debugging and return a 500 error.
-        // ------------------------------------------------------------------
-        console.warn("Response is not valid JSON even after repair:", rawText);
-        return NextResponse.json(
-          { error: "Invalid response format from LLM" },
-          { status: 500 }
-        );
-      }
-    }
+    const { parsed } = await callOpenRouterJson({
+      prompt,
+      // model omitted → uses process.env.LLM_MODEL
+      maxTokens: 4096,
+      temperature: 0.3,
+    });
 
     console.log("Parsed LLM response:", parsed);
 
-    // Extract and format output for storage
     const sections = parsed.result?.sections || [];
     const terminologyMap = parsed.result?.terminologyMap || {};
     const strategy = parsed.normalizationStrategy || {};
@@ -223,7 +132,6 @@ export async function POST(request: NextRequest) {
       "\n\n=== Summary ===\n" +
       summary;
 
-    // Store normalized terminology in database using Prisma upsert
     await prisma.methodologyStep.upsert({
       where: {
         projectId_phase_stepName: {
@@ -249,10 +157,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Return the normalized terminology
     return NextResponse.json(parsed, { status: 200 });
-  } catch (error) {
-    // Handle unexpected errors
+  } catch (error: any) {
+    if (error instanceof LlmApiError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
+
     const message =
       error instanceof Error ? error.message : "Unknown server error";
     console.error("Normalize-terminology route error:", message);
