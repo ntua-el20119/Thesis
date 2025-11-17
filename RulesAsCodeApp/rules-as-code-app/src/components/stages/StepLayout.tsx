@@ -27,155 +27,170 @@ interface StepOutputConfig {
 }
 
 interface StepLayoutProps {
-  /**
-   * If true, render two columns (input + output).
-   * If false, render only the input side (pre-LLM state).
-   */
   showOutput: boolean;
   input: StepInputConfig;
   output?: StepOutputConfig;
 }
 
-/**
- * StepLayout
- * ----------
- * Shared layout + styling for wizard steps that follow the pattern:
- *
- *   - Left: free-form text input + "Process" button
- *   - Right: LLM-generated (or processed) output + "Approve" button
- *
- * This component is intentionally presentation-focused. It does not
- * know anything about phases, steps, or APIs; it simply renders
- * the standard two-pane RaC editing UI.
- */
+const Panel = ({
+  title,
+  description,
+  value,
+  onChange,
+  readOnly,
+  placeholder,
+  footerLeft,
+  footerRight,
+  rows = 26,
+}: {
+  title: string;
+  description?: React.ReactNode;
+  value: string;
+  onChange?: (value: string) => void;
+  readOnly: boolean;
+  placeholder?: string;
+  footerLeft: React.ReactNode;
+  footerRight: React.ReactNode;
+  rows?: number;
+}) => {
+  const handleChange = onChange
+    ? (e: React.ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)
+    : undefined;
+
+  return (
+    <section className="rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-sm shadow-sm flex flex-col h-full">
+      {/* Header — matches StageNavigator phase header */}
+      <header className="flex items-center justify-between px-4 py-3 border-b border-slate-800/80">
+        <div>
+          <h3 className="text-base font-semibold text-slate-100">{title}</h3>
+          {description && (
+            <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+              {description}
+            </p>
+          )}
+        </div>
+      </header>
+
+      {/* Textarea — clean, dark, eye-friendly */}
+      <div className="flex-1 p-4">
+        <textarea
+          value={value}
+          onChange={handleChange}
+          readOnly={readOnly}
+          rows={rows}
+          placeholder={placeholder}
+          className="scrollbar-minimal w-full h-full min-h-0 resize-none rounded-xl bg-slate-900/90 border border-slate-700/50 px-5 py-4 text-[15px] leading-relaxed text-slate-100 font-light outline-none focus:ring-2 focus:ring-emerald-500/50 placeholder:text-slate-600 caret-emerald-400 selection:bg-emerald-500/20"
+        />
+      </div>
+
+      {/* Footer — matches your navigator's spacing */}
+      <footer className="flex items-center justify-between px-4 py-3 border-t border-slate-800/80">
+        <div className="text-xs text-slate-500">{footerLeft}</div>
+        <div>{footerRight}</div>
+      </footer>
+    </section>
+  );
+};
+
 export function StepLayout({ showOutput, input, output }: StepLayoutProps) {
   const twoColumn = showOutput && !!output;
 
-  const inputTitle = input.title ?? "User Input";
-  const outputTitle = output?.title ?? "LLM Response";
-
-  const inputRows = input.rows ?? 25;
-  const outputRows = output?.rows ?? 25;
-
-  const approveLabel = output?.approveLabel ?? "Approve";
-
   return (
-    <div
-      className={
-        twoColumn
-          ? "grid grid-cols-1 lg:grid-cols-2 gap-6"
-          : "grid grid-cols-1 gap-6"
-      }
-    >
-      {/* Left: input side */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 backdrop-blur-sm px-4 py-4 md:px-5 md:py-5 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-base md:text-lg font-semibold text-slate-100">
-            {inputTitle}
-          </h3>
-          {/* Optional small status badge if needed in the future */}
-        </div>
+    <>
+      {/* Minimal scrollbar — matches your StageNavigator aesthetic */}
+      <style jsx global>{`
+        .scrollbar-minimal {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(100, 116, 139, 0.25) transparent;
+        }
+        .scrollbar-minimal::-webkit-scrollbar {
+          width: 5px;
+        }
+        .scrollbar-minimal::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .scrollbar-minimal::-webkit-scrollbar-thumb {
+          background: rgba(100, 116, 139, 0.25);
+          border-radius: 3px;
+        }
+        .scrollbar-minimal:hover::-webkit-scrollbar-thumb {
+          background: rgba(100, 116, 139, 0.5);
+        }
+        .scrollbar-minimal:focus::-webkit-scrollbar-thumb {
+          background: rgba(52, 211, 153, 0.6);
+        }
+      `}</style>
 
-        {input.description && (
-          <p className="text-xs md:text-sm text-slate-400 leading-relaxed">
-            {input.description}
-          </p>
-        )}
-
-        <textarea
+      <div
+        className={
+          twoColumn
+            ? "grid grid-cols-1 lg:grid-cols-2 gap-6"
+            : "grid grid-cols-1 gap-6"
+        }
+      >
+        {/* LEFT: Input */}
+        <Panel
+          title={input.title ?? "User Input"}
+          description={input.description}
           value={input.value}
-          onChange={(e) => input.onChange(e.target.value)}
-          rows={inputRows}
-          className="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs md:text-sm text-slate-100 font-mono
-                     placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent
-                     resize-y min-h-[10rem]"
+          onChange={input.onChange}
+          readOnly={false}
+          placeholder="Start typing your content here..."
+          footerLeft={
+            input.isProcessing
+              ? "Processing your input..."
+              : input.disabled
+              ? "Enter text to enable processing"
+              : "Ready to process"
+          }
+          footerRight={
+            <button
+              onClick={input.onProcess}
+              disabled={input.disabled || input.isProcessing}
+              className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all shadow-md
+                ${
+                  input.disabled || input.isProcessing
+                    ? "bg-emerald-900/40 text-emerald-300/60 cursor-not-allowed border border-emerald-800/50"
+                    : "bg-emerald-500 hover:bg-emerald-450 text-slate-950 shadow-emerald-500/30"
+                }`}
+            >
+              {input.isProcessing ? "Processing…" : input.processLabel}
+            </button>
+          }
         />
 
-        <div className="flex items-center justify-between pt-1">
-          {input.disabled || input.isProcessing ? (
-            <p className="text-[11px] text-slate-500">
-              {input.disabled && !input.isProcessing
-                ? "Provide input to enable processing."
-                : input.isProcessing
-                ? "Processing your text…"
-                : null}
-            </p>
-          ) : (
-            <span className="text-[11px] text-slate-500">
-              {twoColumn
-                ? "Update the text and re-run the segmentation."
-                : "Once ready, run the first transformation step."}
-            </span>
-          )}
-
-          <button
-            onClick={input.onProcess}
-            disabled={input.disabled || input.isProcessing}
-            className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-xs md:text-sm font-medium
-                        transition-colors shadow-md shadow-emerald-500/20
-                        ${
-                          input.disabled || input.isProcessing
-                            ? "bg-emerald-900/50 text-emerald-200/60 cursor-not-allowed border border-emerald-700/60"
-                            : "bg-emerald-500 hover:bg-emerald-600 text-slate-900 border border-emerald-400"
-                        }`}
-          >
-            {input.isProcessing ? "Processing…" : input.processLabel}
-          </button>
-        </div>
-      </div>
-
-      {/* Right: output side */}
-      {twoColumn && output && (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 backdrop-blur-sm px-4 py-4 md:px-5 md:py-5 space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-base md:text-lg font-semibold text-slate-100">
-              {outputTitle}
-            </h3>
-          </div>
-
-          {output.description && (
-            <p className="text-xs md:text-sm text-slate-400 leading-relaxed">
-              {output.description}
-            </p>
-          )}
-
-          <textarea
+        {/* RIGHT: Output — now perfectly matched */}
+        {twoColumn && output && (
+          <Panel
+            title={output.title ?? "Generated Output"}
+            description={output.description}
             value={output.value}
-            onChange={
-              output.onChange
-                ? (e) => output.onChange?.(e.target.value)
-                : undefined
-            }
-            rows={outputRows}
-            className={`w-full rounded-xl border border-slate-700 px-3 py-2 text-xs md:text-sm font-mono resize-y min-h-[10rem]
-                        ${
-                          output.onChange
-                            ? "bg-slate-950/80 text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                            : "bg-slate-900 text-slate-300"
-                        }`}
+            onChange={output.onChange}
             readOnly={!output.onChange}
+            placeholder={output.onChange ? "You can edit this result…" : ""}
+            footerLeft="Review and approve when ready"
+            footerRight={
+              output.onApprove && (
+                <button
+                  onClick={output.onApprove}
+                  disabled={output.disabled || output.isApproving}
+                  className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all shadow-md
+                    ${
+                      output.disabled || output.isApproving
+                        ? "bg-emerald-900/40 text-emerald-300/60 cursor-not-allowed border border-emerald-800/50"
+                        : "bg-emerald-500 hover:bg-emerald-450 text-slate-950 shadow-emerald-500/30"
+                    }`}
+                >
+                  {output.isApproving
+                    ? "Approving…"
+                    : output.approveLabel ?? "Approve & Continue"}
+                </button>
+              )
+            }
           />
-
-          {output.onApprove && (
-            <div className="flex items-center justify-end pt-1">
-              <button
-                onClick={output.onApprove}
-                disabled={output.disabled || output.isApproving}
-                className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-xs md:text-sm font-medium
-                            transition-colors shadow-md shadow-emerald-500/20
-                            ${
-                              output.disabled || output.isApproving
-                                ? "bg-emerald-900/50 text-emerald-200/60 cursor-not-allowed border border-emerald-700/60"
-                                : "bg-emerald-500 hover:bg-emerald-600 text-slate-900 border border-emerald-400"
-                            }`}
-              >
-                {output.isApproving ? "Approving…" : approveLabel}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }
 

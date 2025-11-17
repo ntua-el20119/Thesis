@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { StepEditorProps } from "@/lib/types";
-import { useWizardStore } from "@/lib/store";
 import { StepLayout } from "@/components/stages/StepLayout";
+import { useStepDataLoader } from "@/components/stages/StepDataLoader";
 
 /**
  * PreparationInconsistencyScan
@@ -14,50 +14,25 @@ import { StepLayout } from "@/components/stages/StepLayout";
  *   converts them into a readable textual form for the LLM, and displays the
  *   inconsistency report produced by the LLM.
  *
- * Contracts:
- *   - Previous step (Key Sections):
- *       steps["Preparation-Key Sections"].content:
- *         {
- *           result: {
- *             sections: [
- *               { id, title, content, importance, category },
- *               ...
- *             ]
- *           },
- *           confidence: number
- *         }
- *   - Current step (Inconsistency Scan):
- *       step.content:
- *         {
- *           result: {
- *             inconsistencies: [
- *               { id, description, location, text, type },
- *               ...
- *             ],
- *             analysisApproach: string
- *           },
- *           confidence: number,
- *           analysisCompleteness: string
- *         }
- *   - For all steps:
- *       content = structured JSON (for machines)
- *       output  = readable string (for humans / next step)
  */
-
 export default function PreparationInconsistencyScan({
   step,
   onEdit,
   onApprove,
 }: StepEditorProps) {
   // ---------------------------------------------------------------------------
-  // 1. Context: previous step content + project context
+  // 1. Unified data access: current + previous step via StepDataLoader
   // ---------------------------------------------------------------------------
-  const prevKeySectionsContent = useWizardStore(
-    (s) => s.steps["Preparation-Key Sections"]?.content
-  );
-  const { projectId } = useWizardStore();
+  const io = useStepDataLoader(step, "Preparation-Key Sections");
 
-  const { phase = "", stepName = "", content = {} } = step ?? {};
+  const {
+    phase,
+    stepName,
+    content,
+    projectId,
+    previousStep,
+    output: persistedOutput,
+  } = io;
 
   // ---------------------------------------------------------------------------
   // 2. Local state
@@ -72,20 +47,12 @@ export default function PreparationInconsistencyScan({
   // 3. Helpers
   // ---------------------------------------------------------------------------
 
-  const hasLlmRes =
-    typeof content === "object" &&
-    content !== null &&
-    "result" in content &&
-    typeof (content as any).result === "object" &&
-    (content as any).result !== null &&
-    "inconsistencies" in (content as any).result;
-
   /**
    * Build the text fed into the inconsistency scan LLM from the
-   * structured Key Sections JSON. We focus on ID, Title and Content,
-   * because those carry the legal substance.
+   * structured Key Sections JSON. We focus on ID, Title, Content,
+   * Importance, Category.
    */
-  const buildKeySectionsSeed = (src: any): string => {
+  function buildKeySectionsSeed(src: any): string {
     const sections = src?.result?.sections ?? [];
     if (!Array.isArray(sections) || sections.length === 0) return "";
 
@@ -95,19 +62,21 @@ export default function PreparationInconsistencyScan({
           `ID: ${s.id}\nTitle: ${s.title}\nContent:\n${s.content}\nImportance: ${s.importance}\nCategory: ${s.category}`
       )
       .join("\n\n");
-  };
+  }
 
   /**
+   * buildReadable
+   * -------------------------------------------------------------------------
    * Human-readable inconsistency report from this step's `content`.
    */
-  const buildReadable = (src: any): string => {
+  function buildReadable(src: any): string {
     const incs = src?.result?.inconsistencies ?? [];
     const approach = src?.result?.analysisApproach ?? "N/A";
     const conf =
       typeof src?.confidence !== "undefined" ? src.confidence : "N/A";
     const compl = src?.analysisCompleteness ?? "N/A";
 
-    if (!incs.length) {
+    if (!Array.isArray(incs) || incs.length === 0) {
       // Fallback: if we have no structured inconsistencies, show raw JSON.
       return JSON.stringify(src, null, 2);
     }
@@ -124,7 +93,12 @@ export default function PreparationInconsistencyScan({
     out += "\n\n=== Analysis Completeness ===\n" + compl;
 
     return out;
-  };
+  }
+
+  const hasLlmRes =
+    io.hasLlmContent &&
+    Array.isArray((content as any)?.result?.inconsistencies) &&
+    (content as any).result.inconsistencies.length > 0;
 
   const initialReadable = buildReadable(content);
 
@@ -139,18 +113,23 @@ export default function PreparationInconsistencyScan({
     }
 
     // Otherwise, seed from Key Sections structured content.
-    if (prevKeySectionsContent) {
-      const seed = buildKeySectionsSeed(prevKeySectionsContent);
+    if (previousStep?.content) {
+      const seed = buildKeySectionsSeed(previousStep.content);
       if (seed.trim().length > 0) {
         setInputText(seed);
       }
     }
-  }, [prevKeySectionsContent, step?.input]);
+  }, [step?.input, previousStep?.content]);
 
   // ---------------------------------------------------------------------------
   // 5. Actions – process & approve
   // ---------------------------------------------------------------------------
   const handleProcessText = async () => {
+    if (!projectId) {
+      alert("No project selected.");
+      return;
+    }
+
     setIsProcessing(true);
     setProcessError(null);
 
@@ -197,9 +176,16 @@ export default function PreparationInconsistencyScan({
   };
 
   const handleApprove = async () => {
+    if (!projectId) {
+      alert("No project selected.");
+      return;
+    }
+
     setIsApproving(true);
 
     try {
+      const finalOutput = persistedOutput ?? buildReadable(content);
+
       await fetch("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -208,7 +194,7 @@ export default function PreparationInconsistencyScan({
           stepName,
           input: inputText,
           // Persist a readable string in the DB, like other steps:
-          output: step?.output ?? buildReadable(content),
+          output: finalOutput,
           content: step?.content,
           projectId,
         }),
@@ -226,7 +212,7 @@ export default function PreparationInconsistencyScan({
   const showOutput = hasProcessedThisSession || step?.approved;
 
   // For display: prefer persisted readable output, otherwise derive from content
-  const outputValue = step?.output ?? initialReadable;
+  const outputValue = persistedOutput ?? initialReadable;
 
   // ---------------------------------------------------------------------------
   // 7. Render via shared StepLayout

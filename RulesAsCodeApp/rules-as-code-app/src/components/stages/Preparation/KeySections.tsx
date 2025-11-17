@@ -2,104 +2,127 @@
 
 import { useState, useEffect } from "react";
 import { StepEditorProps } from "@/lib/types";
-import { useWizardStore } from "@/lib/store";
 import { StepLayout } from "@/components/stages/StepLayout";
+import { useStepDataLoader } from "@/components/stages/StepDataLoader";
 
 /**
  * PreparationKeySections
  * -----------------------------------------------------------------------------
  * Purpose:
- *   Implements the "Key Sections" step in the Preparation phase of the
- *   Rules-as-Code workflow. This step uses the output from “Normalize
- *   Terminology” as input, sends the text to an LLM endpoint to extract and
- *   categorize key legal sections, and allows user approval once reviewed.
- *
- * Responsibilities:
- *   - Pre-fills input from the prior approved step (Normalize Terminology).
- *   - Invokes the `/api/llm/key-sections` API route to process text via LLM.
- *   - Displays structured output (sections, categories, importance scores, etc.).
- *   - Supports editing and approval workflow integrated with the global store.
+ *   Implements the "Key Sections" step in the Preparation phase.
+ *   It takes the (approved) normalized text from “Normalize Terminology”,
+ *   calls the `/api/llm/key-sections` endpoint, and renders the structured
+ *   key sections in a human-readable way.
  *
  * Dependencies:
- *   - useWizardStore: retrieves previous step data and current project state.
- *   - StepEditorProps: defines contract for `onEdit` and `onApprove` callbacks.
- *   - StepLayout: shared UI shell for “input + process + output + approve”.
+ *   - Previous step: "Preparation-Normalize Terminology"
+ *   - Uses StepDataLoader to:
+ *       • read current step data (phase, stepName, content, output, etc.)
+ *       • read previous step output as canonical input
+ *       • access projectId
  */
-
 export default function PreparationKeySections({
   step,
   onEdit,
   onApprove,
 }: StepEditorProps) {
   // ---------------------------------------------------------------------------
-  // 1. Context: previous step output + project context
+  // 1. Unified data access via StepDataLoader
   // ---------------------------------------------------------------------------
-  const previousOutput = useWizardStore(
-    (s) => s.steps["Preparation-Normalize Terminology"]?.output ?? ""
-  );
-  const { projectId } = useWizardStore();
+  const io = useStepDataLoader(step, "Preparation-Normalize Terminology");
 
-  // `step` contains phase/stepName and any persisted LLM results.
-  const { phase, stepName, content } = step ?? {
-    phase: "",
-    stepName: "",
-    content: {},
-  };
+  const { phase, stepName, content, projectId, output: persistedOutput } = io;
 
   // ---------------------------------------------------------------------------
   // 2. Local state
   // ---------------------------------------------------------------------------
-  const [inputText, setInputText] = useState("");
+  const [inputText, setInputText] = useState(io.initialInput);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [processError, setProcessError] = useState<string | null>(null);
   const [hasProcessedThisSession, setHasProcessedThisSession] = useState(false);
 
-  // ---------------------------------------------------------------------------
-  // 3. Derived flags and helpers
-  // ---------------------------------------------------------------------------
-  const hasLlmRes =
-    typeof content === "object" &&
-    content !== null &&
-    "result" in content &&
-    typeof (content as any).result === "object" &&
-    (content as any).result !== null &&
-    "sections" in (content as any).result;
+  // Keep the input in sync with canonical initialInput
+  useEffect(() => {
+    setInputText(io.initialInput);
+  }, [io.initialInput]);
 
-  const buildReadable = (src: any) => {
-    if (!src?.result?.sections) return JSON.stringify(src, null, 2);
-    const txt =
-      src.result.sections
-        .map(
-          (s: any) =>
-            `ID: ${s.id}\nTitle: ${s.title}\nContent:\n${s.content}\nImportance: ${s.importance}\nCategory: ${s.category}`
-        )
-        .join("\n\n") +
-      (typeof src.confidence !== "undefined"
+  // ---------------------------------------------------------------------------
+  // 3. Human-readable builder (same name across steps)
+  // ---------------------------------------------------------------------------
+  /**
+   * buildReadable
+   * -------------------------------------------------------------------------
+   * Takes the structured LLM output for Key Sections and transforms it into
+   * a human-readable representation (ID, title, content, importance, category,
+   * and confidence metadata).
+   */
+  function buildReadable(src: any): string {
+    const result = src?.result;
+    const sections = result?.sections ?? [];
+
+    if (!Array.isArray(sections) || sections.length === 0) {
+      return JSON.stringify(src, null, 2);
+    }
+
+    const base = sections
+      .map(
+        (s: any) =>
+          `ID: ${s.id}\nTitle: ${s.title}\nContent:\n${s.content}\nImportance: ${s.importance}\nCategory: ${s.category}`
+      )
+      .join("\n\n");
+
+    const conf =
+      typeof src?.confidence !== "undefined"
         ? `\n\n=== Confidence ===\n${src.confidence}`
-        : "");
-    return txt;
-  };
+        : "";
 
+    return base + conf;
+  }
+
+  // Is there structured LLM content with sections?
+  const hasLlmRes =
+    io.hasLlmContent &&
+    Array.isArray((content as any)?.result?.sections) &&
+    (content as any).result.sections.length > 0;
+
+  // Base readable from content
   const initialReadable = buildReadable(content);
 
-  // ---------------------------------------------------------------------------
-  // 4. Effects – pre-fill input from Normalize Terminology
-  // ---------------------------------------------------------------------------
-  useEffect(() => {
-    setInputText(previousOutput);
-  }, [previousOutput]);
+  // Backward-compatible display logic:
+  // - If step.output exists:
+  //     • try to parse as JSON; if that looks like structured data, render via buildReadable
+  //     • otherwise, treat as pre-formatted text
+  // - Else, use readable from `content`.
+  let displayText = initialReadable;
+  if (step?.output) {
+    try {
+      const parsed = JSON.parse(step.output);
+      displayText = buildReadable(parsed);
+    } catch {
+      displayText = step.output;
+    }
+  }
+
+  const twoColumn = hasProcessedThisSession || step?.approved;
+  const showOutput = twoColumn;
+  const outputValue = persistedOutput ?? displayText;
 
   // ---------------------------------------------------------------------------
-  // 5. Actions – process and approve
+  // 4. Actions – process & approve
   // ---------------------------------------------------------------------------
 
   const handleProcessText = async () => {
+    if (!projectId) {
+      alert("No project selected.");
+      return;
+    }
+
     setIsProcessing(true);
     setProcessError(null);
 
     try {
-      // Draft save of current input & content
+      // Draft save of current input & existing content
       await fetch("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,9 +150,10 @@ export default function PreparationKeySections({
       }
 
       const data = await res.json();
-      // Persist the raw JSON and also a pretty stringified version as output
+      const readable = buildReadable(data);
 
-      onEdit(phase, stepName, data, inputText, JSON.stringify(data, null, 2));
+      // Persist structured JSON and human-readable form
+      onEdit(phase, stepName, data, inputText, readable);
       setHasProcessedThisSession(true);
     } catch (err) {
       setProcessError(err instanceof Error ? err.message : "Unknown error");
@@ -139,9 +163,16 @@ export default function PreparationKeySections({
   };
 
   const handleApprove = async () => {
+    if (!projectId) {
+      alert("No project selected.");
+      return;
+    }
+
     setIsApproving(true);
 
     try {
+      const finalOutput = step?.output ?? buildReadable(content);
+
       await fetch("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -149,7 +180,7 @@ export default function PreparationKeySections({
           phase,
           stepName,
           input: inputText,
-          output: buildReadable(step?.content),
+          output: finalOutput,
           content: step?.content,
           projectId,
         }),
@@ -162,27 +193,7 @@ export default function PreparationKeySections({
   };
 
   // ---------------------------------------------------------------------------
-  // 6. Layout logic & output value for StepLayout
-  // ---------------------------------------------------------------------------
-  const twoColumn = hasProcessedThisSession || step?.approved;
-
-  // Reproduce previous "displayText" logic: prefer parsed step.output, otherwise
-  // fall back to a readable rendering of `content`.
-  let displayText = initialReadable;
-  if (step?.output) {
-    try {
-      const parsed = JSON.parse(step.output);
-      displayText = buildReadable(parsed);
-    } catch {
-      displayText = step.output;
-    }
-  }
-
-  const showOutput = twoColumn;
-  const outputValue = displayText;
-
-  // ---------------------------------------------------------------------------
-  // 7. Render via shared StepLayout
+  // 5. Render via shared StepLayout
   // ---------------------------------------------------------------------------
   return (
     <div>
