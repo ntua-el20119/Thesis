@@ -102,7 +102,7 @@ export const methodology = {
     "Normalize Terminology",
     "Key Sections",
     "Inconsistency Scan",
-    "Inconsistency Categorization",
+    "Inconsistency Categorisation",
   ],
 
   Analysis: [

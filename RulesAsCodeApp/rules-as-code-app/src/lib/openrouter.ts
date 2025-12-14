@@ -90,7 +90,7 @@ export async function callOpenRouterJson(
 
   const data = await response.json();
   const rawText: string = data.choices?.[0]?.message?.content?.trim() || "";
-  console.log("🔵 LLM raw:", rawText);
+  console.log("LLM response:", rawText);
 
   let parsed: any;
 

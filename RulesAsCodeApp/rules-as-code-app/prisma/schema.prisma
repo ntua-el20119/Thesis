@@ -8,27 +8,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/* ──────────────────────── NEW  ──────────────────────── */
 model Project {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique           // user-supplied, must be unique
-  createdAt DateTime @default(now())
-  steps     MethodologyStep[]          // 1-to-many relation
+  id        Int               @id @default(autoincrement())
+  name      String            @unique
+  createdAt DateTime          @default(now())
+  steps     MethodologyStep[]
 }
-/* ─────────────────────────────────────────────────────── */
 
 model MethodologyStep {
   id        Int      @id @default(autoincrement())
-  projectId Int
-  project   Project   @relation(fields: [projectId], references: [id])
   phase     String
   stepName  String
-  input     String   @default("")
-  output    String   @default("")
   content   Json
   approved  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  input     String   @default("")
+  output    String   @default("")
+  projectId Int
+  project   Project  @relation(fields: [projectId], references: [id])
 
-  @@unique([projectId, phase, stepName])  // uniqueness is now per-project
+  @@unique([projectId, phase, stepName])
 }
