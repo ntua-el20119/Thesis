@@ -216,8 +216,7 @@ export default function StartingPage({
             </ul>
           ) : (
             <p className="text-sm text-slate-400">
-              You have not created any projects yet. Create a new project first
-              and it will appear here.
+              You have not created any projects yet.
             </p>
           )}
 
