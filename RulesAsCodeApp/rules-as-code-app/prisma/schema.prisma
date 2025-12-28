@@ -8,25 +8,76 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+//
+// Enums
+//
+
+enum ProjectStatus {
+  in_progress
+  completed
+  failed
+}
+
+//
+// Models
+//
+
 model Project {
-  id        Int               @id @default(autoincrement())
-  name      String            @unique
-  createdAt DateTime          @default(now())
-  steps     MethodologyStep[]
+  id          Int            @id @default(autoincrement())
+  name        String         @unique
+  description String?
+  legalText   String
+  status      ProjectStatus  @default(in_progress)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  steps       MethodologyStep[]
+
+  @@map("Project")
 }
 
 model MethodologyStep {
-  id        Int      @id @default(autoincrement())
-  phase     String
-  stepName  String
-  content   Json
-  approved  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  input     String   @default("")
-  output    String   @default("")
-  projectId Int
-  project   Project  @relation(fields: [projectId], references: [id])
+  id              Int           @id @default(autoincrement())
+  projectId       Int
+  phase           Int
+  stepNumber      Int
+  stepName        String
 
-  @@unique([projectId, phase, stepName])
+  input           Json
+  llmOutput       Json
+  humanOutput     Json?
+
+  confidenceScore Decimal?      @db.Decimal(3, 2)
+
+  schemaValid     Boolean
+  humanModified   Boolean       @default(false)
+  approved        Boolean       @default(false)
+  reviewNotes     String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  project         Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  llmProviders    LLMProvider[]
+
+  @@unique([projectId, phase, stepNumber])
+  @@index([projectId], map: "idx_step_project")
+  @@index([phase, stepNumber], map: "idx_step_phase")
+  @@index([approved], map: "idx_step_approved")
+
+  @@map("MethodologyStep")
+}
+
+model LLMProvider {
+  id        Int             @id @default(autoincrement())
+  stepId    Int
+  provider  String
+  model     String
+  apiCost   Decimal?        @db.Decimal(10, 6)
+  latencyMs Int?
+
+  step      MethodologyStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([stepId], map: "idx_llm_step")
+  @@map("LLMProvider")
 }

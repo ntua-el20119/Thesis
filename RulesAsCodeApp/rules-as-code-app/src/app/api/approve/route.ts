@@ -1,74 +1,101 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 
-// Type definition for the request body
-interface MethodologyStepBody {
+interface ApproveBody {
   projectId: number;
-  phase: string;
-  stepName: string;
-  input?: string;
-  output?: string;
-  content?: Prisma.JsonValue;
+  phase: number;
+  stepNumber: number;
+  stepName?: string;
+
+  // JSON payload (do NOT type as Prisma.JsonValue)
+  humanOutput?: unknown;
+
+  reviewNotes?: string;
 }
 
-/**
- * POST Handler for Methodology Step
- * Creates or updates a methodology step in the database using Prisma's upsert.
- * @param request - The incoming Next.js request containing project details
- * @returns JSON response indicating success or failure
- */
 export async function POST(request: NextRequest) {
   try {
-    // Parse and validate request body
-    const body: MethodologyStepBody = await request.json();
-    const { projectId, phase, stepName, input, output, content = {} } = body;
+    const body: ApproveBody = await request.json();
+    const { projectId, phase, stepNumber, stepName, humanOutput, reviewNotes } =
+      body;
 
-    // Validate required fields
-    if (!projectId || !phase || !stepName) {
+    if (
+      !projectId ||
+      typeof projectId !== "number" ||
+      Number.isNaN(projectId) ||
+      typeof phase !== "number" ||
+      Number.isNaN(phase) ||
+      typeof stepNumber !== "number" ||
+      Number.isNaN(stepNumber)
+    ) {
       return NextResponse.json(
         {
           success: false,
-          error: "Missing required fields: projectId, phase, or stepName",
+          error:
+            "Missing/invalid required fields: projectId, phase, stepNumber",
         },
         { status: 400 }
       );
     }
 
-    // Upsert methodology step in the database
+    const hasHumanOutput = humanOutput !== undefined;
+
+    // Since Json columns are NON-NULL, we must always provide valid JSON objects.
+    const DEFAULT_JSON = {};
+
     await prisma.methodologyStep.upsert({
       where: {
-        projectId_phase_stepName: {
+        projectId_phase_stepNumber: {
           projectId,
           phase,
-          stepName,
+          stepNumber,
         },
       },
+
       update: {
-        input,
-        output,
-        content,
         approved: true,
-        updatedAt: new Date(),
+        ...(stepName ? { stepName } : {}),
+        ...(reviewNotes !== undefined ? { reviewNotes } : {}),
+
+        // Only apply human override if provided (do not clobber existing humanOutput)
+        ...(hasHumanOutput
+          ? {
+              humanOutput: (humanOutput ?? DEFAULT_JSON) as any,
+              humanModified: true,
+            }
+          : {}),
       },
+
       create: {
         projectId,
         phase,
-        stepName,
-        input,
-        output,
-        content,
+        stepNumber,
+        stepName: stepName ?? `Step ${stepNumber}`,
+
+        // NON-NULL JSON fields
+        input: DEFAULT_JSON as any,
+        llmOutput: DEFAULT_JSON as any,
+
         approved: true,
+
+        // If your schema defines humanOutput as NON-NULL too, keep it DEFAULT_JSON.
+        // If it is nullable, you can set it to null here, but you told me the JSON fields are non-null.
+        humanModified: hasHumanOutput,
+        humanOutput: (hasHumanOutput ? humanOutput : DEFAULT_JSON) as any,
+
+        // If confidenceScore is NON-NULL in your schema, set a default number (e.g., 0).
+        confidenceScore: null as any,
+
+        schemaValid: true,
+        reviewNotes: (reviewNotes ?? null) as any,
       },
     });
 
-    // Return success response
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    // Handle errors and return appropriate response
     const message =
       error instanceof Error ? error.message : "Unknown server error";
-    console.error("Error in POST /api/methodology-step:", message);
+    console.error("Error in POST /api/approve:", message);
     return NextResponse.json(
       { success: false, error: message },
       { status: 500 }

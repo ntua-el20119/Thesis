@@ -1,68 +1,39 @@
-"use client"; // Marks this component as a Client Component — required for React hooks and interactivity.
+"use client";
 
 import { StepEditorProps } from "@/lib/types";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { StepLayout } from "@/components/stages/StepLayout";
 import { useStepDataLoader } from "@/components/stages/StepDataLoader";
 
 /**
- * PreparationSegmentText
+ * Phase1SegmentText
  * -----------------------------------------------------------------------------
- * Purpose:
- *   Implements the “Segment Text” step in the Preparation phase.
- *   This is the first step of the Rules-as-Code text transformation pipeline.
+ * Step 1 of the (new) 5-step methodology.
  *
  * Responsibilities:
- *   - Accepts raw legal text from the user as input.
- *   - Calls the LLM segmentation endpoint (`/api/llm/segment-text`) to divide
- *     text into discrete, identifiable legal sections.
- *   - Displays both the editable input and the model’s segmented output.
- *   - Supports approval workflow through `onApprove`, advancing the wizard.
- *
- * Data flow (legal pipeline perspective):
- *   - Input (natural language legal text)
- *   - → LLM segmentation (computational rule application)
- *   - → structured JSON (sections in `content.result.sections`)
- *   - → human-readable view (via `buildReadable`)
- *   - → persisted in DB and propagated to subsequent steps.
+ *   - Accept raw legal text from the user.
+ *   - Call /api/llm/segment-text to segment into sections.
+ *   - Produce a readable "approved output" for downstream steps.
  */
-export default function PreparationSegmentText({
+export default function SegmentText({
   step,
   onEdit,
   onApprove,
 }: StepEditorProps) {
-  // ---------------------------------------------------------------------------
-  // 1. Unified data access using StepDataLoader
-  // ---------------------------------------------------------------------------
-  // First step in the phase → no previous step key.
+  // Step 1 → no previous step
   const io = useStepDataLoader(step, null);
 
   const { phase, stepName, content, projectId, output: persistedOutput } = io;
 
-  // ---------------------------------------------------------------------------
-  // 2. Local UI state
-  // ---------------------------------------------------------------------------
   const [inputText, setInputText] = useState(io.initialInput);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [processError, setProcessError] = useState<string | null>(null);
 
-  // Keep inputText aligned with whatever initialInput is (e.g. after project load).
   useEffect(() => {
     setInputText(io.initialInput);
   }, [io.initialInput]);
 
-  // ---------------------------------------------------------------------------
-  // 3. Shared readable builder (same name across all steps)
-  // ---------------------------------------------------------------------------
-  /**
-   * buildReadable
-   * -------------------------------------------------------------------------
-   * Normalises the structured LLM segmentation result (`content`) into
-   * a human-readable textual representation. This is what:
-   *   - the user reads in the UI,
-   *   - the next step uses as its upstream "approved output".
-   */
   function buildReadable(src: any): string {
     const sections = src?.result?.sections ?? [];
     if (!Array.isArray(sections) || sections.length === 0) {
@@ -81,19 +52,12 @@ export default function PreparationSegmentText({
 
   const hasLlmResponse =
     io.hasLlmContent &&
-    Array.isArray((content as any)?.result?.sections) &&
-    (content as any).result.sections.length > 0;
+    typeof content === "object" &&
+    content !== null &&
+    Object.keys(content as any).length > 0;
 
   const readableOutput = hasLlmResponse ? buildReadable(content) : "";
 
-  // ---------------------------------------------------------------------------
-  // 4. Handlers – process & approve
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Invokes the LLM API to segment legal text into logical sections.
-   * This is the computational instantiation of the "segmentation" rule.
-   */
   const handleProcessText = async () => {
     if (!projectId) {
       alert("No project selected.");
@@ -118,8 +82,15 @@ export default function PreparationSegmentText({
       const data = await response.json();
       const outputText = buildReadable(data);
 
-      // Commit results to the global store (and, indirectly, to the DB via approve).
-      onEdit(phase, stepName, data, inputText, outputText);
+      // Update store (and UI) with the new draft result
+      onEdit(
+        Number(phase),
+        step.stepNumber,
+        stepName,
+        data,
+        inputText,
+        outputText
+      );
     } catch (err) {
       setProcessError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -127,26 +98,27 @@ export default function PreparationSegmentText({
     }
   };
 
-  /**
-   * Marks this step as approved (legally "frozen" for downstream use)
-   * in both backend and global state.
-   */
   const handleApprove = async () => {
     if (!projectId) {
       alert("No project selected.");
       return;
     }
 
+    const finalOutput = (outputValue ?? "").trim();
+    if (!finalOutput) {
+      alert("Nothing to approve yet. Please process the text first.");
+      return;
+    }
+
     setIsApproving(true);
     try {
-      const finalOutput = persistedOutput ?? readableOutput;
-
-      await fetch("/api/approve", {
+      const res = await fetch("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectId,
-          phase,
+          phase: Number(phase),
+          stepNumber: step.stepNumber,
           stepName,
           input: inputText,
           output: finalOutput,
@@ -154,17 +126,24 @@ export default function PreparationSegmentText({
         }),
       });
 
-      await onApprove(phase, stepName);
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(`Approve failed: ${res.status} - ${msg}`);
+      }
+
+      await onApprove(Number(phase), step.stepNumber, stepName);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Unknown approve error");
     } finally {
       setIsApproving(false);
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // 5. Layout wiring – StepLayout
-  // ---------------------------------------------------------------------------
   const showOutput = hasLlmResponse || !!step?.output;
-  const outputValue = step?.output ?? readableOutput;
+  const outputValue =
+    typeof step?.output === "string" && step.output.trim().length > 0
+      ? step.output
+      : readableOutput;
 
   return (
     <div>
@@ -197,7 +176,14 @@ export default function PreparationSegmentText({
                 description: "Segmented legal sections produced by the model.",
                 value: outputValue,
                 onChange: (value: string) =>
-                  onEdit(phase, stepName, content, inputText, value),
+                  onEdit(
+                    Number(phase),
+                    step.stepNumber,
+                    stepName,
+                    content,
+                    inputText,
+                    value
+                  ),
                 onApprove: handleApprove,
                 isApproving,
                 rows: 25,

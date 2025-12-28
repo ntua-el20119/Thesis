@@ -1,5 +1,5 @@
 import React from "react";
-import PreparationSegmentText from "./Preparation/SegmentText";
+import SegmentText from "./Preparation/SegmentText";
 import PreparationNormalizeTerminology from "./Preparation/NormalizeTerminology";
 import PreparationKeySections from "./Preparation/KeySections";
 import PreparationInconsistencyScan from "./Preparation/InconsistencyScan";
@@ -7,7 +7,7 @@ import PreparationInconsistencyCategorisation from "./Preparation/InconsistencyC
 // ... add more as needed
 
 export const stepComponentMap: Record<string, React.FC<any>> = {
-  PreparationSegmentText,
+  SegmentText,
   PreparationNormalizeTerminology,
   PreparationKeySections,
   PreparationInconsistencyScan,

@@ -15,7 +15,7 @@ export type PrismaPromise<T> = $Public.PrismaPromise<T>
 
 /**
  * Model Project
- * ──────────────────────── NEW  ────────────────────────
+ * 
  */
 export type Project = $Result.DefaultSelection<Prisma.$ProjectPayload>
 /**
@@ -23,6 +23,29 @@ export type Project = $Result.DefaultSelection<Prisma.$ProjectPayload>
  * 
  */
 export type MethodologyStep = $Result.DefaultSelection<Prisma.$MethodologyStepPayload>
+/**
+ * Model LLMProvider
+ * 
+ */
+export type LLMProvider = $Result.DefaultSelection<Prisma.$LLMProviderPayload>
+
+/**
+ * Enums
+ */
+export namespace $Enums {
+  export const ProjectStatus: {
+  in_progress: 'in_progress',
+  completed: 'completed',
+  failed: 'failed'
+};
+
+export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus]
+
+}
+
+export type ProjectStatus = $Enums.ProjectStatus
+
+export const ProjectStatus: typeof $Enums.ProjectStatus
 
 /**
  * ##  Prisma Client ʲˢ
@@ -168,6 +191,16 @@ export class PrismaClient<
     * ```
     */
   get methodologyStep(): Prisma.MethodologyStepDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.lLMProvider`: Exposes CRUD operations for the **LLMProvider** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more LLMProviders
+    * const lLMProviders = await prisma.lLMProvider.findMany()
+    * ```
+    */
+  get lLMProvider(): Prisma.LLMProviderDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -609,7 +642,8 @@ export namespace Prisma {
 
   export const ModelName: {
     Project: 'Project',
-    MethodologyStep: 'MethodologyStep'
+    MethodologyStep: 'MethodologyStep',
+    LLMProvider: 'LLMProvider'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -628,7 +662,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "project" | "methodologyStep"
+      modelProps: "project" | "methodologyStep" | "lLMProvider"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -780,6 +814,80 @@ export namespace Prisma {
           }
         }
       }
+      LLMProvider: {
+        payload: Prisma.$LLMProviderPayload<ExtArgs>
+        fields: Prisma.LLMProviderFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.LLMProviderFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LLMProviderPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.LLMProviderFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LLMProviderPayload>
+          }
+          findFirst: {
+            args: Prisma.LLMProviderFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LLMProviderPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.LLMProviderFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LLMProviderPayload>
+          }
+          findMany: {
+            args: Prisma.LLMProviderFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LLMProviderPayload>[]
+          }
+          create: {
+            args: Prisma.LLMProviderCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LLMProviderPayload>
+          }
+          createMany: {
+            args: Prisma.LLMProviderCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.LLMProviderCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LLMProviderPayload>[]
+          }
+          delete: {
+            args: Prisma.LLMProviderDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LLMProviderPayload>
+          }
+          update: {
+            args: Prisma.LLMProviderUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LLMProviderPayload>
+          }
+          deleteMany: {
+            args: Prisma.LLMProviderDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.LLMProviderUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.LLMProviderUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LLMProviderPayload>[]
+          }
+          upsert: {
+            args: Prisma.LLMProviderUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LLMProviderPayload>
+          }
+          aggregate: {
+            args: Prisma.LLMProviderAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateLLMProvider>
+          }
+          groupBy: {
+            args: Prisma.LLMProviderGroupByArgs<ExtArgs>
+            result: $Utils.Optional<LLMProviderGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.LLMProviderCountArgs<ExtArgs>
+            result: $Utils.Optional<LLMProviderCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -866,6 +974,7 @@ export namespace Prisma {
   export type GlobalOmitConfig = {
     project?: ProjectOmit
     methodologyStep?: MethodologyStepOmit
+    lLMProvider?: LLMProviderOmit
   }
 
   /* Types for Logging */
@@ -987,6 +1096,37 @@ export namespace Prisma {
 
 
   /**
+   * Count Type MethodologyStepCountOutputType
+   */
+
+  export type MethodologyStepCountOutputType = {
+    llmProviders: number
+  }
+
+  export type MethodologyStepCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    llmProviders?: boolean | MethodologyStepCountOutputTypeCountLlmProvidersArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * MethodologyStepCountOutputType without action
+   */
+  export type MethodologyStepCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MethodologyStepCountOutputType
+     */
+    select?: MethodologyStepCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * MethodologyStepCountOutputType without action
+   */
+  export type MethodologyStepCountOutputTypeCountLlmProvidersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: LLMProviderWhereInput
+  }
+
+
+  /**
    * Models
    */
 
@@ -1013,19 +1153,31 @@ export namespace Prisma {
   export type ProjectMinAggregateOutputType = {
     id: number | null
     name: string | null
+    description: string | null
+    legalText: string | null
+    status: $Enums.ProjectStatus | null
     createdAt: Date | null
+    updatedAt: Date | null
   }
 
   export type ProjectMaxAggregateOutputType = {
     id: number | null
     name: string | null
+    description: string | null
+    legalText: string | null
+    status: $Enums.ProjectStatus | null
     createdAt: Date | null
+    updatedAt: Date | null
   }
 
   export type ProjectCountAggregateOutputType = {
     id: number
     name: number
+    description: number
+    legalText: number
+    status: number
     createdAt: number
+    updatedAt: number
     _all: number
   }
 
@@ -1041,19 +1193,31 @@ export namespace Prisma {
   export type ProjectMinAggregateInputType = {
     id?: true
     name?: true
+    description?: true
+    legalText?: true
+    status?: true
     createdAt?: true
+    updatedAt?: true
   }
 
   export type ProjectMaxAggregateInputType = {
     id?: true
     name?: true
+    description?: true
+    legalText?: true
+    status?: true
     createdAt?: true
+    updatedAt?: true
   }
 
   export type ProjectCountAggregateInputType = {
     id?: true
     name?: true
+    description?: true
+    legalText?: true
+    status?: true
     createdAt?: true
+    updatedAt?: true
     _all?: true
   }
 
@@ -1146,7 +1310,11 @@ export namespace Prisma {
   export type ProjectGroupByOutputType = {
     id: number
     name: string
+    description: string | null
+    legalText: string
+    status: $Enums.ProjectStatus
     createdAt: Date
+    updatedAt: Date
     _count: ProjectCountAggregateOutputType | null
     _avg: ProjectAvgAggregateOutputType | null
     _sum: ProjectSumAggregateOutputType | null
@@ -1171,7 +1339,11 @@ export namespace Prisma {
   export type ProjectSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    description?: boolean
+    legalText?: boolean
+    status?: boolean
     createdAt?: boolean
+    updatedAt?: boolean
     steps?: boolean | Project$stepsArgs<ExtArgs>
     _count?: boolean | ProjectCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["project"]>
@@ -1179,22 +1351,34 @@ export namespace Prisma {
   export type ProjectSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    description?: boolean
+    legalText?: boolean
+    status?: boolean
     createdAt?: boolean
+    updatedAt?: boolean
   }, ExtArgs["result"]["project"]>
 
   export type ProjectSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
+    description?: boolean
+    legalText?: boolean
+    status?: boolean
     createdAt?: boolean
+    updatedAt?: boolean
   }, ExtArgs["result"]["project"]>
 
   export type ProjectSelectScalar = {
     id?: boolean
     name?: boolean
+    description?: boolean
+    legalText?: boolean
+    status?: boolean
     createdAt?: boolean
+    updatedAt?: boolean
   }
 
-  export type ProjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "createdAt", ExtArgs["result"]["project"]>
+  export type ProjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "description" | "legalText" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["project"]>
   export type ProjectInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     steps?: boolean | Project$stepsArgs<ExtArgs>
     _count?: boolean | ProjectCountOutputTypeDefaultArgs<ExtArgs>
@@ -1210,7 +1394,11 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: number
       name: string
+      description: string | null
+      legalText: string
+      status: $Enums.ProjectStatus
       createdAt: Date
+      updatedAt: Date
     }, ExtArgs["result"]["project"]>
     composites: {}
   }
@@ -1637,7 +1825,11 @@ export namespace Prisma {
   interface ProjectFieldRefs {
     readonly id: FieldRef<"Project", 'Int'>
     readonly name: FieldRef<"Project", 'String'>
+    readonly description: FieldRef<"Project", 'String'>
+    readonly legalText: FieldRef<"Project", 'String'>
+    readonly status: FieldRef<"Project", 'ProjectStatus'>
     readonly createdAt: FieldRef<"Project", 'DateTime'>
+    readonly updatedAt: FieldRef<"Project", 'DateTime'>
   }
     
 
@@ -2083,21 +2275,30 @@ export namespace Prisma {
   export type MethodologyStepAvgAggregateOutputType = {
     id: number | null
     projectId: number | null
+    phase: number | null
+    stepNumber: number | null
+    confidenceScore: Decimal | null
   }
 
   export type MethodologyStepSumAggregateOutputType = {
     id: number | null
     projectId: number | null
+    phase: number | null
+    stepNumber: number | null
+    confidenceScore: Decimal | null
   }
 
   export type MethodologyStepMinAggregateOutputType = {
     id: number | null
     projectId: number | null
-    phase: string | null
+    phase: number | null
+    stepNumber: number | null
     stepName: string | null
-    input: string | null
-    output: string | null
+    confidenceScore: Decimal | null
+    schemaValid: boolean | null
+    humanModified: boolean | null
     approved: boolean | null
+    reviewNotes: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -2105,11 +2306,14 @@ export namespace Prisma {
   export type MethodologyStepMaxAggregateOutputType = {
     id: number | null
     projectId: number | null
-    phase: string | null
+    phase: number | null
+    stepNumber: number | null
     stepName: string | null
-    input: string | null
-    output: string | null
+    confidenceScore: Decimal | null
+    schemaValid: boolean | null
+    humanModified: boolean | null
     approved: boolean | null
+    reviewNotes: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -2118,11 +2322,16 @@ export namespace Prisma {
     id: number
     projectId: number
     phase: number
+    stepNumber: number
     stepName: number
     input: number
-    output: number
-    content: number
+    llmOutput: number
+    humanOutput: number
+    confidenceScore: number
+    schemaValid: number
+    humanModified: number
     approved: number
+    reviewNotes: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -2132,21 +2341,30 @@ export namespace Prisma {
   export type MethodologyStepAvgAggregateInputType = {
     id?: true
     projectId?: true
+    phase?: true
+    stepNumber?: true
+    confidenceScore?: true
   }
 
   export type MethodologyStepSumAggregateInputType = {
     id?: true
     projectId?: true
+    phase?: true
+    stepNumber?: true
+    confidenceScore?: true
   }
 
   export type MethodologyStepMinAggregateInputType = {
     id?: true
     projectId?: true
     phase?: true
+    stepNumber?: true
     stepName?: true
-    input?: true
-    output?: true
+    confidenceScore?: true
+    schemaValid?: true
+    humanModified?: true
     approved?: true
+    reviewNotes?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -2155,10 +2373,13 @@ export namespace Prisma {
     id?: true
     projectId?: true
     phase?: true
+    stepNumber?: true
     stepName?: true
-    input?: true
-    output?: true
+    confidenceScore?: true
+    schemaValid?: true
+    humanModified?: true
     approved?: true
+    reviewNotes?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -2167,11 +2388,16 @@ export namespace Prisma {
     id?: true
     projectId?: true
     phase?: true
+    stepNumber?: true
     stepName?: true
     input?: true
-    output?: true
-    content?: true
+    llmOutput?: true
+    humanOutput?: true
+    confidenceScore?: true
+    schemaValid?: true
+    humanModified?: true
     approved?: true
+    reviewNotes?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -2266,12 +2492,17 @@ export namespace Prisma {
   export type MethodologyStepGroupByOutputType = {
     id: number
     projectId: number
-    phase: string
+    phase: number
+    stepNumber: number
     stepName: string
-    input: string
-    output: string
-    content: JsonValue
+    input: JsonValue
+    llmOutput: JsonValue
+    humanOutput: JsonValue | null
+    confidenceScore: Decimal | null
+    schemaValid: boolean
+    humanModified: boolean
     approved: boolean
+    reviewNotes: string | null
     createdAt: Date
     updatedAt: Date
     _count: MethodologyStepCountAggregateOutputType | null
@@ -2299,25 +2530,37 @@ export namespace Prisma {
     id?: boolean
     projectId?: boolean
     phase?: boolean
+    stepNumber?: boolean
     stepName?: boolean
     input?: boolean
-    output?: boolean
-    content?: boolean
+    llmOutput?: boolean
+    humanOutput?: boolean
+    confidenceScore?: boolean
+    schemaValid?: boolean
+    humanModified?: boolean
     approved?: boolean
+    reviewNotes?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     project?: boolean | ProjectDefaultArgs<ExtArgs>
+    llmProviders?: boolean | MethodologyStep$llmProvidersArgs<ExtArgs>
+    _count?: boolean | MethodologyStepCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["methodologyStep"]>
 
   export type MethodologyStepSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     projectId?: boolean
     phase?: boolean
+    stepNumber?: boolean
     stepName?: boolean
     input?: boolean
-    output?: boolean
-    content?: boolean
+    llmOutput?: boolean
+    humanOutput?: boolean
+    confidenceScore?: boolean
+    schemaValid?: boolean
+    humanModified?: boolean
     approved?: boolean
+    reviewNotes?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     project?: boolean | ProjectDefaultArgs<ExtArgs>
@@ -2327,11 +2570,16 @@ export namespace Prisma {
     id?: boolean
     projectId?: boolean
     phase?: boolean
+    stepNumber?: boolean
     stepName?: boolean
     input?: boolean
-    output?: boolean
-    content?: boolean
+    llmOutput?: boolean
+    humanOutput?: boolean
+    confidenceScore?: boolean
+    schemaValid?: boolean
+    humanModified?: boolean
     approved?: boolean
+    reviewNotes?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     project?: boolean | ProjectDefaultArgs<ExtArgs>
@@ -2341,18 +2589,25 @@ export namespace Prisma {
     id?: boolean
     projectId?: boolean
     phase?: boolean
+    stepNumber?: boolean
     stepName?: boolean
     input?: boolean
-    output?: boolean
-    content?: boolean
+    llmOutput?: boolean
+    humanOutput?: boolean
+    confidenceScore?: boolean
+    schemaValid?: boolean
+    humanModified?: boolean
     approved?: boolean
+    reviewNotes?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type MethodologyStepOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "projectId" | "phase" | "stepName" | "input" | "output" | "content" | "approved" | "createdAt" | "updatedAt", ExtArgs["result"]["methodologyStep"]>
+  export type MethodologyStepOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "projectId" | "phase" | "stepNumber" | "stepName" | "input" | "llmOutput" | "humanOutput" | "confidenceScore" | "schemaValid" | "humanModified" | "approved" | "reviewNotes" | "createdAt" | "updatedAt", ExtArgs["result"]["methodologyStep"]>
   export type MethodologyStepInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     project?: boolean | ProjectDefaultArgs<ExtArgs>
+    llmProviders?: boolean | MethodologyStep$llmProvidersArgs<ExtArgs>
+    _count?: boolean | MethodologyStepCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type MethodologyStepIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     project?: boolean | ProjectDefaultArgs<ExtArgs>
@@ -2365,16 +2620,22 @@ export namespace Prisma {
     name: "MethodologyStep"
     objects: {
       project: Prisma.$ProjectPayload<ExtArgs>
+      llmProviders: Prisma.$LLMProviderPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
       projectId: number
-      phase: string
+      phase: number
+      stepNumber: number
       stepName: string
-      input: string
-      output: string
-      content: Prisma.JsonValue
+      input: Prisma.JsonValue
+      llmOutput: Prisma.JsonValue
+      humanOutput: Prisma.JsonValue | null
+      confidenceScore: Prisma.Decimal | null
+      schemaValid: boolean
+      humanModified: boolean
       approved: boolean
+      reviewNotes: string | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["methodologyStep"]>
@@ -2772,6 +3033,7 @@ export namespace Prisma {
   export interface Prisma__MethodologyStepClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     project<T extends ProjectDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ProjectDefaultArgs<ExtArgs>>): Prisma__ProjectClient<$Result.GetResult<Prisma.$ProjectPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    llmProviders<T extends MethodologyStep$llmProvidersArgs<ExtArgs> = {}>(args?: Subset<T, MethodologyStep$llmProvidersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LLMProviderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2803,12 +3065,17 @@ export namespace Prisma {
   interface MethodologyStepFieldRefs {
     readonly id: FieldRef<"MethodologyStep", 'Int'>
     readonly projectId: FieldRef<"MethodologyStep", 'Int'>
-    readonly phase: FieldRef<"MethodologyStep", 'String'>
+    readonly phase: FieldRef<"MethodologyStep", 'Int'>
+    readonly stepNumber: FieldRef<"MethodologyStep", 'Int'>
     readonly stepName: FieldRef<"MethodologyStep", 'String'>
-    readonly input: FieldRef<"MethodologyStep", 'String'>
-    readonly output: FieldRef<"MethodologyStep", 'String'>
-    readonly content: FieldRef<"MethodologyStep", 'Json'>
+    readonly input: FieldRef<"MethodologyStep", 'Json'>
+    readonly llmOutput: FieldRef<"MethodologyStep", 'Json'>
+    readonly humanOutput: FieldRef<"MethodologyStep", 'Json'>
+    readonly confidenceScore: FieldRef<"MethodologyStep", 'Decimal'>
+    readonly schemaValid: FieldRef<"MethodologyStep", 'Boolean'>
+    readonly humanModified: FieldRef<"MethodologyStep", 'Boolean'>
     readonly approved: FieldRef<"MethodologyStep", 'Boolean'>
+    readonly reviewNotes: FieldRef<"MethodologyStep", 'String'>
     readonly createdAt: FieldRef<"MethodologyStep", 'DateTime'>
     readonly updatedAt: FieldRef<"MethodologyStep", 'DateTime'>
   }
@@ -3207,6 +3474,30 @@ export namespace Prisma {
   }
 
   /**
+   * MethodologyStep.llmProviders
+   */
+  export type MethodologyStep$llmProvidersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LLMProvider
+     */
+    select?: LLMProviderSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LLMProvider
+     */
+    omit?: LLMProviderOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LLMProviderInclude<ExtArgs> | null
+    where?: LLMProviderWhereInput
+    orderBy?: LLMProviderOrderByWithRelationInput | LLMProviderOrderByWithRelationInput[]
+    cursor?: LLMProviderWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: LLMProviderScalarFieldEnum | LLMProviderScalarFieldEnum[]
+  }
+
+  /**
    * MethodologyStep without action
    */
   export type MethodologyStepDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3222,6 +3513,1123 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: MethodologyStepInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model LLMProvider
+   */
+
+  export type AggregateLLMProvider = {
+    _count: LLMProviderCountAggregateOutputType | null
+    _avg: LLMProviderAvgAggregateOutputType | null
+    _sum: LLMProviderSumAggregateOutputType | null
+    _min: LLMProviderMinAggregateOutputType | null
+    _max: LLMProviderMaxAggregateOutputType | null
+  }
+
+  export type LLMProviderAvgAggregateOutputType = {
+    id: number | null
+    stepId: number | null
+    apiCost: Decimal | null
+    latencyMs: number | null
+  }
+
+  export type LLMProviderSumAggregateOutputType = {
+    id: number | null
+    stepId: number | null
+    apiCost: Decimal | null
+    latencyMs: number | null
+  }
+
+  export type LLMProviderMinAggregateOutputType = {
+    id: number | null
+    stepId: number | null
+    provider: string | null
+    model: string | null
+    apiCost: Decimal | null
+    latencyMs: number | null
+  }
+
+  export type LLMProviderMaxAggregateOutputType = {
+    id: number | null
+    stepId: number | null
+    provider: string | null
+    model: string | null
+    apiCost: Decimal | null
+    latencyMs: number | null
+  }
+
+  export type LLMProviderCountAggregateOutputType = {
+    id: number
+    stepId: number
+    provider: number
+    model: number
+    apiCost: number
+    latencyMs: number
+    _all: number
+  }
+
+
+  export type LLMProviderAvgAggregateInputType = {
+    id?: true
+    stepId?: true
+    apiCost?: true
+    latencyMs?: true
+  }
+
+  export type LLMProviderSumAggregateInputType = {
+    id?: true
+    stepId?: true
+    apiCost?: true
+    latencyMs?: true
+  }
+
+  export type LLMProviderMinAggregateInputType = {
+    id?: true
+    stepId?: true
+    provider?: true
+    model?: true
+    apiCost?: true
+    latencyMs?: true
+  }
+
+  export type LLMProviderMaxAggregateInputType = {
+    id?: true
+    stepId?: true
+    provider?: true
+    model?: true
+    apiCost?: true
+    latencyMs?: true
+  }
+
+  export type LLMProviderCountAggregateInputType = {
+    id?: true
+    stepId?: true
+    provider?: true
+    model?: true
+    apiCost?: true
+    latencyMs?: true
+    _all?: true
+  }
+
+  export type LLMProviderAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LLMProvider to aggregate.
+     */
+    where?: LLMProviderWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LLMProviders to fetch.
+     */
+    orderBy?: LLMProviderOrderByWithRelationInput | LLMProviderOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: LLMProviderWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LLMProviders from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LLMProviders.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned LLMProviders
+    **/
+    _count?: true | LLMProviderCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: LLMProviderAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: LLMProviderSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: LLMProviderMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: LLMProviderMaxAggregateInputType
+  }
+
+  export type GetLLMProviderAggregateType<T extends LLMProviderAggregateArgs> = {
+        [P in keyof T & keyof AggregateLLMProvider]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateLLMProvider[P]>
+      : GetScalarType<T[P], AggregateLLMProvider[P]>
+  }
+
+
+
+
+  export type LLMProviderGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: LLMProviderWhereInput
+    orderBy?: LLMProviderOrderByWithAggregationInput | LLMProviderOrderByWithAggregationInput[]
+    by: LLMProviderScalarFieldEnum[] | LLMProviderScalarFieldEnum
+    having?: LLMProviderScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: LLMProviderCountAggregateInputType | true
+    _avg?: LLMProviderAvgAggregateInputType
+    _sum?: LLMProviderSumAggregateInputType
+    _min?: LLMProviderMinAggregateInputType
+    _max?: LLMProviderMaxAggregateInputType
+  }
+
+  export type LLMProviderGroupByOutputType = {
+    id: number
+    stepId: number
+    provider: string
+    model: string
+    apiCost: Decimal | null
+    latencyMs: number | null
+    _count: LLMProviderCountAggregateOutputType | null
+    _avg: LLMProviderAvgAggregateOutputType | null
+    _sum: LLMProviderSumAggregateOutputType | null
+    _min: LLMProviderMinAggregateOutputType | null
+    _max: LLMProviderMaxAggregateOutputType | null
+  }
+
+  type GetLLMProviderGroupByPayload<T extends LLMProviderGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<LLMProviderGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof LLMProviderGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], LLMProviderGroupByOutputType[P]>
+            : GetScalarType<T[P], LLMProviderGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type LLMProviderSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    stepId?: boolean
+    provider?: boolean
+    model?: boolean
+    apiCost?: boolean
+    latencyMs?: boolean
+    step?: boolean | MethodologyStepDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["lLMProvider"]>
+
+  export type LLMProviderSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    stepId?: boolean
+    provider?: boolean
+    model?: boolean
+    apiCost?: boolean
+    latencyMs?: boolean
+    step?: boolean | MethodologyStepDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["lLMProvider"]>
+
+  export type LLMProviderSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    stepId?: boolean
+    provider?: boolean
+    model?: boolean
+    apiCost?: boolean
+    latencyMs?: boolean
+    step?: boolean | MethodologyStepDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["lLMProvider"]>
+
+  export type LLMProviderSelectScalar = {
+    id?: boolean
+    stepId?: boolean
+    provider?: boolean
+    model?: boolean
+    apiCost?: boolean
+    latencyMs?: boolean
+  }
+
+  export type LLMProviderOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "stepId" | "provider" | "model" | "apiCost" | "latencyMs", ExtArgs["result"]["lLMProvider"]>
+  export type LLMProviderInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    step?: boolean | MethodologyStepDefaultArgs<ExtArgs>
+  }
+  export type LLMProviderIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    step?: boolean | MethodologyStepDefaultArgs<ExtArgs>
+  }
+  export type LLMProviderIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    step?: boolean | MethodologyStepDefaultArgs<ExtArgs>
+  }
+
+  export type $LLMProviderPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "LLMProvider"
+    objects: {
+      step: Prisma.$MethodologyStepPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      stepId: number
+      provider: string
+      model: string
+      apiCost: Prisma.Decimal | null
+      latencyMs: number | null
+    }, ExtArgs["result"]["lLMProvider"]>
+    composites: {}
+  }
+
+  type LLMProviderGetPayload<S extends boolean | null | undefined | LLMProviderDefaultArgs> = $Result.GetResult<Prisma.$LLMProviderPayload, S>
+
+  type LLMProviderCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<LLMProviderFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: LLMProviderCountAggregateInputType | true
+    }
+
+  export interface LLMProviderDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['LLMProvider'], meta: { name: 'LLMProvider' } }
+    /**
+     * Find zero or one LLMProvider that matches the filter.
+     * @param {LLMProviderFindUniqueArgs} args - Arguments to find a LLMProvider
+     * @example
+     * // Get one LLMProvider
+     * const lLMProvider = await prisma.lLMProvider.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends LLMProviderFindUniqueArgs>(args: SelectSubset<T, LLMProviderFindUniqueArgs<ExtArgs>>): Prisma__LLMProviderClient<$Result.GetResult<Prisma.$LLMProviderPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one LLMProvider that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {LLMProviderFindUniqueOrThrowArgs} args - Arguments to find a LLMProvider
+     * @example
+     * // Get one LLMProvider
+     * const lLMProvider = await prisma.lLMProvider.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends LLMProviderFindUniqueOrThrowArgs>(args: SelectSubset<T, LLMProviderFindUniqueOrThrowArgs<ExtArgs>>): Prisma__LLMProviderClient<$Result.GetResult<Prisma.$LLMProviderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first LLMProvider that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LLMProviderFindFirstArgs} args - Arguments to find a LLMProvider
+     * @example
+     * // Get one LLMProvider
+     * const lLMProvider = await prisma.lLMProvider.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends LLMProviderFindFirstArgs>(args?: SelectSubset<T, LLMProviderFindFirstArgs<ExtArgs>>): Prisma__LLMProviderClient<$Result.GetResult<Prisma.$LLMProviderPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first LLMProvider that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LLMProviderFindFirstOrThrowArgs} args - Arguments to find a LLMProvider
+     * @example
+     * // Get one LLMProvider
+     * const lLMProvider = await prisma.lLMProvider.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends LLMProviderFindFirstOrThrowArgs>(args?: SelectSubset<T, LLMProviderFindFirstOrThrowArgs<ExtArgs>>): Prisma__LLMProviderClient<$Result.GetResult<Prisma.$LLMProviderPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more LLMProviders that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LLMProviderFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all LLMProviders
+     * const lLMProviders = await prisma.lLMProvider.findMany()
+     * 
+     * // Get first 10 LLMProviders
+     * const lLMProviders = await prisma.lLMProvider.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const lLMProviderWithIdOnly = await prisma.lLMProvider.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends LLMProviderFindManyArgs>(args?: SelectSubset<T, LLMProviderFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LLMProviderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a LLMProvider.
+     * @param {LLMProviderCreateArgs} args - Arguments to create a LLMProvider.
+     * @example
+     * // Create one LLMProvider
+     * const LLMProvider = await prisma.lLMProvider.create({
+     *   data: {
+     *     // ... data to create a LLMProvider
+     *   }
+     * })
+     * 
+     */
+    create<T extends LLMProviderCreateArgs>(args: SelectSubset<T, LLMProviderCreateArgs<ExtArgs>>): Prisma__LLMProviderClient<$Result.GetResult<Prisma.$LLMProviderPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many LLMProviders.
+     * @param {LLMProviderCreateManyArgs} args - Arguments to create many LLMProviders.
+     * @example
+     * // Create many LLMProviders
+     * const lLMProvider = await prisma.lLMProvider.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends LLMProviderCreateManyArgs>(args?: SelectSubset<T, LLMProviderCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many LLMProviders and returns the data saved in the database.
+     * @param {LLMProviderCreateManyAndReturnArgs} args - Arguments to create many LLMProviders.
+     * @example
+     * // Create many LLMProviders
+     * const lLMProvider = await prisma.lLMProvider.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many LLMProviders and only return the `id`
+     * const lLMProviderWithIdOnly = await prisma.lLMProvider.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends LLMProviderCreateManyAndReturnArgs>(args?: SelectSubset<T, LLMProviderCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LLMProviderPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a LLMProvider.
+     * @param {LLMProviderDeleteArgs} args - Arguments to delete one LLMProvider.
+     * @example
+     * // Delete one LLMProvider
+     * const LLMProvider = await prisma.lLMProvider.delete({
+     *   where: {
+     *     // ... filter to delete one LLMProvider
+     *   }
+     * })
+     * 
+     */
+    delete<T extends LLMProviderDeleteArgs>(args: SelectSubset<T, LLMProviderDeleteArgs<ExtArgs>>): Prisma__LLMProviderClient<$Result.GetResult<Prisma.$LLMProviderPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one LLMProvider.
+     * @param {LLMProviderUpdateArgs} args - Arguments to update one LLMProvider.
+     * @example
+     * // Update one LLMProvider
+     * const lLMProvider = await prisma.lLMProvider.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends LLMProviderUpdateArgs>(args: SelectSubset<T, LLMProviderUpdateArgs<ExtArgs>>): Prisma__LLMProviderClient<$Result.GetResult<Prisma.$LLMProviderPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more LLMProviders.
+     * @param {LLMProviderDeleteManyArgs} args - Arguments to filter LLMProviders to delete.
+     * @example
+     * // Delete a few LLMProviders
+     * const { count } = await prisma.lLMProvider.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends LLMProviderDeleteManyArgs>(args?: SelectSubset<T, LLMProviderDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more LLMProviders.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LLMProviderUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many LLMProviders
+     * const lLMProvider = await prisma.lLMProvider.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends LLMProviderUpdateManyArgs>(args: SelectSubset<T, LLMProviderUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more LLMProviders and returns the data updated in the database.
+     * @param {LLMProviderUpdateManyAndReturnArgs} args - Arguments to update many LLMProviders.
+     * @example
+     * // Update many LLMProviders
+     * const lLMProvider = await prisma.lLMProvider.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more LLMProviders and only return the `id`
+     * const lLMProviderWithIdOnly = await prisma.lLMProvider.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends LLMProviderUpdateManyAndReturnArgs>(args: SelectSubset<T, LLMProviderUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LLMProviderPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one LLMProvider.
+     * @param {LLMProviderUpsertArgs} args - Arguments to update or create a LLMProvider.
+     * @example
+     * // Update or create a LLMProvider
+     * const lLMProvider = await prisma.lLMProvider.upsert({
+     *   create: {
+     *     // ... data to create a LLMProvider
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the LLMProvider we want to update
+     *   }
+     * })
+     */
+    upsert<T extends LLMProviderUpsertArgs>(args: SelectSubset<T, LLMProviderUpsertArgs<ExtArgs>>): Prisma__LLMProviderClient<$Result.GetResult<Prisma.$LLMProviderPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of LLMProviders.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LLMProviderCountArgs} args - Arguments to filter LLMProviders to count.
+     * @example
+     * // Count the number of LLMProviders
+     * const count = await prisma.lLMProvider.count({
+     *   where: {
+     *     // ... the filter for the LLMProviders we want to count
+     *   }
+     * })
+    **/
+    count<T extends LLMProviderCountArgs>(
+      args?: Subset<T, LLMProviderCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], LLMProviderCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a LLMProvider.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LLMProviderAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends LLMProviderAggregateArgs>(args: Subset<T, LLMProviderAggregateArgs>): Prisma.PrismaPromise<GetLLMProviderAggregateType<T>>
+
+    /**
+     * Group by LLMProvider.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LLMProviderGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends LLMProviderGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: LLMProviderGroupByArgs['orderBy'] }
+        : { orderBy?: LLMProviderGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, LLMProviderGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetLLMProviderGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the LLMProvider model
+   */
+  readonly fields: LLMProviderFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for LLMProvider.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__LLMProviderClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    step<T extends MethodologyStepDefaultArgs<ExtArgs> = {}>(args?: Subset<T, MethodologyStepDefaultArgs<ExtArgs>>): Prisma__MethodologyStepClient<$Result.GetResult<Prisma.$MethodologyStepPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the LLMProvider model
+   */
+  interface LLMProviderFieldRefs {
+    readonly id: FieldRef<"LLMProvider", 'Int'>
+    readonly stepId: FieldRef<"LLMProvider", 'Int'>
+    readonly provider: FieldRef<"LLMProvider", 'String'>
+    readonly model: FieldRef<"LLMProvider", 'String'>
+    readonly apiCost: FieldRef<"LLMProvider", 'Decimal'>
+    readonly latencyMs: FieldRef<"LLMProvider", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * LLMProvider findUnique
+   */
+  export type LLMProviderFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LLMProvider
+     */
+    select?: LLMProviderSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LLMProvider
+     */
+    omit?: LLMProviderOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LLMProviderInclude<ExtArgs> | null
+    /**
+     * Filter, which LLMProvider to fetch.
+     */
+    where: LLMProviderWhereUniqueInput
+  }
+
+  /**
+   * LLMProvider findUniqueOrThrow
+   */
+  export type LLMProviderFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LLMProvider
+     */
+    select?: LLMProviderSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LLMProvider
+     */
+    omit?: LLMProviderOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LLMProviderInclude<ExtArgs> | null
+    /**
+     * Filter, which LLMProvider to fetch.
+     */
+    where: LLMProviderWhereUniqueInput
+  }
+
+  /**
+   * LLMProvider findFirst
+   */
+  export type LLMProviderFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LLMProvider
+     */
+    select?: LLMProviderSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LLMProvider
+     */
+    omit?: LLMProviderOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LLMProviderInclude<ExtArgs> | null
+    /**
+     * Filter, which LLMProvider to fetch.
+     */
+    where?: LLMProviderWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LLMProviders to fetch.
+     */
+    orderBy?: LLMProviderOrderByWithRelationInput | LLMProviderOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LLMProviders.
+     */
+    cursor?: LLMProviderWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LLMProviders from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LLMProviders.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LLMProviders.
+     */
+    distinct?: LLMProviderScalarFieldEnum | LLMProviderScalarFieldEnum[]
+  }
+
+  /**
+   * LLMProvider findFirstOrThrow
+   */
+  export type LLMProviderFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LLMProvider
+     */
+    select?: LLMProviderSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LLMProvider
+     */
+    omit?: LLMProviderOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LLMProviderInclude<ExtArgs> | null
+    /**
+     * Filter, which LLMProvider to fetch.
+     */
+    where?: LLMProviderWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LLMProviders to fetch.
+     */
+    orderBy?: LLMProviderOrderByWithRelationInput | LLMProviderOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LLMProviders.
+     */
+    cursor?: LLMProviderWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LLMProviders from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LLMProviders.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LLMProviders.
+     */
+    distinct?: LLMProviderScalarFieldEnum | LLMProviderScalarFieldEnum[]
+  }
+
+  /**
+   * LLMProvider findMany
+   */
+  export type LLMProviderFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LLMProvider
+     */
+    select?: LLMProviderSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LLMProvider
+     */
+    omit?: LLMProviderOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LLMProviderInclude<ExtArgs> | null
+    /**
+     * Filter, which LLMProviders to fetch.
+     */
+    where?: LLMProviderWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LLMProviders to fetch.
+     */
+    orderBy?: LLMProviderOrderByWithRelationInput | LLMProviderOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing LLMProviders.
+     */
+    cursor?: LLMProviderWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LLMProviders from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LLMProviders.
+     */
+    skip?: number
+    distinct?: LLMProviderScalarFieldEnum | LLMProviderScalarFieldEnum[]
+  }
+
+  /**
+   * LLMProvider create
+   */
+  export type LLMProviderCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LLMProvider
+     */
+    select?: LLMProviderSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LLMProvider
+     */
+    omit?: LLMProviderOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LLMProviderInclude<ExtArgs> | null
+    /**
+     * The data needed to create a LLMProvider.
+     */
+    data: XOR<LLMProviderCreateInput, LLMProviderUncheckedCreateInput>
+  }
+
+  /**
+   * LLMProvider createMany
+   */
+  export type LLMProviderCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many LLMProviders.
+     */
+    data: LLMProviderCreateManyInput | LLMProviderCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * LLMProvider createManyAndReturn
+   */
+  export type LLMProviderCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LLMProvider
+     */
+    select?: LLMProviderSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the LLMProvider
+     */
+    omit?: LLMProviderOmit<ExtArgs> | null
+    /**
+     * The data used to create many LLMProviders.
+     */
+    data: LLMProviderCreateManyInput | LLMProviderCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LLMProviderIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * LLMProvider update
+   */
+  export type LLMProviderUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LLMProvider
+     */
+    select?: LLMProviderSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LLMProvider
+     */
+    omit?: LLMProviderOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LLMProviderInclude<ExtArgs> | null
+    /**
+     * The data needed to update a LLMProvider.
+     */
+    data: XOR<LLMProviderUpdateInput, LLMProviderUncheckedUpdateInput>
+    /**
+     * Choose, which LLMProvider to update.
+     */
+    where: LLMProviderWhereUniqueInput
+  }
+
+  /**
+   * LLMProvider updateMany
+   */
+  export type LLMProviderUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update LLMProviders.
+     */
+    data: XOR<LLMProviderUpdateManyMutationInput, LLMProviderUncheckedUpdateManyInput>
+    /**
+     * Filter which LLMProviders to update
+     */
+    where?: LLMProviderWhereInput
+    /**
+     * Limit how many LLMProviders to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * LLMProvider updateManyAndReturn
+   */
+  export type LLMProviderUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LLMProvider
+     */
+    select?: LLMProviderSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the LLMProvider
+     */
+    omit?: LLMProviderOmit<ExtArgs> | null
+    /**
+     * The data used to update LLMProviders.
+     */
+    data: XOR<LLMProviderUpdateManyMutationInput, LLMProviderUncheckedUpdateManyInput>
+    /**
+     * Filter which LLMProviders to update
+     */
+    where?: LLMProviderWhereInput
+    /**
+     * Limit how many LLMProviders to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LLMProviderIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * LLMProvider upsert
+   */
+  export type LLMProviderUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LLMProvider
+     */
+    select?: LLMProviderSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LLMProvider
+     */
+    omit?: LLMProviderOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LLMProviderInclude<ExtArgs> | null
+    /**
+     * The filter to search for the LLMProvider to update in case it exists.
+     */
+    where: LLMProviderWhereUniqueInput
+    /**
+     * In case the LLMProvider found by the `where` argument doesn't exist, create a new LLMProvider with this data.
+     */
+    create: XOR<LLMProviderCreateInput, LLMProviderUncheckedCreateInput>
+    /**
+     * In case the LLMProvider was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<LLMProviderUpdateInput, LLMProviderUncheckedUpdateInput>
+  }
+
+  /**
+   * LLMProvider delete
+   */
+  export type LLMProviderDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LLMProvider
+     */
+    select?: LLMProviderSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LLMProvider
+     */
+    omit?: LLMProviderOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LLMProviderInclude<ExtArgs> | null
+    /**
+     * Filter which LLMProvider to delete.
+     */
+    where: LLMProviderWhereUniqueInput
+  }
+
+  /**
+   * LLMProvider deleteMany
+   */
+  export type LLMProviderDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LLMProviders to delete
+     */
+    where?: LLMProviderWhereInput
+    /**
+     * Limit how many LLMProviders to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * LLMProvider without action
+   */
+  export type LLMProviderDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LLMProvider
+     */
+    select?: LLMProviderSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LLMProvider
+     */
+    omit?: LLMProviderOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LLMProviderInclude<ExtArgs> | null
   }
 
 
@@ -3242,7 +4650,11 @@ export namespace Prisma {
   export const ProjectScalarFieldEnum: {
     id: 'id',
     name: 'name',
-    createdAt: 'createdAt'
+    description: 'description',
+    legalText: 'legalText',
+    status: 'status',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
   };
 
   export type ProjectScalarFieldEnum = (typeof ProjectScalarFieldEnum)[keyof typeof ProjectScalarFieldEnum]
@@ -3252,16 +4664,33 @@ export namespace Prisma {
     id: 'id',
     projectId: 'projectId',
     phase: 'phase',
+    stepNumber: 'stepNumber',
     stepName: 'stepName',
     input: 'input',
-    output: 'output',
-    content: 'content',
+    llmOutput: 'llmOutput',
+    humanOutput: 'humanOutput',
+    confidenceScore: 'confidenceScore',
+    schemaValid: 'schemaValid',
+    humanModified: 'humanModified',
     approved: 'approved',
+    reviewNotes: 'reviewNotes',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
 
   export type MethodologyStepScalarFieldEnum = (typeof MethodologyStepScalarFieldEnum)[keyof typeof MethodologyStepScalarFieldEnum]
+
+
+  export const LLMProviderScalarFieldEnum: {
+    id: 'id',
+    stepId: 'stepId',
+    provider: 'provider',
+    model: 'model',
+    apiCost: 'apiCost',
+    latencyMs: 'latencyMs'
+  };
+
+  export type LLMProviderScalarFieldEnum = (typeof LLMProviderScalarFieldEnum)[keyof typeof LLMProviderScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -3279,12 +4708,28 @@ export namespace Prisma {
   export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
+  export const NullableJsonNullValueInput: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull
+  };
+
+  export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
   export const QueryMode: {
     default: 'default',
     insensitive: 'insensitive'
   };
 
   export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+  export const NullsOrder: {
+    first: 'first',
+    last: 'last'
+  };
+
+  export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
   export const JsonNullValueFilter: {
@@ -3330,6 +4775,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'ProjectStatus'
+   */
+  export type EnumProjectStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ProjectStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'ProjectStatus[]'
+   */
+  export type ListEnumProjectStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ProjectStatus[]'>
+    
+
+
+  /**
    * Reference to a field of type 'DateTime'
    */
   export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
@@ -3354,6 +4813,20 @@ export namespace Prisma {
    * Reference to a field of type 'QueryMode'
    */
   export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+  /**
+   * Reference to a field of type 'Decimal'
+   */
+  export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
+    
+
+
+  /**
+   * Reference to a field of type 'Decimal[]'
+   */
+  export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
     
 
 
@@ -3387,14 +4860,22 @@ export namespace Prisma {
     NOT?: ProjectWhereInput | ProjectWhereInput[]
     id?: IntFilter<"Project"> | number
     name?: StringFilter<"Project"> | string
+    description?: StringNullableFilter<"Project"> | string | null
+    legalText?: StringFilter<"Project"> | string
+    status?: EnumProjectStatusFilter<"Project"> | $Enums.ProjectStatus
     createdAt?: DateTimeFilter<"Project"> | Date | string
+    updatedAt?: DateTimeFilter<"Project"> | Date | string
     steps?: MethodologyStepListRelationFilter
   }
 
   export type ProjectOrderByWithRelationInput = {
     id?: SortOrder
     name?: SortOrder
+    description?: SortOrderInput | SortOrder
+    legalText?: SortOrder
+    status?: SortOrder
     createdAt?: SortOrder
+    updatedAt?: SortOrder
     steps?: MethodologyStepOrderByRelationAggregateInput
   }
 
@@ -3404,14 +4885,22 @@ export namespace Prisma {
     AND?: ProjectWhereInput | ProjectWhereInput[]
     OR?: ProjectWhereInput[]
     NOT?: ProjectWhereInput | ProjectWhereInput[]
+    description?: StringNullableFilter<"Project"> | string | null
+    legalText?: StringFilter<"Project"> | string
+    status?: EnumProjectStatusFilter<"Project"> | $Enums.ProjectStatus
     createdAt?: DateTimeFilter<"Project"> | Date | string
+    updatedAt?: DateTimeFilter<"Project"> | Date | string
     steps?: MethodologyStepListRelationFilter
   }, "id" | "name">
 
   export type ProjectOrderByWithAggregationInput = {
     id?: SortOrder
     name?: SortOrder
+    description?: SortOrderInput | SortOrder
+    legalText?: SortOrder
+    status?: SortOrder
     createdAt?: SortOrder
+    updatedAt?: SortOrder
     _count?: ProjectCountOrderByAggregateInput
     _avg?: ProjectAvgOrderByAggregateInput
     _max?: ProjectMaxOrderByAggregateInput
@@ -3425,7 +4914,11 @@ export namespace Prisma {
     NOT?: ProjectScalarWhereWithAggregatesInput | ProjectScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"Project"> | number
     name?: StringWithAggregatesFilter<"Project"> | string
+    description?: StringNullableWithAggregatesFilter<"Project"> | string | null
+    legalText?: StringWithAggregatesFilter<"Project"> | string
+    status?: EnumProjectStatusWithAggregatesFilter<"Project"> | $Enums.ProjectStatus
     createdAt?: DateTimeWithAggregatesFilter<"Project"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"Project"> | Date | string
   }
 
   export type MethodologyStepWhereInput = {
@@ -3434,58 +4927,81 @@ export namespace Prisma {
     NOT?: MethodologyStepWhereInput | MethodologyStepWhereInput[]
     id?: IntFilter<"MethodologyStep"> | number
     projectId?: IntFilter<"MethodologyStep"> | number
-    phase?: StringFilter<"MethodologyStep"> | string
+    phase?: IntFilter<"MethodologyStep"> | number
+    stepNumber?: IntFilter<"MethodologyStep"> | number
     stepName?: StringFilter<"MethodologyStep"> | string
-    input?: StringFilter<"MethodologyStep"> | string
-    output?: StringFilter<"MethodologyStep"> | string
-    content?: JsonFilter<"MethodologyStep">
+    input?: JsonFilter<"MethodologyStep">
+    llmOutput?: JsonFilter<"MethodologyStep">
+    humanOutput?: JsonNullableFilter<"MethodologyStep">
+    confidenceScore?: DecimalNullableFilter<"MethodologyStep"> | Decimal | DecimalJsLike | number | string | null
+    schemaValid?: BoolFilter<"MethodologyStep"> | boolean
+    humanModified?: BoolFilter<"MethodologyStep"> | boolean
     approved?: BoolFilter<"MethodologyStep"> | boolean
+    reviewNotes?: StringNullableFilter<"MethodologyStep"> | string | null
     createdAt?: DateTimeFilter<"MethodologyStep"> | Date | string
     updatedAt?: DateTimeFilter<"MethodologyStep"> | Date | string
     project?: XOR<ProjectScalarRelationFilter, ProjectWhereInput>
+    llmProviders?: LLMProviderListRelationFilter
   }
 
   export type MethodologyStepOrderByWithRelationInput = {
     id?: SortOrder
     projectId?: SortOrder
     phase?: SortOrder
+    stepNumber?: SortOrder
     stepName?: SortOrder
     input?: SortOrder
-    output?: SortOrder
-    content?: SortOrder
+    llmOutput?: SortOrder
+    humanOutput?: SortOrderInput | SortOrder
+    confidenceScore?: SortOrderInput | SortOrder
+    schemaValid?: SortOrder
+    humanModified?: SortOrder
     approved?: SortOrder
+    reviewNotes?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     project?: ProjectOrderByWithRelationInput
+    llmProviders?: LLMProviderOrderByRelationAggregateInput
   }
 
   export type MethodologyStepWhereUniqueInput = Prisma.AtLeast<{
     id?: number
-    projectId_phase_stepName?: MethodologyStepProjectIdPhaseStepNameCompoundUniqueInput
+    projectId_phase_stepNumber?: MethodologyStepProjectIdPhaseStepNumberCompoundUniqueInput
     AND?: MethodologyStepWhereInput | MethodologyStepWhereInput[]
     OR?: MethodologyStepWhereInput[]
     NOT?: MethodologyStepWhereInput | MethodologyStepWhereInput[]
     projectId?: IntFilter<"MethodologyStep"> | number
-    phase?: StringFilter<"MethodologyStep"> | string
+    phase?: IntFilter<"MethodologyStep"> | number
+    stepNumber?: IntFilter<"MethodologyStep"> | number
     stepName?: StringFilter<"MethodologyStep"> | string
-    input?: StringFilter<"MethodologyStep"> | string
-    output?: StringFilter<"MethodologyStep"> | string
-    content?: JsonFilter<"MethodologyStep">
+    input?: JsonFilter<"MethodologyStep">
+    llmOutput?: JsonFilter<"MethodologyStep">
+    humanOutput?: JsonNullableFilter<"MethodologyStep">
+    confidenceScore?: DecimalNullableFilter<"MethodologyStep"> | Decimal | DecimalJsLike | number | string | null
+    schemaValid?: BoolFilter<"MethodologyStep"> | boolean
+    humanModified?: BoolFilter<"MethodologyStep"> | boolean
     approved?: BoolFilter<"MethodologyStep"> | boolean
+    reviewNotes?: StringNullableFilter<"MethodologyStep"> | string | null
     createdAt?: DateTimeFilter<"MethodologyStep"> | Date | string
     updatedAt?: DateTimeFilter<"MethodologyStep"> | Date | string
     project?: XOR<ProjectScalarRelationFilter, ProjectWhereInput>
-  }, "id" | "projectId_phase_stepName">
+    llmProviders?: LLMProviderListRelationFilter
+  }, "id" | "projectId_phase_stepNumber">
 
   export type MethodologyStepOrderByWithAggregationInput = {
     id?: SortOrder
     projectId?: SortOrder
     phase?: SortOrder
+    stepNumber?: SortOrder
     stepName?: SortOrder
     input?: SortOrder
-    output?: SortOrder
-    content?: SortOrder
+    llmOutput?: SortOrder
+    humanOutput?: SortOrderInput | SortOrder
+    confidenceScore?: SortOrderInput | SortOrder
+    schemaValid?: SortOrder
+    humanModified?: SortOrder
     approved?: SortOrder
+    reviewNotes?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: MethodologyStepCountOrderByAggregateInput
@@ -3501,129 +5017,258 @@ export namespace Prisma {
     NOT?: MethodologyStepScalarWhereWithAggregatesInput | MethodologyStepScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"MethodologyStep"> | number
     projectId?: IntWithAggregatesFilter<"MethodologyStep"> | number
-    phase?: StringWithAggregatesFilter<"MethodologyStep"> | string
+    phase?: IntWithAggregatesFilter<"MethodologyStep"> | number
+    stepNumber?: IntWithAggregatesFilter<"MethodologyStep"> | number
     stepName?: StringWithAggregatesFilter<"MethodologyStep"> | string
-    input?: StringWithAggregatesFilter<"MethodologyStep"> | string
-    output?: StringWithAggregatesFilter<"MethodologyStep"> | string
-    content?: JsonWithAggregatesFilter<"MethodologyStep">
+    input?: JsonWithAggregatesFilter<"MethodologyStep">
+    llmOutput?: JsonWithAggregatesFilter<"MethodologyStep">
+    humanOutput?: JsonNullableWithAggregatesFilter<"MethodologyStep">
+    confidenceScore?: DecimalNullableWithAggregatesFilter<"MethodologyStep"> | Decimal | DecimalJsLike | number | string | null
+    schemaValid?: BoolWithAggregatesFilter<"MethodologyStep"> | boolean
+    humanModified?: BoolWithAggregatesFilter<"MethodologyStep"> | boolean
     approved?: BoolWithAggregatesFilter<"MethodologyStep"> | boolean
+    reviewNotes?: StringNullableWithAggregatesFilter<"MethodologyStep"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"MethodologyStep"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"MethodologyStep"> | Date | string
   }
 
+  export type LLMProviderWhereInput = {
+    AND?: LLMProviderWhereInput | LLMProviderWhereInput[]
+    OR?: LLMProviderWhereInput[]
+    NOT?: LLMProviderWhereInput | LLMProviderWhereInput[]
+    id?: IntFilter<"LLMProvider"> | number
+    stepId?: IntFilter<"LLMProvider"> | number
+    provider?: StringFilter<"LLMProvider"> | string
+    model?: StringFilter<"LLMProvider"> | string
+    apiCost?: DecimalNullableFilter<"LLMProvider"> | Decimal | DecimalJsLike | number | string | null
+    latencyMs?: IntNullableFilter<"LLMProvider"> | number | null
+    step?: XOR<MethodologyStepScalarRelationFilter, MethodologyStepWhereInput>
+  }
+
+  export type LLMProviderOrderByWithRelationInput = {
+    id?: SortOrder
+    stepId?: SortOrder
+    provider?: SortOrder
+    model?: SortOrder
+    apiCost?: SortOrderInput | SortOrder
+    latencyMs?: SortOrderInput | SortOrder
+    step?: MethodologyStepOrderByWithRelationInput
+  }
+
+  export type LLMProviderWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    AND?: LLMProviderWhereInput | LLMProviderWhereInput[]
+    OR?: LLMProviderWhereInput[]
+    NOT?: LLMProviderWhereInput | LLMProviderWhereInput[]
+    stepId?: IntFilter<"LLMProvider"> | number
+    provider?: StringFilter<"LLMProvider"> | string
+    model?: StringFilter<"LLMProvider"> | string
+    apiCost?: DecimalNullableFilter<"LLMProvider"> | Decimal | DecimalJsLike | number | string | null
+    latencyMs?: IntNullableFilter<"LLMProvider"> | number | null
+    step?: XOR<MethodologyStepScalarRelationFilter, MethodologyStepWhereInput>
+  }, "id">
+
+  export type LLMProviderOrderByWithAggregationInput = {
+    id?: SortOrder
+    stepId?: SortOrder
+    provider?: SortOrder
+    model?: SortOrder
+    apiCost?: SortOrderInput | SortOrder
+    latencyMs?: SortOrderInput | SortOrder
+    _count?: LLMProviderCountOrderByAggregateInput
+    _avg?: LLMProviderAvgOrderByAggregateInput
+    _max?: LLMProviderMaxOrderByAggregateInput
+    _min?: LLMProviderMinOrderByAggregateInput
+    _sum?: LLMProviderSumOrderByAggregateInput
+  }
+
+  export type LLMProviderScalarWhereWithAggregatesInput = {
+    AND?: LLMProviderScalarWhereWithAggregatesInput | LLMProviderScalarWhereWithAggregatesInput[]
+    OR?: LLMProviderScalarWhereWithAggregatesInput[]
+    NOT?: LLMProviderScalarWhereWithAggregatesInput | LLMProviderScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"LLMProvider"> | number
+    stepId?: IntWithAggregatesFilter<"LLMProvider"> | number
+    provider?: StringWithAggregatesFilter<"LLMProvider"> | string
+    model?: StringWithAggregatesFilter<"LLMProvider"> | string
+    apiCost?: DecimalNullableWithAggregatesFilter<"LLMProvider"> | Decimal | DecimalJsLike | number | string | null
+    latencyMs?: IntNullableWithAggregatesFilter<"LLMProvider"> | number | null
+  }
+
   export type ProjectCreateInput = {
     name: string
+    description?: string | null
+    legalText: string
+    status?: $Enums.ProjectStatus
     createdAt?: Date | string
+    updatedAt?: Date | string
     steps?: MethodologyStepCreateNestedManyWithoutProjectInput
   }
 
   export type ProjectUncheckedCreateInput = {
     id?: number
     name: string
+    description?: string | null
+    legalText: string
+    status?: $Enums.ProjectStatus
     createdAt?: Date | string
+    updatedAt?: Date | string
     steps?: MethodologyStepUncheckedCreateNestedManyWithoutProjectInput
   }
 
   export type ProjectUpdateInput = {
     name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    legalText?: StringFieldUpdateOperationsInput | string
+    status?: EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     steps?: MethodologyStepUpdateManyWithoutProjectNestedInput
   }
 
   export type ProjectUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    legalText?: StringFieldUpdateOperationsInput | string
+    status?: EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     steps?: MethodologyStepUncheckedUpdateManyWithoutProjectNestedInput
   }
 
   export type ProjectCreateManyInput = {
     id?: number
     name: string
+    description?: string | null
+    legalText: string
+    status?: $Enums.ProjectStatus
     createdAt?: Date | string
+    updatedAt?: Date | string
   }
 
   export type ProjectUpdateManyMutationInput = {
     name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    legalText?: StringFieldUpdateOperationsInput | string
+    status?: EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ProjectUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    legalText?: StringFieldUpdateOperationsInput | string
+    status?: EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type MethodologyStepCreateInput = {
-    phase: string
+    phase: number
+    stepNumber: number
     stepName: string
-    input?: string
-    output?: string
-    content: JsonNullValueInput | InputJsonValue
+    input: JsonNullValueInput | InputJsonValue
+    llmOutput: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    schemaValid: boolean
+    humanModified?: boolean
     approved?: boolean
+    reviewNotes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     project: ProjectCreateNestedOneWithoutStepsInput
+    llmProviders?: LLMProviderCreateNestedManyWithoutStepInput
   }
 
   export type MethodologyStepUncheckedCreateInput = {
     id?: number
     projectId: number
-    phase: string
+    phase: number
+    stepNumber: number
     stepName: string
-    input?: string
-    output?: string
-    content: JsonNullValueInput | InputJsonValue
+    input: JsonNullValueInput | InputJsonValue
+    llmOutput: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    schemaValid: boolean
+    humanModified?: boolean
     approved?: boolean
+    reviewNotes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    llmProviders?: LLMProviderUncheckedCreateNestedManyWithoutStepInput
   }
 
   export type MethodologyStepUpdateInput = {
-    phase?: StringFieldUpdateOperationsInput | string
+    phase?: IntFieldUpdateOperationsInput | number
+    stepNumber?: IntFieldUpdateOperationsInput | number
     stepName?: StringFieldUpdateOperationsInput | string
-    input?: StringFieldUpdateOperationsInput | string
-    output?: StringFieldUpdateOperationsInput | string
-    content?: JsonNullValueInput | InputJsonValue
+    input?: JsonNullValueInput | InputJsonValue
+    llmOutput?: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    schemaValid?: BoolFieldUpdateOperationsInput | boolean
+    humanModified?: BoolFieldUpdateOperationsInput | boolean
     approved?: BoolFieldUpdateOperationsInput | boolean
+    reviewNotes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     project?: ProjectUpdateOneRequiredWithoutStepsNestedInput
+    llmProviders?: LLMProviderUpdateManyWithoutStepNestedInput
   }
 
   export type MethodologyStepUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     projectId?: IntFieldUpdateOperationsInput | number
-    phase?: StringFieldUpdateOperationsInput | string
+    phase?: IntFieldUpdateOperationsInput | number
+    stepNumber?: IntFieldUpdateOperationsInput | number
     stepName?: StringFieldUpdateOperationsInput | string
-    input?: StringFieldUpdateOperationsInput | string
-    output?: StringFieldUpdateOperationsInput | string
-    content?: JsonNullValueInput | InputJsonValue
+    input?: JsonNullValueInput | InputJsonValue
+    llmOutput?: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    schemaValid?: BoolFieldUpdateOperationsInput | boolean
+    humanModified?: BoolFieldUpdateOperationsInput | boolean
     approved?: BoolFieldUpdateOperationsInput | boolean
+    reviewNotes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    llmProviders?: LLMProviderUncheckedUpdateManyWithoutStepNestedInput
   }
 
   export type MethodologyStepCreateManyInput = {
     id?: number
     projectId: number
-    phase: string
+    phase: number
+    stepNumber: number
     stepName: string
-    input?: string
-    output?: string
-    content: JsonNullValueInput | InputJsonValue
+    input: JsonNullValueInput | InputJsonValue
+    llmOutput: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    schemaValid: boolean
+    humanModified?: boolean
     approved?: boolean
+    reviewNotes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
 
   export type MethodologyStepUpdateManyMutationInput = {
-    phase?: StringFieldUpdateOperationsInput | string
+    phase?: IntFieldUpdateOperationsInput | number
+    stepNumber?: IntFieldUpdateOperationsInput | number
     stepName?: StringFieldUpdateOperationsInput | string
-    input?: StringFieldUpdateOperationsInput | string
-    output?: StringFieldUpdateOperationsInput | string
-    content?: JsonNullValueInput | InputJsonValue
+    input?: JsonNullValueInput | InputJsonValue
+    llmOutput?: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    schemaValid?: BoolFieldUpdateOperationsInput | boolean
+    humanModified?: BoolFieldUpdateOperationsInput | boolean
     approved?: BoolFieldUpdateOperationsInput | boolean
+    reviewNotes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -3631,14 +5276,78 @@ export namespace Prisma {
   export type MethodologyStepUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     projectId?: IntFieldUpdateOperationsInput | number
-    phase?: StringFieldUpdateOperationsInput | string
+    phase?: IntFieldUpdateOperationsInput | number
+    stepNumber?: IntFieldUpdateOperationsInput | number
     stepName?: StringFieldUpdateOperationsInput | string
-    input?: StringFieldUpdateOperationsInput | string
-    output?: StringFieldUpdateOperationsInput | string
-    content?: JsonNullValueInput | InputJsonValue
+    input?: JsonNullValueInput | InputJsonValue
+    llmOutput?: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    schemaValid?: BoolFieldUpdateOperationsInput | boolean
+    humanModified?: BoolFieldUpdateOperationsInput | boolean
     approved?: BoolFieldUpdateOperationsInput | boolean
+    reviewNotes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LLMProviderCreateInput = {
+    provider: string
+    model: string
+    apiCost?: Decimal | DecimalJsLike | number | string | null
+    latencyMs?: number | null
+    step: MethodologyStepCreateNestedOneWithoutLlmProvidersInput
+  }
+
+  export type LLMProviderUncheckedCreateInput = {
+    id?: number
+    stepId: number
+    provider: string
+    model: string
+    apiCost?: Decimal | DecimalJsLike | number | string | null
+    latencyMs?: number | null
+  }
+
+  export type LLMProviderUpdateInput = {
+    provider?: StringFieldUpdateOperationsInput | string
+    model?: StringFieldUpdateOperationsInput | string
+    apiCost?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    latencyMs?: NullableIntFieldUpdateOperationsInput | number | null
+    step?: MethodologyStepUpdateOneRequiredWithoutLlmProvidersNestedInput
+  }
+
+  export type LLMProviderUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    stepId?: IntFieldUpdateOperationsInput | number
+    provider?: StringFieldUpdateOperationsInput | string
+    model?: StringFieldUpdateOperationsInput | string
+    apiCost?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    latencyMs?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type LLMProviderCreateManyInput = {
+    id?: number
+    stepId: number
+    provider: string
+    model: string
+    apiCost?: Decimal | DecimalJsLike | number | string | null
+    latencyMs?: number | null
+  }
+
+  export type LLMProviderUpdateManyMutationInput = {
+    provider?: StringFieldUpdateOperationsInput | string
+    model?: StringFieldUpdateOperationsInput | string
+    apiCost?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    latencyMs?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type LLMProviderUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    stepId?: IntFieldUpdateOperationsInput | number
+    provider?: StringFieldUpdateOperationsInput | string
+    model?: StringFieldUpdateOperationsInput | string
+    apiCost?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    latencyMs?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -3667,6 +5376,28 @@ export namespace Prisma {
     not?: NestedStringFilter<$PrismaModel> | string
   }
 
+  export type StringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type EnumProjectStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.ProjectStatus | EnumProjectStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ProjectStatus[] | ListEnumProjectStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ProjectStatus[] | ListEnumProjectStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumProjectStatusFilter<$PrismaModel> | $Enums.ProjectStatus
+  }
+
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -3684,6 +5415,11 @@ export namespace Prisma {
     none?: MethodologyStepWhereInput
   }
 
+  export type SortOrderInput = {
+    sort: SortOrder
+    nulls?: NullsOrder
+  }
+
   export type MethodologyStepOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -3691,7 +5427,11 @@ export namespace Prisma {
   export type ProjectCountOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    description?: SortOrder
+    legalText?: SortOrder
+    status?: SortOrder
     createdAt?: SortOrder
+    updatedAt?: SortOrder
   }
 
   export type ProjectAvgOrderByAggregateInput = {
@@ -3701,13 +5441,21 @@ export namespace Prisma {
   export type ProjectMaxOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    description?: SortOrder
+    legalText?: SortOrder
+    status?: SortOrder
     createdAt?: SortOrder
+    updatedAt?: SortOrder
   }
 
   export type ProjectMinOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
+    description?: SortOrder
+    legalText?: SortOrder
+    status?: SortOrder
     createdAt?: SortOrder
+    updatedAt?: SortOrder
   }
 
   export type ProjectSumOrderByAggregateInput = {
@@ -3748,6 +5496,34 @@ export namespace Prisma {
     _max?: NestedStringFilter<$PrismaModel>
   }
 
+  export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type EnumProjectStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ProjectStatus | EnumProjectStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ProjectStatus[] | ListEnumProjectStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ProjectStatus[] | ListEnumProjectStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumProjectStatusWithAggregatesFilter<$PrismaModel> | $Enums.ProjectStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumProjectStatusFilter<$PrismaModel>
+    _max?: NestedEnumProjectStatusFilter<$PrismaModel>
+  }
+
   export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -3784,6 +5560,40 @@ export namespace Prisma {
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
+  export type JsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type DecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
 
   export type BoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
@@ -3795,21 +5605,36 @@ export namespace Prisma {
     isNot?: ProjectWhereInput
   }
 
-  export type MethodologyStepProjectIdPhaseStepNameCompoundUniqueInput = {
+  export type LLMProviderListRelationFilter = {
+    every?: LLMProviderWhereInput
+    some?: LLMProviderWhereInput
+    none?: LLMProviderWhereInput
+  }
+
+  export type LLMProviderOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type MethodologyStepProjectIdPhaseStepNumberCompoundUniqueInput = {
     projectId: number
-    phase: string
-    stepName: string
+    phase: number
+    stepNumber: number
   }
 
   export type MethodologyStepCountOrderByAggregateInput = {
     id?: SortOrder
     projectId?: SortOrder
     phase?: SortOrder
+    stepNumber?: SortOrder
     stepName?: SortOrder
     input?: SortOrder
-    output?: SortOrder
-    content?: SortOrder
+    llmOutput?: SortOrder
+    humanOutput?: SortOrder
+    confidenceScore?: SortOrder
+    schemaValid?: SortOrder
+    humanModified?: SortOrder
     approved?: SortOrder
+    reviewNotes?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -3817,16 +5642,22 @@ export namespace Prisma {
   export type MethodologyStepAvgOrderByAggregateInput = {
     id?: SortOrder
     projectId?: SortOrder
+    phase?: SortOrder
+    stepNumber?: SortOrder
+    confidenceScore?: SortOrder
   }
 
   export type MethodologyStepMaxOrderByAggregateInput = {
     id?: SortOrder
     projectId?: SortOrder
     phase?: SortOrder
+    stepNumber?: SortOrder
     stepName?: SortOrder
-    input?: SortOrder
-    output?: SortOrder
+    confidenceScore?: SortOrder
+    schemaValid?: SortOrder
+    humanModified?: SortOrder
     approved?: SortOrder
+    reviewNotes?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -3835,10 +5666,13 @@ export namespace Prisma {
     id?: SortOrder
     projectId?: SortOrder
     phase?: SortOrder
+    stepNumber?: SortOrder
     stepName?: SortOrder
-    input?: SortOrder
-    output?: SortOrder
+    confidenceScore?: SortOrder
+    schemaValid?: SortOrder
+    humanModified?: SortOrder
     approved?: SortOrder
+    reviewNotes?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -3846,6 +5680,9 @@ export namespace Prisma {
   export type MethodologyStepSumOrderByAggregateInput = {
     id?: SortOrder
     projectId?: SortOrder
+    phase?: SortOrder
+    stepNumber?: SortOrder
+    confidenceScore?: SortOrder
   }
   export type JsonWithAggregatesFilter<$PrismaModel = never> =
     | PatchUndefined<
@@ -3873,6 +5710,48 @@ export namespace Prisma {
     _min?: NestedJsonFilter<$PrismaModel>
     _max?: NestedJsonFilter<$PrismaModel>
   }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
+  }
+
+  export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
+  }
 
   export type BoolWithAggregatesFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
@@ -3880,6 +5759,79 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedBoolFilter<$PrismaModel>
     _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type MethodologyStepScalarRelationFilter = {
+    is?: MethodologyStepWhereInput
+    isNot?: MethodologyStepWhereInput
+  }
+
+  export type LLMProviderCountOrderByAggregateInput = {
+    id?: SortOrder
+    stepId?: SortOrder
+    provider?: SortOrder
+    model?: SortOrder
+    apiCost?: SortOrder
+    latencyMs?: SortOrder
+  }
+
+  export type LLMProviderAvgOrderByAggregateInput = {
+    id?: SortOrder
+    stepId?: SortOrder
+    apiCost?: SortOrder
+    latencyMs?: SortOrder
+  }
+
+  export type LLMProviderMaxOrderByAggregateInput = {
+    id?: SortOrder
+    stepId?: SortOrder
+    provider?: SortOrder
+    model?: SortOrder
+    apiCost?: SortOrder
+    latencyMs?: SortOrder
+  }
+
+  export type LLMProviderMinOrderByAggregateInput = {
+    id?: SortOrder
+    stepId?: SortOrder
+    provider?: SortOrder
+    model?: SortOrder
+    apiCost?: SortOrder
+    latencyMs?: SortOrder
+  }
+
+  export type LLMProviderSumOrderByAggregateInput = {
+    id?: SortOrder
+    stepId?: SortOrder
+    apiCost?: SortOrder
+    latencyMs?: SortOrder
+  }
+
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
   }
 
   export type MethodologyStepCreateNestedManyWithoutProjectInput = {
@@ -3898,6 +5850,14 @@ export namespace Prisma {
 
   export type StringFieldUpdateOperationsInput = {
     set?: string
+  }
+
+  export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null
+  }
+
+  export type EnumProjectStatusFieldUpdateOperationsInput = {
+    set?: $Enums.ProjectStatus
   }
 
   export type DateTimeFieldUpdateOperationsInput = {
@@ -3946,6 +5906,28 @@ export namespace Prisma {
     connect?: ProjectWhereUniqueInput
   }
 
+  export type LLMProviderCreateNestedManyWithoutStepInput = {
+    create?: XOR<LLMProviderCreateWithoutStepInput, LLMProviderUncheckedCreateWithoutStepInput> | LLMProviderCreateWithoutStepInput[] | LLMProviderUncheckedCreateWithoutStepInput[]
+    connectOrCreate?: LLMProviderCreateOrConnectWithoutStepInput | LLMProviderCreateOrConnectWithoutStepInput[]
+    createMany?: LLMProviderCreateManyStepInputEnvelope
+    connect?: LLMProviderWhereUniqueInput | LLMProviderWhereUniqueInput[]
+  }
+
+  export type LLMProviderUncheckedCreateNestedManyWithoutStepInput = {
+    create?: XOR<LLMProviderCreateWithoutStepInput, LLMProviderUncheckedCreateWithoutStepInput> | LLMProviderCreateWithoutStepInput[] | LLMProviderUncheckedCreateWithoutStepInput[]
+    connectOrCreate?: LLMProviderCreateOrConnectWithoutStepInput | LLMProviderCreateOrConnectWithoutStepInput[]
+    createMany?: LLMProviderCreateManyStepInputEnvelope
+    connect?: LLMProviderWhereUniqueInput | LLMProviderWhereUniqueInput[]
+  }
+
+  export type NullableDecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string | null
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
   export type BoolFieldUpdateOperationsInput = {
     set?: boolean
   }
@@ -3956,6 +5938,56 @@ export namespace Prisma {
     upsert?: ProjectUpsertWithoutStepsInput
     connect?: ProjectWhereUniqueInput
     update?: XOR<XOR<ProjectUpdateToOneWithWhereWithoutStepsInput, ProjectUpdateWithoutStepsInput>, ProjectUncheckedUpdateWithoutStepsInput>
+  }
+
+  export type LLMProviderUpdateManyWithoutStepNestedInput = {
+    create?: XOR<LLMProviderCreateWithoutStepInput, LLMProviderUncheckedCreateWithoutStepInput> | LLMProviderCreateWithoutStepInput[] | LLMProviderUncheckedCreateWithoutStepInput[]
+    connectOrCreate?: LLMProviderCreateOrConnectWithoutStepInput | LLMProviderCreateOrConnectWithoutStepInput[]
+    upsert?: LLMProviderUpsertWithWhereUniqueWithoutStepInput | LLMProviderUpsertWithWhereUniqueWithoutStepInput[]
+    createMany?: LLMProviderCreateManyStepInputEnvelope
+    set?: LLMProviderWhereUniqueInput | LLMProviderWhereUniqueInput[]
+    disconnect?: LLMProviderWhereUniqueInput | LLMProviderWhereUniqueInput[]
+    delete?: LLMProviderWhereUniqueInput | LLMProviderWhereUniqueInput[]
+    connect?: LLMProviderWhereUniqueInput | LLMProviderWhereUniqueInput[]
+    update?: LLMProviderUpdateWithWhereUniqueWithoutStepInput | LLMProviderUpdateWithWhereUniqueWithoutStepInput[]
+    updateMany?: LLMProviderUpdateManyWithWhereWithoutStepInput | LLMProviderUpdateManyWithWhereWithoutStepInput[]
+    deleteMany?: LLMProviderScalarWhereInput | LLMProviderScalarWhereInput[]
+  }
+
+  export type LLMProviderUncheckedUpdateManyWithoutStepNestedInput = {
+    create?: XOR<LLMProviderCreateWithoutStepInput, LLMProviderUncheckedCreateWithoutStepInput> | LLMProviderCreateWithoutStepInput[] | LLMProviderUncheckedCreateWithoutStepInput[]
+    connectOrCreate?: LLMProviderCreateOrConnectWithoutStepInput | LLMProviderCreateOrConnectWithoutStepInput[]
+    upsert?: LLMProviderUpsertWithWhereUniqueWithoutStepInput | LLMProviderUpsertWithWhereUniqueWithoutStepInput[]
+    createMany?: LLMProviderCreateManyStepInputEnvelope
+    set?: LLMProviderWhereUniqueInput | LLMProviderWhereUniqueInput[]
+    disconnect?: LLMProviderWhereUniqueInput | LLMProviderWhereUniqueInput[]
+    delete?: LLMProviderWhereUniqueInput | LLMProviderWhereUniqueInput[]
+    connect?: LLMProviderWhereUniqueInput | LLMProviderWhereUniqueInput[]
+    update?: LLMProviderUpdateWithWhereUniqueWithoutStepInput | LLMProviderUpdateWithWhereUniqueWithoutStepInput[]
+    updateMany?: LLMProviderUpdateManyWithWhereWithoutStepInput | LLMProviderUpdateManyWithWhereWithoutStepInput[]
+    deleteMany?: LLMProviderScalarWhereInput | LLMProviderScalarWhereInput[]
+  }
+
+  export type MethodologyStepCreateNestedOneWithoutLlmProvidersInput = {
+    create?: XOR<MethodologyStepCreateWithoutLlmProvidersInput, MethodologyStepUncheckedCreateWithoutLlmProvidersInput>
+    connectOrCreate?: MethodologyStepCreateOrConnectWithoutLlmProvidersInput
+    connect?: MethodologyStepWhereUniqueInput
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type MethodologyStepUpdateOneRequiredWithoutLlmProvidersNestedInput = {
+    create?: XOR<MethodologyStepCreateWithoutLlmProvidersInput, MethodologyStepUncheckedCreateWithoutLlmProvidersInput>
+    connectOrCreate?: MethodologyStepCreateOrConnectWithoutLlmProvidersInput
+    upsert?: MethodologyStepUpsertWithoutLlmProvidersInput
+    connect?: MethodologyStepWhereUniqueInput
+    update?: XOR<XOR<MethodologyStepUpdateToOneWithWhereWithoutLlmProvidersInput, MethodologyStepUpdateWithoutLlmProvidersInput>, MethodologyStepUncheckedUpdateWithoutLlmProvidersInput>
   }
 
   export type NestedIntFilter<$PrismaModel = never> = {
@@ -3981,6 +6013,27 @@ export namespace Prisma {
     startsWith?: string | StringFieldRefInput<$PrismaModel>
     endsWith?: string | StringFieldRefInput<$PrismaModel>
     not?: NestedStringFilter<$PrismaModel> | string
+  }
+
+  export type NestedStringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type NestedEnumProjectStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.ProjectStatus | EnumProjectStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ProjectStatus[] | ListEnumProjectStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ProjectStatus[] | ListEnumProjectStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumProjectStatusFilter<$PrismaModel> | $Enums.ProjectStatus
   }
 
   export type NestedDateTimeFilter<$PrismaModel = never> = {
@@ -4038,6 +6091,44 @@ export namespace Prisma {
     _max?: NestedStringFilter<$PrismaModel>
   }
 
+  export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type NestedIntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type NestedEnumProjectStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ProjectStatus | EnumProjectStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ProjectStatus[] | ListEnumProjectStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ProjectStatus[] | ListEnumProjectStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumProjectStatusWithAggregatesFilter<$PrismaModel> | $Enums.ProjectStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumProjectStatusFilter<$PrismaModel>
+    _max?: NestedEnumProjectStatusFilter<$PrismaModel>
+  }
+
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -4050,6 +6141,17 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
   }
 
   export type NestedBoolFilter<$PrismaModel = never> = {
@@ -4079,6 +6181,45 @@ export namespace Prisma {
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
+  export type NestedJsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type NestedDecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
+  }
 
   export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
@@ -4088,27 +6229,66 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
+  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
   export type MethodologyStepCreateWithoutProjectInput = {
-    phase: string
+    phase: number
+    stepNumber: number
     stepName: string
-    input?: string
-    output?: string
-    content: JsonNullValueInput | InputJsonValue
+    input: JsonNullValueInput | InputJsonValue
+    llmOutput: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    schemaValid: boolean
+    humanModified?: boolean
     approved?: boolean
+    reviewNotes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    llmProviders?: LLMProviderCreateNestedManyWithoutStepInput
   }
 
   export type MethodologyStepUncheckedCreateWithoutProjectInput = {
     id?: number
-    phase: string
+    phase: number
+    stepNumber: number
     stepName: string
-    input?: string
-    output?: string
-    content: JsonNullValueInput | InputJsonValue
+    input: JsonNullValueInput | InputJsonValue
+    llmOutput: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    schemaValid: boolean
+    humanModified?: boolean
     approved?: boolean
+    reviewNotes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    llmProviders?: LLMProviderUncheckedCreateNestedManyWithoutStepInput
   }
 
   export type MethodologyStepCreateOrConnectWithoutProjectInput = {
@@ -4143,30 +6323,68 @@ export namespace Prisma {
     NOT?: MethodologyStepScalarWhereInput | MethodologyStepScalarWhereInput[]
     id?: IntFilter<"MethodologyStep"> | number
     projectId?: IntFilter<"MethodologyStep"> | number
-    phase?: StringFilter<"MethodologyStep"> | string
+    phase?: IntFilter<"MethodologyStep"> | number
+    stepNumber?: IntFilter<"MethodologyStep"> | number
     stepName?: StringFilter<"MethodologyStep"> | string
-    input?: StringFilter<"MethodologyStep"> | string
-    output?: StringFilter<"MethodologyStep"> | string
-    content?: JsonFilter<"MethodologyStep">
+    input?: JsonFilter<"MethodologyStep">
+    llmOutput?: JsonFilter<"MethodologyStep">
+    humanOutput?: JsonNullableFilter<"MethodologyStep">
+    confidenceScore?: DecimalNullableFilter<"MethodologyStep"> | Decimal | DecimalJsLike | number | string | null
+    schemaValid?: BoolFilter<"MethodologyStep"> | boolean
+    humanModified?: BoolFilter<"MethodologyStep"> | boolean
     approved?: BoolFilter<"MethodologyStep"> | boolean
+    reviewNotes?: StringNullableFilter<"MethodologyStep"> | string | null
     createdAt?: DateTimeFilter<"MethodologyStep"> | Date | string
     updatedAt?: DateTimeFilter<"MethodologyStep"> | Date | string
   }
 
   export type ProjectCreateWithoutStepsInput = {
     name: string
+    description?: string | null
+    legalText: string
+    status?: $Enums.ProjectStatus
     createdAt?: Date | string
+    updatedAt?: Date | string
   }
 
   export type ProjectUncheckedCreateWithoutStepsInput = {
     id?: number
     name: string
+    description?: string | null
+    legalText: string
+    status?: $Enums.ProjectStatus
     createdAt?: Date | string
+    updatedAt?: Date | string
   }
 
   export type ProjectCreateOrConnectWithoutStepsInput = {
     where: ProjectWhereUniqueInput
     create: XOR<ProjectCreateWithoutStepsInput, ProjectUncheckedCreateWithoutStepsInput>
+  }
+
+  export type LLMProviderCreateWithoutStepInput = {
+    provider: string
+    model: string
+    apiCost?: Decimal | DecimalJsLike | number | string | null
+    latencyMs?: number | null
+  }
+
+  export type LLMProviderUncheckedCreateWithoutStepInput = {
+    id?: number
+    provider: string
+    model: string
+    apiCost?: Decimal | DecimalJsLike | number | string | null
+    latencyMs?: number | null
+  }
+
+  export type LLMProviderCreateOrConnectWithoutStepInput = {
+    where: LLMProviderWhereUniqueInput
+    create: XOR<LLMProviderCreateWithoutStepInput, LLMProviderUncheckedCreateWithoutStepInput>
+  }
+
+  export type LLMProviderCreateManyStepInputEnvelope = {
+    data: LLMProviderCreateManyStepInput | LLMProviderCreateManyStepInput[]
+    skipDuplicates?: boolean
   }
 
   export type ProjectUpsertWithoutStepsInput = {
@@ -4182,60 +6400,235 @@ export namespace Prisma {
 
   export type ProjectUpdateWithoutStepsInput = {
     name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    legalText?: StringFieldUpdateOperationsInput | string
+    status?: EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ProjectUncheckedUpdateWithoutStepsInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    legalText?: StringFieldUpdateOperationsInput | string
+    status?: EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LLMProviderUpsertWithWhereUniqueWithoutStepInput = {
+    where: LLMProviderWhereUniqueInput
+    update: XOR<LLMProviderUpdateWithoutStepInput, LLMProviderUncheckedUpdateWithoutStepInput>
+    create: XOR<LLMProviderCreateWithoutStepInput, LLMProviderUncheckedCreateWithoutStepInput>
+  }
+
+  export type LLMProviderUpdateWithWhereUniqueWithoutStepInput = {
+    where: LLMProviderWhereUniqueInput
+    data: XOR<LLMProviderUpdateWithoutStepInput, LLMProviderUncheckedUpdateWithoutStepInput>
+  }
+
+  export type LLMProviderUpdateManyWithWhereWithoutStepInput = {
+    where: LLMProviderScalarWhereInput
+    data: XOR<LLMProviderUpdateManyMutationInput, LLMProviderUncheckedUpdateManyWithoutStepInput>
+  }
+
+  export type LLMProviderScalarWhereInput = {
+    AND?: LLMProviderScalarWhereInput | LLMProviderScalarWhereInput[]
+    OR?: LLMProviderScalarWhereInput[]
+    NOT?: LLMProviderScalarWhereInput | LLMProviderScalarWhereInput[]
+    id?: IntFilter<"LLMProvider"> | number
+    stepId?: IntFilter<"LLMProvider"> | number
+    provider?: StringFilter<"LLMProvider"> | string
+    model?: StringFilter<"LLMProvider"> | string
+    apiCost?: DecimalNullableFilter<"LLMProvider"> | Decimal | DecimalJsLike | number | string | null
+    latencyMs?: IntNullableFilter<"LLMProvider"> | number | null
+  }
+
+  export type MethodologyStepCreateWithoutLlmProvidersInput = {
+    phase: number
+    stepNumber: number
+    stepName: string
+    input: JsonNullValueInput | InputJsonValue
+    llmOutput: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    schemaValid: boolean
+    humanModified?: boolean
+    approved?: boolean
+    reviewNotes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    project: ProjectCreateNestedOneWithoutStepsInput
+  }
+
+  export type MethodologyStepUncheckedCreateWithoutLlmProvidersInput = {
+    id?: number
+    projectId: number
+    phase: number
+    stepNumber: number
+    stepName: string
+    input: JsonNullValueInput | InputJsonValue
+    llmOutput: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    schemaValid: boolean
+    humanModified?: boolean
+    approved?: boolean
+    reviewNotes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type MethodologyStepCreateOrConnectWithoutLlmProvidersInput = {
+    where: MethodologyStepWhereUniqueInput
+    create: XOR<MethodologyStepCreateWithoutLlmProvidersInput, MethodologyStepUncheckedCreateWithoutLlmProvidersInput>
+  }
+
+  export type MethodologyStepUpsertWithoutLlmProvidersInput = {
+    update: XOR<MethodologyStepUpdateWithoutLlmProvidersInput, MethodologyStepUncheckedUpdateWithoutLlmProvidersInput>
+    create: XOR<MethodologyStepCreateWithoutLlmProvidersInput, MethodologyStepUncheckedCreateWithoutLlmProvidersInput>
+    where?: MethodologyStepWhereInput
+  }
+
+  export type MethodologyStepUpdateToOneWithWhereWithoutLlmProvidersInput = {
+    where?: MethodologyStepWhereInput
+    data: XOR<MethodologyStepUpdateWithoutLlmProvidersInput, MethodologyStepUncheckedUpdateWithoutLlmProvidersInput>
+  }
+
+  export type MethodologyStepUpdateWithoutLlmProvidersInput = {
+    phase?: IntFieldUpdateOperationsInput | number
+    stepNumber?: IntFieldUpdateOperationsInput | number
+    stepName?: StringFieldUpdateOperationsInput | string
+    input?: JsonNullValueInput | InputJsonValue
+    llmOutput?: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    schemaValid?: BoolFieldUpdateOperationsInput | boolean
+    humanModified?: BoolFieldUpdateOperationsInput | boolean
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    reviewNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    project?: ProjectUpdateOneRequiredWithoutStepsNestedInput
+  }
+
+  export type MethodologyStepUncheckedUpdateWithoutLlmProvidersInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    projectId?: IntFieldUpdateOperationsInput | number
+    phase?: IntFieldUpdateOperationsInput | number
+    stepNumber?: IntFieldUpdateOperationsInput | number
+    stepName?: StringFieldUpdateOperationsInput | string
+    input?: JsonNullValueInput | InputJsonValue
+    llmOutput?: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    schemaValid?: BoolFieldUpdateOperationsInput | boolean
+    humanModified?: BoolFieldUpdateOperationsInput | boolean
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    reviewNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type MethodologyStepCreateManyProjectInput = {
     id?: number
-    phase: string
+    phase: number
+    stepNumber: number
     stepName: string
-    input?: string
-    output?: string
-    content: JsonNullValueInput | InputJsonValue
+    input: JsonNullValueInput | InputJsonValue
+    llmOutput: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    schemaValid: boolean
+    humanModified?: boolean
     approved?: boolean
+    reviewNotes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
 
   export type MethodologyStepUpdateWithoutProjectInput = {
-    phase?: StringFieldUpdateOperationsInput | string
+    phase?: IntFieldUpdateOperationsInput | number
+    stepNumber?: IntFieldUpdateOperationsInput | number
     stepName?: StringFieldUpdateOperationsInput | string
-    input?: StringFieldUpdateOperationsInput | string
-    output?: StringFieldUpdateOperationsInput | string
-    content?: JsonNullValueInput | InputJsonValue
+    input?: JsonNullValueInput | InputJsonValue
+    llmOutput?: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    schemaValid?: BoolFieldUpdateOperationsInput | boolean
+    humanModified?: BoolFieldUpdateOperationsInput | boolean
     approved?: BoolFieldUpdateOperationsInput | boolean
+    reviewNotes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    llmProviders?: LLMProviderUpdateManyWithoutStepNestedInput
   }
 
   export type MethodologyStepUncheckedUpdateWithoutProjectInput = {
     id?: IntFieldUpdateOperationsInput | number
-    phase?: StringFieldUpdateOperationsInput | string
+    phase?: IntFieldUpdateOperationsInput | number
+    stepNumber?: IntFieldUpdateOperationsInput | number
     stepName?: StringFieldUpdateOperationsInput | string
-    input?: StringFieldUpdateOperationsInput | string
-    output?: StringFieldUpdateOperationsInput | string
-    content?: JsonNullValueInput | InputJsonValue
+    input?: JsonNullValueInput | InputJsonValue
+    llmOutput?: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    schemaValid?: BoolFieldUpdateOperationsInput | boolean
+    humanModified?: BoolFieldUpdateOperationsInput | boolean
     approved?: BoolFieldUpdateOperationsInput | boolean
+    reviewNotes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    llmProviders?: LLMProviderUncheckedUpdateManyWithoutStepNestedInput
   }
 
   export type MethodologyStepUncheckedUpdateManyWithoutProjectInput = {
     id?: IntFieldUpdateOperationsInput | number
-    phase?: StringFieldUpdateOperationsInput | string
+    phase?: IntFieldUpdateOperationsInput | number
+    stepNumber?: IntFieldUpdateOperationsInput | number
     stepName?: StringFieldUpdateOperationsInput | string
-    input?: StringFieldUpdateOperationsInput | string
-    output?: StringFieldUpdateOperationsInput | string
-    content?: JsonNullValueInput | InputJsonValue
+    input?: JsonNullValueInput | InputJsonValue
+    llmOutput?: JsonNullValueInput | InputJsonValue
+    humanOutput?: NullableJsonNullValueInput | InputJsonValue
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    schemaValid?: BoolFieldUpdateOperationsInput | boolean
+    humanModified?: BoolFieldUpdateOperationsInput | boolean
     approved?: BoolFieldUpdateOperationsInput | boolean
+    reviewNotes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LLMProviderCreateManyStepInput = {
+    id?: number
+    provider: string
+    model: string
+    apiCost?: Decimal | DecimalJsLike | number | string | null
+    latencyMs?: number | null
+  }
+
+  export type LLMProviderUpdateWithoutStepInput = {
+    provider?: StringFieldUpdateOperationsInput | string
+    model?: StringFieldUpdateOperationsInput | string
+    apiCost?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    latencyMs?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type LLMProviderUncheckedUpdateWithoutStepInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    provider?: StringFieldUpdateOperationsInput | string
+    model?: StringFieldUpdateOperationsInput | string
+    apiCost?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    latencyMs?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type LLMProviderUncheckedUpdateManyWithoutStepInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    provider?: StringFieldUpdateOperationsInput | string
+    model?: StringFieldUpdateOperationsInput | string
+    apiCost?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    latencyMs?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
 

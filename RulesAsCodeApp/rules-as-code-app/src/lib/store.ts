@@ -1,123 +1,174 @@
 /* ------------------------------------------------------------------ */
-/*  store.ts – central wizard state                                   */
+/*  store.ts – central wizard state (UPDATED for new DB schema)        */
 /*  Purpose:                                                           */
 /*    - Holds the canonical client-side state for the Rules-as-Code    */
 /*      wizard using Zustand (with persistence).                       */
-/*    - Defines methodology ordering, navigation policy, step data,    */
-/*      and actions (approve, advance, set content).                   */
-/*  Key Ideas:                                                         */
-/*    - Methodology order is the single source of truth for navigation */
-/*      constraints (gated by approvals).                              */
-/*    - Steps are keyed by `${phase}-${stepName}` for O(1) lookup.     */
-/*    - Persistence only stores project identity; step data is re-     */
-/*      hydrated from the backend to avoid stale/large local payloads. */
+/*    - Aligns client identifiers with the NEW database contract:      */
+/*        MethodologyStep is uniquely identified by                     */
+/*          (projectId, phase:int, stepNumber:int)                     */
+/*      while the UI may still display human-friendly labels.          */
+/*  Key Ideas (new contract):                                          */
+/*    - Navigation is based on strict global ordering and approval     */
+/*      gates (approved=true).                                         */
+/*    - Steps in the store are keyed by `${phase}-${stepNumber}`       */
+/*      (phase and stepNumber are integers), matching DB uniqueness.   */
+/*    - Store persists only project identity; step data is rehydrated  */
+/*      from backend on project selection.                             */
 /* ------------------------------------------------------------------ */
+
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Step, JsonValue } from "./types";
 
-/* ========== Methodology definition ========== */
-/*  Role: Declarative definition of phases and ordered steps.          */
-/*  Contract:                                                          
-      - Object key order encodes phase order.                          
-      - Array index order encodes step order within a phase.           
-    Consumers:
-      - PHASE_ORDER / stepIterator() for deterministic traversal.      */
-export const methodology: Record<string, string[]> = {
-  Preparation: [
-    "Segment Text",
-    "Normalize Terminology",
-    "Key Sections",
-    "Inconsistency Scan",
-    "Inconsistency Categorisation",
-  ],
-  Analysis: [
-    "Extract Entities",
-    "Entity Refinement",
-    "Data Requirement Identification",
-    "Data Types and Validation Rules",
-    "Ambiguity Tagging",
-    "Uncertainty Modeling",
-    "Entity Relationship Mapping",
-    "Rule Extraction",
-    "Rule Formalisation",
-    "Rule Depencies Mapping",
-    "Decision Requirement Diagram Creation",
-    "Incosistency Detection",
-    "Execution Path Conflicts Analysis",
-    "Rule Categorisation",
-    "Conflict Resolution Modeling",
-  ],
-  Implementation: ["GenerateCode"],
-  Testing: [],
-  Documentation: [],
+/* ------------------------------------------------------------------ */
+/* Types aligned to the NEW DB schema                                  */
+/* ------------------------------------------------------------------ */
+/**
+ * Mirrors the fields you persist in MethodologyStep (new schema).
+ * - input / llmOutput / humanOutput are JSON (Prisma Json/Json?).
+ * - approval + validation flags are first-class.
+ */
+export type DBStep = {
+  id?: number;
+
+  projectId: number;
+
+  phase: number; // 1 | 2
+  stepNumber: number; // 1..5
+  stepName: string;
+
+  input: any; // Json
+  llmOutput: any; // Json
+  humanOutput?: any | null; // Json?
+  confidenceScore?: string | number | null;
+
+  schemaValid: boolean;
+  humanModified: boolean;
+  approved: boolean;
+
+  reviewNotes?: string | null;
 };
 
-/* Phase order is captured once to ensure consistent iteration semantics. */
-const PHASE_ORDER = Object.keys(methodology);
+/* ------------------------------------------------------------------ */
+/* Methodology definition (UPDATED to the new 5-step workflow)         */
+/* ------------------------------------------------------------------ */
+/**
+ * IMPORTANT:
+ * - Phase order is the global order.
+ * - Step ordering is encoded by stepNumber within each phase.
+ * - These constants should match the rows you create during project init.
+ */
+export const methodology: Record<
+  number,
+  { stepNumber: number; stepName: string }[]
+> = {
+  1: [
+    { stepNumber: 1, stepName: "Segment Text" },
+    { stepNumber: 2, stepName: "Extract Rules" },
+    { stepNumber: 3, stepName: "Detect Conflicts" },
+  ],
+  2: [
+    { stepNumber: 4, stepName: "Create Data Model" },
+    { stepNumber: 5, stepName: "Generate Business Rules" },
+  ],
+};
+
+const PHASE_ORDER = Object.keys(methodology)
+  .map((x) => Number(x))
+  .sort((a, b) => a - b);
 
 /* ------------------------------------------------------------------ */
 /* stepIterator                                                        */
 /* ------------------------------------------------------------------ */
-/*  Purpose:                                                          
-      - Provide a generator over the full methodology in global order. 
-    Why a generator:
-      - Avoid materializing arrays for large structures.
-      - Enables single-pass scans (e.g., gating via approvals).        */
+/**
+ * Provides a generator over the full methodology in global order.
+ * This is used for:
+ * - gated navigation (all prerequisites must be approved)
+ * - deterministic next-step advancement
+ */
 function* stepIterator() {
   for (const phase of PHASE_ORDER) {
-    for (const step of methodology[phase]) {
-      yield { phase, step };
+    for (const { stepNumber, stepName } of methodology[phase]) {
+      yield { phase, stepNumber, stepName };
     }
   }
 }
 
 /* ------------------------------------------------------------------ */
+/* Helper: canonical key for store lookup                              */
+/* ------------------------------------------------------------------ */
+/**
+ * Store key matches DB identity shape (phase:int + stepNumber:int).
+ * This avoids brittle string-based identifiers ("Preparation", "Segment Text")
+ * and aligns with @@unique([projectId, phase, stepNumber]).
+ */
+const stepKey = (phase: number, stepNumber: number) => `${phase}-${stepNumber}`;
+
+/* ------------------------------------------------------------------ */
 /* WizardState interface                                               */
 /* ------------------------------------------------------------------ */
-/*  Describes the shape of the Zustand store and the domain actions.   */
-/*  Notes:                                                            
-      - `steps` is a sparse, normalized map keyed by `${phase}-${step}`.
-      - `canNavigateTo` enforces linear progression (approval-gated). 
-      - `setStepContent` is the canonical mutation for step data.      
-      - `approveStep` flips approval and triggers advancement.         */
 interface WizardState {
   projectId: number | null;
   projectName: string | null;
 
-  currentPhase: string;
-  currentStep: string;
+  // Cursor uses DB identifiers now
+  currentPhase: number; // 1|2
+  currentStepNumber: number; // 1..5
 
-  steps: Record<string, Step>;
+  // Steps indexed by `${phase}-${stepNumber}`
+  steps: Record<string, DBStep>;
 
+  // identity
   setProjectId: (id: number) => void;
   setProjectName: (name: string) => void;
 
-  canNavigateTo: (phase: string, step: string) => boolean;
-  setCurrentStep: (phase: string, step: string) => void;
+  // navigation
+  canNavigateTo: (phase: number, stepNumber: number) => boolean;
+  setCurrentStep: (phase: number, stepNumber: number) => void;
 
-  setStepContent: (
-    phase: string,
-    stepName: string,
-    content: JsonValue,
-    input?: string,
-    output?: string,
-    approved?: boolean
+  // data mutations
+  /**
+   * Hydrate from DB:
+   * - This is the preferred way after selecting a project.
+   * - It overwrites/merges steps by canonical key.
+   */
+  setStepsFromDB: (steps: DBStep[]) => void;
+
+  /**
+   * Upsert a step payload by (phase, stepNumber).
+   * - Use this after LLM processing or user edits.
+   */
+  setStepData: (
+    phase: number,
+    stepNumber: number,
+    patch: Partial<Omit<DBStep, "projectId" | "phase" | "stepNumber">>
   ) => void;
 
-  approveStep: (phase: string, stepName: string) => Promise<void>;
+  /**
+   * Approval marks the step as approved and advances to the next step.
+   * NOTE: In the new architecture, approval should ideally be persisted
+   * server-side as well; client-side approval is kept for UI continuity.
+   */
+  approveStep: (phase: number, stepNumber: number) => Promise<void>;
+
   nextStep: () => void;
+
+  /**
+   * Effective output rule:
+   * - If approved and humanModified and humanOutput exists -> humanOutput
+   * - Else if approved -> llmOutput
+   * - Else null
+   */
+  getEffectiveOutput: (phase: number, stepNumber: number) => any;
+
+  /**
+   * Convenience: return UI display label like "1. Segment Text"
+   */
+  getStepDisplayName: (phase: number, stepNumber: number) => string;
 }
 
 /* ------------------------------------------------------------------ */
 /* useWizardStore (Zustand + persist)                                  */
 /* ------------------------------------------------------------------ */
-/*  Responsibilities:                                                  
-      - Initialize and expose wizard state and operations.             
-      - Apply persistence for cross-session continuity of project ID/Name.
-    Persistence Strategy:
-      - `partialize` limits storage to project identity only, avoiding
-        large or sensitive step payloads in local storage.              */
 export const useWizardStore = create(
   persist<WizardState>(
     (set, get) => ({
@@ -125,8 +176,9 @@ export const useWizardStore = create(
       projectId: null,
       projectName: null,
 
-      currentPhase: "Preparation",
-      currentStep: "Segment Text",
+      currentPhase: 1,
+      currentStepNumber: 1,
+
       steps: {},
 
       /* ---------- Identity Mutations ---------- */
@@ -134,96 +186,115 @@ export const useWizardStore = create(
       setProjectName: (name) => set({ projectName: name }),
 
       /* ------------------------------------------------------------------ */
-      /* canNavigateTo                                                      */
+      /* canNavigateTo (approval-gated)                                      */
       /* ------------------------------------------------------------------ */
-      /*  Rule:                                                             *
-       *    - Navigation is strictly linear in methodology order.           *
-       *    - A user can navigate to a target (phase, step) iff every       *
-       *      preceding step in the global order is approved.               *
-       *  Implementation:                                                   *
-       *    - Iterate from the start; stop on the target or the first       *
-       *      unapproved step.                                              *
-       *  Returns:                                                          *
-       *    - true  -> target reached before encountering unapproved step.  *
-       *    - false -> encountered an unapproved prerequisite first.        */
-      canNavigateTo: (phase, step) => {
+      canNavigateTo: (phase, stepNumber) => {
         const { steps } = get();
-        for (const { phase: p, step: s } of stepIterator()) {
-          if (p === phase && s === step) return true;
-          const key = `${p}-${s}`;
+
+        // First step is always reachable
+        if (phase === 1 && stepNumber === 1) return true;
+
+        for (const it of stepIterator()) {
+          // If we've reached the target, all prerequisites are satisfied
+          if (it.phase === phase && it.stepNumber === stepNumber) return true;
+
+          const key = stepKey(it.phase, it.stepNumber);
           if (!steps[key]?.approved) return false;
         }
+
+        // If target not found in methodology (invalid), deny
         return false;
       },
 
       /* ------------------------------------------------------------------ */
-      /* setCurrentStep                                                     */
+      /* setCurrentStep                                                      */
       /* ------------------------------------------------------------------ */
-      /*  Behavior:
-       *    - Moves the cursor iff policy (`canNavigateTo`) allows it.
-       *  Rationale:
-       *    - Centralized guard prevents UI components from bypassing
-       *      progression policy.                                           */
-      setCurrentStep: (phase, step) => {
-        if (get().canNavigateTo(phase, step)) {
-          set({ currentPhase: phase, currentStep: step });
+      setCurrentStep: (phase, stepNumber) => {
+        if (get().canNavigateTo(phase, stepNumber)) {
+          set({ currentPhase: phase, currentStepNumber: stepNumber });
         }
       },
 
       /* ------------------------------------------------------------------ */
-      /* setStepContent                                                     */
+      /* setStepsFromDB                                                      */
       /* ------------------------------------------------------------------ */
-      /*  Purpose:
-       *    - Upsert step data and (optionally) approval status.
-       *  Notes:
-       *    - Uses normalized key `${phase}-${stepName}`.
-       *    - Associates the step with current `projectId` for tracing.
-       *    - `approved` defaults to false to prevent accidental promotion. */
-      setStepContent: (
-        phase,
-        stepName,
-        content,
-        input,
-        output,
-        approved // <-- note: no default here in the signature
-      ) =>
+      setStepsFromDB: (dbSteps) =>
         set((state) => {
-          const key = `${phase}-${stepName}`;
+          const merged: Record<string, DBStep> = { ...state.steps };
+
+          for (const s of dbSteps) {
+            const key = stepKey(s.phase, s.stepNumber);
+            merged[key] = {
+              // ensure required fields exist, even if backend omits optional ones
+              projectId: s.projectId ?? state.projectId ?? 0,
+              phase: s.phase,
+              stepNumber: s.stepNumber,
+              stepName: s.stepName,
+
+              input: s.input ?? {},
+              llmOutput: s.llmOutput ?? {},
+              humanOutput: s.humanOutput ?? null,
+
+              confidenceScore: s.confidenceScore ?? null,
+              schemaValid: Boolean(s.schemaValid),
+              humanModified: Boolean(s.humanModified),
+              approved: Boolean(s.approved),
+
+              reviewNotes: s.reviewNotes ?? null,
+              id: s.id,
+            };
+          }
+
+          return { steps: merged };
+        }),
+
+      /* ------------------------------------------------------------------ */
+      /* setStepData (upsert patch by canonical key)                          */
+      /* ------------------------------------------------------------------ */
+      setStepData: (phase, stepNumber, patch) =>
+        set((state) => {
+          const key = stepKey(phase, stepNumber);
           const prev = state.steps[key];
 
-          // Preserve previous approval if caller doesn't provide one
-          const nextApproved =
-            approved !== undefined ? approved : prev?.approved ?? false;
+          const phaseSteps = methodology[phase] ?? [];
+          const def = phaseSteps.find((x) => x.stepNumber === stepNumber);
+
+          const base: DBStep = prev ?? {
+            projectId: state.projectId ?? 0,
+            phase,
+            stepNumber,
+            stepName: def?.stepName ?? `Step ${stepNumber}`,
+            input: {},
+            llmOutput: {},
+            humanOutput: null,
+            confidenceScore: null,
+            schemaValid: false,
+            humanModified: false,
+            approved: false,
+            reviewNotes: null,
+          };
 
           return {
             steps: {
               ...state.steps,
               [key]: {
-                // keep prior record fields unless explicitly overwritten
-                ...prev,
+                ...base,
+                ...patch,
+                // Never allow phase/stepNumber drift through patch
                 phase,
-                stepName,
-                projectId: state.projectId!,
-                content,
-                input,
-                output,
-                approved: nextApproved,
+                stepNumber,
+                projectId: base.projectId,
               },
             },
           };
         }),
 
       /* ------------------------------------------------------------------ */
-      /* approveStep                                                        */
+      /* approveStep                                                         */
       /* ------------------------------------------------------------------ */
-      /*  Behavior:
-       *    - Marks a step as approved in the store.
-       *    - Immediately advances to the next logical step via `nextStep`.
-       *  Async signature:
-       *    - Kept async for future-proofing (e.g., server ack) even though
-       *      it currently operates synchronously on the client state.      */
-      approveStep: async (phase, stepName) => {
-        const key = `${phase}-${stepName}`;
+      approveStep: async (phase, stepNumber) => {
+        const key = stepKey(phase, stepNumber);
+
         set((state) => ({
           steps: {
             ...state.steps,
@@ -233,62 +304,87 @@ export const useWizardStore = create(
             },
           },
         }));
+
         get().nextStep();
       },
 
       /* ------------------------------------------------------------------ */
-      /* nextStep                                                           */
+      /* nextStep                                                            */
       /* ------------------------------------------------------------------ */
-      /*  Algorithm:
-       *    1) Iterate the global methodology order using `stepIterator`.
-       *    2) Set a flag once the current cursor is encountered.
-       *    3) The very next item after the current cursor is the target.
-       *    4) If the next step has no record yet, seed it with the previous
-       *       step's content (content carry-forward for continuity).
-       *    5) Update the cursor via `setCurrentStep`.
-       *    6) If iteration completes, we are at the end of the methodology.
-       *  Notes:
-       *    - Carry-forward simplifies UX when subsequent steps build on prior
-       *      outputs (can be overridden later by actual LLM/API results).   */
       nextStep: () => {
         const {
           currentPhase,
-          currentStep,
+          currentStepNumber,
           steps,
           setCurrentStep,
-          setStepContent,
+          setStepData,
         } = get();
 
         let advance = false;
-        for (const { phase, step } of stepIterator()) {
+
+        for (const it of stepIterator()) {
           if (!advance) {
-            if (phase === currentPhase && step === currentStep) advance = true;
+            if (
+              it.phase === currentPhase &&
+              it.stepNumber === currentStepNumber
+            ) {
+              advance = true;
+            }
             continue;
           }
 
-          const nextKey = `${phase}-${step}`;
-          const prevKey = `${currentPhase}-${currentStep}`;
+          const nextKey = stepKey(it.phase, it.stepNumber);
 
+          // Seed an empty record if missing (do NOT carry-forward LLM output automatically in the new model)
+          // Rationale: downstream steps should rely on effective approved output via explicit loader logic,
+          // not implicit state copying, to preserve auditability.
           if (!steps[nextKey]) {
-            setStepContent(phase, step, steps[prevKey]?.content ?? null);
+            setStepData(it.phase, it.stepNumber, {
+              stepName: it.stepName,
+              input: {},
+              llmOutput: {},
+              humanOutput: null,
+              schemaValid: false,
+              humanModified: false,
+              approved: false,
+              reviewNotes: null,
+            });
           }
 
-          setCurrentStep(phase, step);
+          setCurrentStep(it.phase, it.stepNumber);
           return;
         }
 
-        console.log("🚩  End of methodology reached.");
+        console.log("🚩 End of methodology reached.");
+      },
+
+      /* ------------------------------------------------------------------ */
+      /* getEffectiveOutput                                                  */
+      /* ------------------------------------------------------------------ */
+      getEffectiveOutput: (phase, stepNumber) => {
+        const key = stepKey(phase, stepNumber);
+        const s = get().steps[key];
+        if (!s || !s.approved) return null;
+
+        if (s.humanModified && s.humanOutput != null) return s.humanOutput;
+        return s.llmOutput;
+      },
+
+      /* ------------------------------------------------------------------ */
+      /* getStepDisplayName                                                  */
+      /* ------------------------------------------------------------------ */
+      getStepDisplayName: (phase, stepNumber) => {
+        const key = stepKey(phase, stepNumber);
+        const s = get().steps[key];
+        const name =
+          s?.stepName ??
+          methodology[phase]?.find((x) => x.stepNumber === stepNumber)
+            ?.stepName ??
+          "";
+        return `${stepNumber}. ${name || `Step ${stepNumber}`}`;
       },
     }),
     {
-      /* ------------------------------------------------------------------ */
-      /* Persistence configuration                                          */
-      /* ------------------------------------------------------------------ */
-      /*  Storage key: "wizard-storage"                                     *
-       *  partialize:
-       *    - Persist only project identity to avoid large local payloads    *
-       *      and reduce privacy risk; step data is expected to be fetched   *
-       *      from the server per project selection.                         */
       name: "wizard-storage",
       partialize: (state) => ({
         projectId: state.projectId,
@@ -297,3 +393,26 @@ export const useWizardStore = create(
     }
   )
 );
+
+/* ------------------------------------------------------------------ */
+/* Notes for integrating with existing UI code                         */
+/* ------------------------------------------------------------------ */
+/**
+ * Your existing UI components likely still use string phases/steps:
+ *   - currentPhase: "Preparation"
+ *   - currentStep: "Segment Text"
+ * and keys like: `${phase}-${stepName}`
+ *
+ * With this updated store:
+ *   - currentPhase is number (1|2)
+ *   - currentStepNumber is number
+ *   - step key is `${phase}-${stepNumber}`
+ *
+ * Therefore, update UI to call:
+ *   setCurrentStep(1, 1)
+ * and to render labels using:
+ *   getStepDisplayName(phase, stepNumber)
+ *
+ * This change is essential to align the UI with the DB's unique key
+ * (projectId, phase, stepNumber).
+ */

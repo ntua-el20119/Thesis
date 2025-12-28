@@ -123,20 +123,38 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
 exports.Prisma.ProjectScalarFieldEnum = {
   id: 'id',
   name: 'name',
-  createdAt: 'createdAt'
+  description: 'description',
+  legalText: 'legalText',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.MethodologyStepScalarFieldEnum = {
   id: 'id',
   projectId: 'projectId',
   phase: 'phase',
+  stepNumber: 'stepNumber',
   stepName: 'stepName',
   input: 'input',
-  output: 'output',
-  content: 'content',
+  llmOutput: 'llmOutput',
+  humanOutput: 'humanOutput',
+  confidenceScore: 'confidenceScore',
+  schemaValid: 'schemaValid',
+  humanModified: 'humanModified',
   approved: 'approved',
+  reviewNotes: 'reviewNotes',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.LLMProviderScalarFieldEnum = {
+  id: 'id',
+  stepId: 'stepId',
+  provider: 'provider',
+  model: 'model',
+  apiCost: 'apiCost',
+  latencyMs: 'latencyMs'
 };
 
 exports.Prisma.SortOrder = {
@@ -148,9 +166,19 @@ exports.Prisma.JsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
 
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
+};
+
 exports.Prisma.QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
+};
+
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
 };
 
 exports.Prisma.JsonNullValueFilter = {
@@ -158,11 +186,16 @@ exports.Prisma.JsonNullValueFilter = {
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
 };
-
+exports.ProjectStatus = exports.$Enums.ProjectStatus = {
+  in_progress: 'in_progress',
+  completed: 'completed',
+  failed: 'failed'
+};
 
 exports.Prisma.ModelName = {
   Project: 'Project',
-  MethodologyStep: 'MethodologyStep'
+  MethodologyStep: 'MethodologyStep',
+  LLMProvider: 'LLMProvider'
 };
 
 /**

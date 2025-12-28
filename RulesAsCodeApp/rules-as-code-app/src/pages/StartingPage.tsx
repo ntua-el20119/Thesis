@@ -99,16 +99,10 @@ export default function StartingPage({
                         {phase}
                       </td>
                       <td className="px-5 py-4 text-slate-300 text-sm leading-relaxed">
-                        {phase === "Preparation" &&
-                          "Analyse and segment the legal text into coherent units, identify scope and assumptions, and prepare it for downstream formalisation."}
-                        {phase === "Analysis" &&
-                          "Extract legal entities, conditions, parameters and decision points. Resolve ambiguity and make implicit logic explicit."}
-                        {phase === "Implementation" &&
-                          "Translate the analysed rules into a formal or executable representation (e.g. DSL, logic program, or code artefact)."}
-                        {phase === "Testing" &&
-                          "Validate the encoded rules against test scenarios, edge cases, and reference interpretations to ensure correctness and consistency."}
-                        {phase === "Documentation" &&
-                          "Produce technical and legal documentation that links formal rules back to their sources, ensuring traceability and auditability."}
+                        {phase === "Phase 1" &&
+                          "Segment the legal text into coherent, traceable units and extract core legal rules in a structured form (entities, conditions, outcomes). Identify interpretive issues early to support downstream formalisation."}
+                        {phase === "Phase 2" &&
+                          "Resolve detected conflicts and ambiguities into actionable outcomes, derive a data model (JSON schema) for the domain entities, and generate implementation-ready business rules that preserve traceability to the source text."}
                       </td>
                     </tr>
                   ))}
