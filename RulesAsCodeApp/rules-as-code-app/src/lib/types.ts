@@ -33,6 +33,7 @@ export type Step = {
   input?: string; // textarea string (NOT the DB JSON input)
   output?: string; // textarea/preview string
 
+  confidenceScore?: number | null;
   approved: boolean;
 };
 
@@ -50,7 +51,8 @@ export interface StepEditorProps {
     stepName: string,
     content: JsonValue,
     input?: string,
-    output?: string
+    output?: string,
+    confidenceScore?: number | null
   ) => void;
 
   onApprove: (

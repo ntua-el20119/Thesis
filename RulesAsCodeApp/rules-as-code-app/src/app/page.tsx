@@ -81,9 +81,8 @@ export default function Home() {
             : activeStep.input && Object.keys(activeStep.input).length > 0
             ? JSON.stringify(activeStep.input, null, 2)
             : "",
-
         output: effective == null ? "" : JSON.stringify(effective, null, 2),
-
+        confidenceScore: activeStep.confidenceScore,
         approved: activeStep.approved,
       };
     }
@@ -96,6 +95,7 @@ export default function Home() {
       content: {},
       input: "",
       output: "",
+      confidenceScore: null,
       approved: false,
     };
   }, [activeStep, getEffectiveOutput, projectId]);
@@ -234,16 +234,19 @@ export default function Home() {
             stepName: string,
             content: any,
             input?: string,
-            output?: string
+            output?: string,
+            confidenceScore?: number | null
           ) => {
             const phaseInt = Number(phase);
+            console.log("[DEBUG] page.tsx onEdit called:", { phase, stepNumber, output, inputLength: input?.length });
 
             setStepData(phaseInt, stepNumber, {
-              stepName, // ✅ κράτα και το stepName
+              stepName, 
               llmOutput: content ?? {},
               input: input && input.length > 0 ? input : null,
               humanOutput: output ? { text: output } : null,
               humanModified: Boolean(output),
+              confidenceScore: confidenceScore,
             });
           }}
           onApprove={async (

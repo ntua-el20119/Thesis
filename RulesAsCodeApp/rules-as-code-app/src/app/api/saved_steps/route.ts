@@ -25,8 +25,14 @@ export async function GET(req: NextRequest) {
       schemaValid: true,
       humanModified: true,
       approved: true,
+      confidenceScore: true,
     },
   });
 
-  return NextResponse.json(steps);
+  const serialized = steps.map((s) => ({
+    ...s,
+    confidenceScore: s.confidenceScore ? Number(s.confidenceScore) : null,
+  }));
+
+  return NextResponse.json(serialized);
 }

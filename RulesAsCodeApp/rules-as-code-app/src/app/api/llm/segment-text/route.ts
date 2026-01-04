@@ -149,6 +149,7 @@ Now process the legal text provided above.
       temperature: 0.3,
     });
 
+
     const { ok: schemaValid, confidence } = isValidSegmentationPayload(parsed);
 
     // Persist according to new DB schema:
@@ -189,7 +190,8 @@ Now process the legal text provided above.
       },
     });
 
-    return NextResponse.json(parsed, { status: 200 });
+    const responsePayload = JSON.parse(JSON.stringify(parsed));
+    return NextResponse.json(responsePayload, { status: 200 });
   } catch (error: any) {
     if (error instanceof LlmApiError) {
       return NextResponse.json(
@@ -204,3 +206,4 @@ Now process the legal text provided above.
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+

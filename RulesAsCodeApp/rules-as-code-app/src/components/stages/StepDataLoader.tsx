@@ -2,100 +2,59 @@
 
 import { useWizardStore } from "@/lib/store";
 
-/**
- * StepDataLoader.ts (updated)
- * -----------------------------------------------------------------------------
- * Unified interface for:
- *   - reading current step
- *   - reading previous step (optional)
- *   - computing a canonical initialInput
- *
- * RULE (approval gate):
- *   - If previous step exists, we ONLY use its output if it is APPROVED.
- *     Otherwise, initialInput falls back to this step's saved input (if any).
- *
- * IMPORTANT UPDATE:
- * - In the new DB schema, "input" is stored as JSON, typically:
- *     input: { text: "<plain text>" }
- * - Therefore, the loader must "unwrap" that JSON and return a readable string
- *   for UI display (textarea expects string).
- */
-
 export interface StepDataLoaderResult {
   phase: string;
   stepName: string;
   content: any;
-
-  // NOTE: these may not always be plain strings anymore (DB stores JSON),
-  // but we keep them as-is for downstream use. initialInput is the readable string.
   input?: any;
   output?: string;
   approved?: boolean;
-
   projectId: number | null;
-
   previousStep?: {
     input?: any;
     output?: string;
     content?: any;
     approved?: boolean;
   };
-
-  /**
-   * Standard initial input rules:
-   * 1. If previousStep exists AND is approved AND previousStep.output exists → use it.
-   * 2. Else if this step.input exists → use the readable unwrapped input text.
-   * 3. Else → "".
-   */
   initialInput: string;
-
-  /**
-   * Whether the step has structured LLM content:
-   * i.e. content.result exists and is an object.
-   */
   hasLlmContent: boolean;
 }
 
 /**
  * unwrapInputText
  * -----------------------------------------------------------------------------
- * Converts stored JSON input (e.g., { text: "..." }) to a readable string.
- *
- * Handles:
- * - Correct form: { text: "plain..." }
- * - Legacy/buggy form: { text: "{ \"text\": \"plain...\" }" } (double-wrapped)
- * - Legacy/buggy form: "{\"text\":\"plain...\"}" (stringified JSON)
- * - Plain string input
+ * Extracts text from the stored input object.
+ * Expected format: { text: "..." } -> "..."
+ * If input is already a string, return it.
  */
-function unwrapInputText(input: unknown): string {
-  if (input == null) return "";
-
-  // Case A: plain string or JSON-string
-  if (typeof input === "string") {
-    const s = input.trim();
-
-    // If it looks like JSON, try parsing and unwrap recursively
-    if (
-      (s.startsWith("{") && s.endsWith("}")) ||
-      (s.startsWith("[") && s.endsWith("]"))
-    ) {
-      try {
-        return unwrapInputText(JSON.parse(s));
-      } catch {
-        // Not valid JSON; treat as plain text
-        return input;
-      }
-    }
-
-    return input;
+export function unwrapInputText(input: any): string {
+  if (input === null || input === undefined) return "";
+  
+  // 1. If object with .text, return it
+  if (typeof input === "object" && "text" in input) {
+    return String(input.text);
   }
 
-  // Case B: object form, likely { text: ... }
-  if (typeof input === "object") {
-    const obj = input as Record<string, unknown>;
-    if ("text" in obj) {
-      return unwrapInputText(obj.text);
+  // 2. If it's a string, it might be the stringified wrapper from page.tsx props
+  if (typeof input === "string") {
+    const trimmed = input.trim();
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed && typeof parsed === "object") {
+          // If it's a valid wrapper, return content
+          if ("text" in parsed) {
+            return String(parsed.text);
+          }
+          // If it's a bare object without .text (likely corrupted/raw data), return empty
+          // This allows the component to fall back to the clean LLM readableOutput
+          return "";
+        }
+      } catch {
+        // Not JSON, return as plain text
+      }
     }
+    return input;
   }
 
   return "";
@@ -108,11 +67,53 @@ export function useStepDataLoader(
   const {
     phase = "",
     stepName = "",
-    content = {},
-    input,
-    output,
+    // DBStep fields
+    llmOutput: rawLlmOutput,
+    humanOutput: rawHumanOutput,
+    humanModified,
+    
+    // Legacy/Component fields
+    content: rawContent, 
+    input, 
+    output: rawOutput, 
     approved,
   } = step ?? {};
+
+  // Robust iterative parser: handle double/triple encoded JSON strings
+  const iterativeParse = (val: any): any => {
+    let current = val;
+    // Try parsing up to 3 times to unwrap nested stringification
+    for (let i = 0; i < 3; i++) {
+        if (typeof current === 'string') {
+            try {
+                const parsed = JSON.parse(current);
+                current = parsed;
+            } catch {
+                // If parse fails, it's just a string
+                break;
+            }
+        } else {
+            // Not a string, strict object/null/number
+            break;
+        }
+    }
+    return current;
+  };
+
+  const llmOutput = iterativeParse(rawLlmOutput);
+  const humanOutput = iterativeParse(rawHumanOutput);
+  const content = iterativeParse(rawContent) ?? llmOutput ?? {};
+
+  if (stepName === "Segment Text" || stepName === "Extract Rules") {
+    console.log(`[DEBUG] SDL ${stepName} Input values:`, { llmOutput, humanOutput, humanModified, rawOutput, rawContent });
+  }
+
+  // Output calculation:
+  // We ignore 'rawOutput' (passed from page.tsx) because page.tsx blindly stringifies the object.
+  // Instead, we always re-derive the clean string from the structured source of truth.
+  const output = unwrapInputText(
+    (humanModified && humanOutput) ? humanOutput : llmOutput
+  );
 
   const projectId = useWizardStore((s) => s.projectId);
   const steps = useWizardStore((s) => s.steps);
@@ -125,8 +126,12 @@ export function useStepDataLoader(
   const previousStep = previousRaw
     ? {
         input: previousRaw.input,
-        output: previousRaw.output,
-        content: previousRaw.content,
+        output: unwrapInputText(
+          previousRaw.humanModified && previousRaw.humanOutput
+            ? previousRaw.humanOutput
+            : previousRaw.llmOutput
+        ),
+        content: previousRaw.llmOutput,
         approved: previousRaw.approved,
       }
     : undefined;

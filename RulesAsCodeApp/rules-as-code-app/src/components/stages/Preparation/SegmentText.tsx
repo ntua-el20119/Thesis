@@ -20,6 +20,8 @@ export default function SegmentText({
   onEdit,
   onApprove,
 }: StepEditorProps) {
+  if (!step) return null;
+
   // Step 1 → no previous step
   const io = useStepDataLoader(step, null);
 
@@ -58,6 +60,21 @@ export default function SegmentText({
 
   const readableOutput = hasLlmResponse ? buildReadable(content) : "";
 
+  const [outputValue, setOutputValue] = useState(
+    (typeof persistedOutput === "string" && persistedOutput.trim().length > 0)
+      ? persistedOutput
+      : readableOutput
+  );
+
+  useEffect(() => {
+    setOutputValue(
+      (typeof persistedOutput === "string" && persistedOutput.trim().length > 0)
+        ? persistedOutput
+        : readableOutput
+    );
+  }, [persistedOutput, readableOutput]); 
+  // Dependency on readableOutput handles re-renders when LLM content updates
+
   const handleProcessText = async () => {
     if (!projectId) {
       alert("No project selected.");
@@ -72,6 +89,7 @@ export default function SegmentText({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId, text: inputText }),
+        cache: "no-store",
       });
 
       if (!response.ok) {
@@ -82,14 +100,20 @@ export default function SegmentText({
       const data = await response.json();
       const outputText = buildReadable(data);
 
-      // Update store (and UI) with the new draft result
+      const confidence = typeof data?.confidence === 'number' ? data.confidence : null;
+
+      // Update local UI immediately
+      setOutputValue(outputText);
+
+      // Persist to store (and DB via onEdit)
       onEdit(
         Number(phase),
         step.stepNumber,
         stepName,
         data,
         inputText,
-        outputText
+        outputText,
+        confidence
       );
     } catch (err) {
       setProcessError(err instanceof Error ? err.message : "Unknown error");
@@ -121,7 +145,7 @@ export default function SegmentText({
           stepNumber: step.stepNumber,
           stepName,
           input: inputText,
-          output: finalOutput,
+          humanOutput: { text: finalOutput }, // Fix: Send humanOutput for persistence
           content: step?.content,
         }),
       });
@@ -140,10 +164,6 @@ export default function SegmentText({
   };
 
   const showOutput = hasLlmResponse || !!step?.output;
-  const outputValue =
-    typeof step?.output === "string" && step.output.trim().length > 0
-      ? step.output
-      : readableOutput;
 
   return (
     <div>
@@ -170,28 +190,27 @@ export default function SegmentText({
           rows: 25,
         }}
         output={
-          showOutput
-            ? {
-                title: "LLM Response",
-                description: "Segmented legal sections produced by the model.",
-                value: outputValue,
-                onChange: (value: string) =>
-                  onEdit(
-                    Number(phase),
-                    step.stepNumber,
-                    stepName,
-                    content,
-                    inputText,
-                    value
-                  ),
-                onApprove: handleApprove,
-                isApproving,
-                rows: 25,
-              }
-            : undefined
+          showOutput ? {
+            title: "LLM Response",
+            description: "Segmented text. You can edit invalid segments.",
+            value: outputValue,
+            onChange: setOutputValue, // Local state only
+            onApprove: handleApprove,
+            onReset: () => {
+               // Reset by sending undefined output to onEdit (clearing DB)
+               // AND resetting local state to original readableOutput
+               setOutputValue(readableOutput);
+               onEdit(Number(phase), step.stepNumber, stepName, content, inputText, undefined);
+            },
+            isApproving: false,
+            confidence: typeof step?.confidenceScore === 'number' ? step.confidenceScore : null,
+          } : undefined
         }
       />
 
+      {processError && (
+        <p className="mt-2 text-sm text-red-500">{processError}</p>
+      )}
       {processError && (
         <p className="mt-2 text-sm text-red-500">{processError}</p>
       )}

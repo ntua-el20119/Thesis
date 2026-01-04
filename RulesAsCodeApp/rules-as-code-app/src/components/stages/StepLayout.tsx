@@ -21,9 +21,11 @@ interface StepOutputConfig {
   onChange?: (value: string) => void;
   approveLabel?: string;
   onApprove?: () => void;
+  onReset?: () => void; // New Reset Handler
   isApproving?: boolean;
   disabled?: boolean;
   rows?: number;
+  confidence?: number | null;
 }
 
 interface StepLayoutProps {
@@ -42,6 +44,7 @@ const Panel = ({
   footerLeft,
   footerRight,
   rows = 26,
+  confidence,
 }: {
   title: string;
   description?: React.ReactNode;
@@ -52,6 +55,7 @@ const Panel = ({
   footerLeft: React.ReactNode;
   footerRight: React.ReactNode;
   rows?: number;
+  confidence?: number | null;
 }) => {
   const handleChange = onChange
     ? (e: React.ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)
@@ -61,12 +65,28 @@ const Panel = ({
     <section className="rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-sm shadow-sm flex flex-col h-full">
       {/* Header — matches StageNavigator phase header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-slate-800/80">
-        <div>
-          <h3 className="text-base font-semibold text-slate-100">{title}</h3>
-          {description && (
-            <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-              {description}
-            </p>
+        <div className="flex items-center justify-between w-full">
+          <div>
+            <h3 className="text-base font-semibold text-slate-100">{title}</h3>
+            {description && (
+              <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                {description}
+              </p>
+            )}
+          </div>
+          {confidence !== undefined && confidence !== null && (
+            <div
+              title={`Confidence Score: ${confidence}`}
+              className={`ml-3 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider border ${
+                confidence >= 0.8
+                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                  : confidence >= 0.5
+                  ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                  : "bg-red-500/10 text-red-400 border-red-500/20"
+              }`}
+            >
+              {(confidence * 100).toFixed(0)}% CONFIDENCE SCORE
+            </div>
           )}
         </div>
       </header>
@@ -164,11 +184,16 @@ export function StepLayout({ showOutput, input, output }: StepLayoutProps) {
           <Panel
             title={output.title ?? "Generated Output"}
             description={output.description}
+            confidence={output.confidence}
             value={output.value}
             onChange={output.onChange}
-            readOnly={!output.onChange}
-            placeholder={output.onChange ? "You can edit this result…" : ""}
-            footerLeft="Review and approve when ready"
+            readOnly={false}
+            placeholder="You can edit this result…"
+            footerLeft={
+              <div className="flex gap-2">
+                <span>Review and approve when ready</span>
+              </div>
+            }
             footerRight={
               output.onApprove && (
                 <button
