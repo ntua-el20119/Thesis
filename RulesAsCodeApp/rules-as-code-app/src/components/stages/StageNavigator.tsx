@@ -54,6 +54,9 @@ function isNewStepDefArray(list: unknown): list is NewStepDef[] {
 function phaseLabel(phaseKey: string) {
   // If phaseKey is numeric, render Phase N; else render as-is
   const asNum = Number(phaseKey);
+  if (asNum === 1) return "1. Analysis";
+  if (asNum === 2) return "2. Modeling";
+  
   return Number.isFinite(asNum) && phaseKey.trim() !== ""
     ? `Phase ${asNum}`
     : phaseKey;

@@ -13,7 +13,7 @@ interface Project {
 }
 
 function phaseLabel(phase: number) {
-  return phase === 1 ? "Phase 1" : "Phase 2";
+  return phase === 1 ? "Analysis" : "Modeling";
 }
 
 function stepLabel(stepNumber: number) {
@@ -49,6 +49,7 @@ export default function Home() {
   const [isApproving, setIsApproving] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [showLoad, setShowLoad] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
   const [newName, setNewName] = useState("");
   const [projects, setProjects] = useState<Project[]>([]);
 
@@ -131,7 +132,7 @@ export default function Home() {
 
   // --- Load projects list when modal opens
   useEffect(() => {
-    if (!showLoad) return;
+    if (!showLoad && !showDelete) return;
 
     const fetchProjects = async () => {
       try {
@@ -146,7 +147,38 @@ export default function Home() {
     };
 
     fetchProjects();
-  }, [showLoad]);
+  }, [showLoad, showDelete]);
+
+  // --- Delete project
+  const deleteProject = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+      return; 
+    }
+    // Note: The UI for confirmation is handled in StartingPage, but a safety check here is fine. 
+    // Actually, user requested a specific modal flow, so this alert might be redundant if StartingPage handles it, 
+    // but the request said "popup... warning...". I'll implement the backend call here.
+
+    try {
+      const res = await fetch(`/api/projects/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        alert("Failed to delete project.");
+        return;
+      }
+      // Refresh list
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+      // Close delete modal if open (handled via state in StartingPage usually, but we have showDelete here)
+      // Actually StartingPage receives showDelete/setShowDelete.
+      
+      // If the deleted project was active, we might want to reset? 
+      if (projectId === id) {
+          setProjectId(0); // Reset ID
+          setStarted(false);
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Error deleting project.");
+    }
+  };
 
   // --- Select project
   const selectProject = async (project: Project) => {
@@ -191,11 +223,14 @@ export default function Home() {
         setShowCreate={setShowCreate}
         showLoad={showLoad}
         setShowLoad={setShowLoad}
+        showDelete={showDelete}
+        setShowDelete={setShowDelete}
         newName={newName}
         setNewName={setNewName}
         projects={projects}
         submitCreate={submitCreate}
         selectProject={selectProject}
+        deleteProject={deleteProject}
       />
     );
   }
@@ -203,9 +238,24 @@ export default function Home() {
   // --- Active workspace
   return (
     <div className="container mx-auto p-4 text-white">
-      <h1 className="text-2xl font-bold mb-4">
-        Project ID: {projectId} | Name: {projectName ?? "Unnamed"}
-      </h1>
+      <div className="relative flex flex-col md:flex-row items-center justify-center mb-8 pt-4">
+        <button
+          onClick={() => {
+            setStarted(false);
+            setProjectId(0);
+          }}
+          className="md:absolute md:left-0 px-4 py-2 bg-gray-800/50 hover:bg-gray-700 rounded-lg text-gray-300 hover:text-white transition-all flex items-center gap-2 mb-4 md:mb-0 border border-gray-700"
+        >
+          <span>←</span> Back to Starting Page
+        </button>
+
+        <div className="text-center">
+          <div className="text-xs text-gray-500 font-mono mb-1">PROJECT ID: {projectId}</div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+             {projectName ?? "Unnamed Project"}
+          </h1>
+        </div>
+      </div>
 
       <StageNavigator
         steps={steps as any}

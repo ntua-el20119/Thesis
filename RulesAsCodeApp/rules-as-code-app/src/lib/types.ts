@@ -72,12 +72,12 @@ export type MethodologyStepDef = { stepNumber: number; stepName: string };
 export type Methodology = Record<string, MethodologyStepDef[]>;
 
 export const methodology: Methodology = {
-  "Phase 1": [
+  "Analysis": [
     { stepNumber: 1, stepName: "Segment Text" },
     { stepNumber: 2, stepName: "Extract Rules" },
     { stepNumber: 3, stepName: "Detect Conflicts" },
   ],
-  "Phase 2": [
+  "Modeling": [
     { stepNumber: 4, stepName: "Create Data Model" },
     { stepNumber: 5, stepName: "Generate Business Rules" },
   ],

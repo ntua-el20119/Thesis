@@ -1,5 +1,5 @@
 import React from "react";
-import SegmentText from "./Preparation/SegmentText";
+import SegmentText from "./Analysis/SegmentText";
 import ExtractRules from "./Analysis/ExtractRules";
 import DetectConflicts from "./Analysis/DetectConflicts";
 import CreateDataModel from "./Modeling/CreateDataModel";

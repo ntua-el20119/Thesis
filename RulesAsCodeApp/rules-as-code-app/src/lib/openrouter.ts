@@ -1,3 +1,5 @@
+import { jsonrepair } from "jsonrepair";
+
 // src/lib/openrouter.ts
 
 /**
@@ -90,7 +92,7 @@ export async function callOpenRouterJson(
 
   const data = await response.json();
   const rawText: string = data.choices?.[0]?.message?.content?.trim() || "";
-  console.log("LLM response:", rawText);
+  console.log("LLM response (truncated log):", rawText.slice(0, 500));
 
   let parsed: any;
 
@@ -104,13 +106,14 @@ export async function callOpenRouterJson(
     parsed = JSON.parse(cleaned);
   } catch {
     try {
-      // Step 2: repair newlines inside JSON string values and parse again
-      const repaired = rawText
+      // Step 2: attempt robust repair for truncated/malformed JSON using jsonrepair
+      // First clean fences just in case (jsonrepair might handle it but safer to strip markdown)
+      const cleaned = rawText
         .replace(/^```(?:json)?/i, "")
         .replace(/```$/, "")
-        .replace(/"(?:[^"\\]|\\.)*?"/gs, (m) => m.replace(/\n/g, "\\n"))
         .trim();
-
+        
+      const repaired = jsonrepair(cleaned);
       parsed = JSON.parse(repaired);
     } catch {
       console.warn(

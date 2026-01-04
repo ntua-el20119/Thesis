@@ -15,6 +15,8 @@ interface StartingPageProps {
   setShowCreate: (v: boolean) => void;
   showLoad: boolean;
   setShowLoad: (v: boolean) => void;
+  showDelete: boolean;
+  setShowDelete: (v: boolean) => void;
   newName: string;
   setNewName: (v: string) => void;
 
@@ -24,6 +26,7 @@ interface StartingPageProps {
   // actions (lifted from Home)
   submitCreate: () => Promise<void> | void;
   selectProject: (p: Project) => Promise<void> | void;
+  deleteProject: (id: number) => Promise<void> | void;
 }
 
 /**
@@ -34,17 +37,21 @@ interface StartingPageProps {
  * - Entry points for:
  *    * Creating a new project (modal with text input)
  *    * Loading an existing project (modal with selectable list)
+ *    * Deleting an existing project (modal with selectable list + warning)
  */
 export default function StartingPage({
   showCreate,
   setShowCreate,
   showLoad,
   setShowLoad,
+  showDelete,
+  setShowDelete,
   newName,
   setNewName,
   projects,
   submitCreate,
   selectProject,
+  deleteProject,
 }: StartingPageProps) {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex justify-center px-4 py-16 md:py-24">
@@ -99,10 +106,10 @@ export default function StartingPage({
                         {phase}
                       </td>
                       <td className="px-5 py-4 text-slate-300 text-sm leading-relaxed">
-                        {phase === "Phase 1" &&
-                          "Segment the legal text into coherent, traceable units and extract core legal rules in a structured form (entities, conditions, outcomes). Identify interpretive issues early to support downstream formalisation."}
-                        {phase === "Phase 2" &&
-                          "Resolve detected conflicts and ambiguities into actionable outcomes, derive a data model (JSON schema) for the domain entities, and generate implementation-ready business rules that preserve traceability to the source text."}
+                        {phase === "Analysis" &&
+                          "Process raw legal text, segment it into atomic units, and extract formal rules and entities (Persons, Organizations, etc.)."}
+                        {phase === "Modeling" &&
+                          "Detect conflicts, create data models, and generate executable business logic (Decision Tables) that preserve traceability to the source text."}
                       </td>
                     </tr>
                   ))}
@@ -133,6 +140,12 @@ export default function StartingPage({
                 className="inline-flex items-center justify-center rounded-full px-7 py-3 text-sm font-medium border border-slate-600 bg-slate-900 hover:bg-slate-800 text-slate-100 shadow-md shadow-slate-900/40 transition-colors"
               >
                 Load Existing Project
+              </button>
+              <button
+                onClick={() => setShowDelete(true)}
+                className="inline-flex items-center justify-center rounded-full px-7 py-3 text-sm font-medium border border-red-900/50 bg-red-950/20 hover:bg-red-900/40 text-red-200 shadow-md shadow-red-900/10 transition-colors"
+              >
+                Delete Project
               </button>
             </div>
           </section>
@@ -195,13 +208,13 @@ export default function StartingPage({
                   <button
                     className="w-full text-left px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-sm text-slate-100 transition-colors"
                     onClick={() => {
-                      console.log("[DEBUG] Load project button clicked:", {
-                        id: p.id,
-                        name: p.name,
-                        time: new Date().toISOString(),
-                      });
-                      selectProject(p);
-                    }}
+                        console.log("[DEBUG] Load project button clicked:", {
+                          id: p.id,
+                          name: p.name,
+                          time: new Date().toISOString(),
+                        });
+                        selectProject(p);
+                      }}
                   >
                     <span className="font-medium">{p.name}</span>
                   </button>
@@ -217,6 +230,54 @@ export default function StartingPage({
           <div className="flex justify-end pt-2">
             <button
               onClick={() => setShowLoad(false)}
+              className="px-4 py-2 text-sm rounded-full border border-slate-600 bg-slate-900 hover:bg-slate-800 text-slate-100"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal: Delete Project (controlled by showDelete) */}
+      <Modal open={showDelete} onClose={() => setShowDelete(false)}>
+        <div className="space-y-4">
+          <h2 className="text-lg md:text-xl font-semibold text-red-400">
+            Delete Project
+          </h2>
+          <p className="text-sm text-slate-400">
+            Select a project to <strong className="text-red-400">permanently delete</strong>. 
+            This action involves removing all associated data (steps, rules, models) and 
+            <strong className="text-red-400"> cannot be undone</strong>.
+          </p>
+
+          {projects.length ? (
+            <ul className="space-y-2 max-h-80 overflow-y-auto pr-1">
+              {projects.map((p) => (
+                <li key={p.id}>
+                  <button
+                    className="w-full text-left flex justify-between items-center px-4 py-2 rounded-lg bg-red-950/10 hover:bg-red-950/30 border border-red-900/30 text-sm text-slate-100 transition-colors group"
+                    onClick={() => {
+                      // We can implement a secondary confirm here or rely on the global one we put in page.tsx
+                      // User requested "a warning will be shown that will require the user to ensure he wants to delete..."
+                      // The global confirm() in page.tsx acts as this warning.
+                      deleteProject(p.id);
+                    }}
+                  >
+                    <span className="font-medium group-hover:text-red-200 transition-colors">{p.name}</span>
+                    <span className="text-xs text-red-500/60 uppercase font-semibold">Delete</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-slate-400">
+              No projects available to delete.
+            </p>
+          )}
+
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={() => setShowDelete(false)}
               className="px-4 py-2 text-sm rounded-full border border-slate-600 bg-slate-900 hover:bg-slate-800 text-slate-100"
             >
               Close

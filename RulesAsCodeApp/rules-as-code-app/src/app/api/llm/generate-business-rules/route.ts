@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { callOpenRouterJson, LlmApiError } from "@/lib/openrouter";
 
 interface GenBusinessRulesBody {
-  text: string; // Rules + Data Model
+  rules: string;
+  dataModel: string;
   projectId: number;
 }
 
@@ -12,54 +13,161 @@ const STEP_NUMBER = 5;
 const STEP_NAME = "Generate Business Rules";
 
 export async function POST(req: NextRequest) {
-  const { text, projectId }: GenBusinessRulesBody = await req.json();
+  const { rules, dataModel, projectId }: GenBusinessRulesBody = await req.json();
 
   if (!projectId || typeof projectId !== "number") {
     return NextResponse.json({ error: "Invalid projectId" }, { status: 400 });
   }
 
+  const combinedText = `
+### Extracted Rules (Step 2)
+${rules || "(No rules available)"}
+
+### Data Model (Step 4)
+${dataModel || "(No data model available)"}
+`.trim();
+
   const prompt = `
-# Prompt: Step 5 - Generate Business Rules
+# Prompt: Step 5 - Generate Business Rules and Tests
 
 ## Your Task
-Convert the extracted legal rules and the designed data model into formal implementation logic (Pseudo-code or Decision Tables).
+
+Transform IF-THEN rules into formal, executable business rule specifications that reference the data model. Generate test scenarios for validation.
 
 ## Instructions
-1. **Map Rules to Data**: Show how each legal rule checks the definition attributes from Step 4.
-2. **Logic Flow**: Write pseudo-code (IF/THEN/ELSE) for each major decision.
-3. **Decision Table**: Create a tabular representation for complex conditional logic.
 
-## Input Context
-${text}
+For each rule from Step 2:
+
+1. **Formalize conditions**:
+   - Use entity.property notation
+   - Apply appropriate operators
+   - Combine with logical operators (AND, OR)
+   - Reference data model properties
+
+2. **Specify actions**:
+   - Property assignments
+   - Status changes
+   - Calculations
+   - Procedures
+
+3. **Organize rules**:
+   - Assign priorities
+   - Group into categories
+   - Define dependencies
+
+4. **Generate tests**:
+   - Positive cases (should trigger)
+   - Negative cases (should NOT trigger)
+   - Edge cases (boundaries)
+
+## Input
+
+Data Model from Step 4 and Rules from Step 2:
+
+${combinedText}
 
 ## Required Output Format
-Respond with valid JSON:
+
+\`\`\`json
 {
   "result": {
-    "pseudoCode": [
+    "businessRules": [
       {
-        "name": "Check Application Validity",
-        "code": "IF Applicant.age >= 18 AND Application.isComplete THEN RETURN TRUE ELSE RETURN FALSE"
+        "id": "br-1",
+        "name": "Rule name",
+        "description": "What this rule does",
+        "conditions": [
+          {
+            "entity": "EntityName",
+            "property": "propertyName",
+            "operator": "equals|less_than|greater_than|contains|in",
+            "value": "comparison value",
+            "logicalOperator": "AND|OR"
+          }
+        ],
+        "actions": [
+          {
+            "type": "set_property|calculate|notify",
+            "entity": "EntityName",
+            "property": "propertyName",
+            "value": "new value or formula"
+          }
+        ],
+        "priority": 100,
+        "category": "CategoryName",
+        "sourceRule": "rule-1"
       }
     ],
-    "decisionTables": [
+    "ruleCategories": [
       {
-         "name": "Eligibility Matrix",
-         "rows": [
-            { "condition": "Age < 18", "result": "Reject" },
-            { "condition": "Age >= 18", "result": "Approve" }
-         ]
+        "name": "CategoryName",
+        "description": "Purpose of this category",
+        "rules": ["br-1", "br-2"]
+      }
+    ],
+    "dependencies": [
+      {
+        "ruleId": "br-2",
+        "dependsOn": ["br-1"],
+        "type": "prerequisite|sequence"
+      }
+    ],
+    "testScenarios": [
+      {
+        "id": "test-1",
+        "name": "Test scenario name",
+        "type": "positive|negative|edge",
+        "inputData": {
+          "EntityName": {
+            "property": "value"
+          }
+        },
+        "expectedOutput": {
+          "EntityName.property": "expected value"
+        },
+        "testedRules": ["br-1"]
       }
     ]
   },
-  "confidence": 0.95
+  "confidence": 0.90
 }
+\`\`\`
+
+## Operators
+
+**Comparison**: equals, not_equals, greater_than, less_than, greater_than_or_equal, less_than_or_equal
+
+**Collection**: in, not_in, contains, not_contains
+
+**Existence**: is_null, is_not_null
+
+**Logical**: AND, OR, NOT
+
+## Test Types
+
+**Positive**: Should trigger the rule
+**Negative**: Should NOT trigger the rule  
+**Edge**: Boundary conditions
+
+## Success Criteria
+
+Your output will be evaluated on: all rules formalized with data model references, operators appropriate for property types, actions specific and executable, and adequate test coverage.
+
+## Important Notes
+
+- Validate all entity/property references against data model
+- Use correct operators for data types
+- Include both positive and negative tests
+- Cover edge cases at thresholds
+- Set confidence below 0.8 if incomplete
+
+Now generate business rules and tests from the provided inputs.
 `;
 
   try {
     const { parsed } = await callOpenRouterJson({
       prompt,
-      maxTokens: 5000,
+      maxTokens: 50000,
       temperature: 0.1, 
     });
 
@@ -73,9 +181,8 @@ Respond with valid JSON:
       },
       update: {
         stepName: STEP_NAME,
-        input: { text },
+        input: { text: combinedText },
         llmOutput: parsed,
-        // llmOutput set above
         confidenceScore: parsed.confidence,
         schemaValid: true,
         humanModified: false,
@@ -85,9 +192,8 @@ Respond with valid JSON:
         phase: PHASE,
         stepNumber: STEP_NUMBER,
         stepName: STEP_NAME,
-        input: { text },
+        input: { text: combinedText },
         llmOutput: parsed,
-        // llmOutput set above
         confidenceScore: parsed.confidence,
         schemaValid: true,
         approved: false,

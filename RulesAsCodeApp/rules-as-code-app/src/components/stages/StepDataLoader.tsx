@@ -128,10 +128,10 @@ export function useStepDataLoader(
         input: previousRaw.input,
         output: unwrapInputText(
           previousRaw.humanModified && previousRaw.humanOutput
-            ? previousRaw.humanOutput
-            : previousRaw.llmOutput
+            ? iterativeParse(previousRaw.humanOutput)
+            : iterativeParse(previousRaw.llmOutput)
         ),
-        content: previousRaw.llmOutput,
+        content: iterativeParse(previousRaw.llmOutput),
         approved: previousRaw.approved,
       }
     : undefined;

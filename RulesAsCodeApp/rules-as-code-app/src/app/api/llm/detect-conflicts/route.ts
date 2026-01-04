@@ -19,37 +19,94 @@ export async function POST(req: NextRequest) {
   }
 
   const prompt = `
-# Prompt: Step 3 - Detect Conflicts
+# Prompt: Step 3 - Detect Conflicts 
 
 ## Your Task
-Analyze the following set of extracted legal rules and identify logical contradictions, ambiguities, or gaps.
+
+Identify contradictions, ambiguities, gaps, and implementation issues in the extracted rules and entities.
 
 ## Instructions
-1. **Compare** every rule against every other rule.
-2. **Identify Contradictions**: Where two rules prescribe opposite behaviors for the same condition.
-3. **Identify Ambiguities**: Where terms are used inconsistently.
-4. **Identify Gaps**: Where a condition is mentioned but not defined/handled.
 
-## Input Rules
+Analyze the entities and rules for:
+
+1. **Contradictions**: Rules that conflict with each other
+2. **Ambiguities**: Unclear or subjective terms
+3. **Gaps**: Missing information needed for implementation
+4. **Overlaps**: Redundant or duplicate provisions
+
+For each issue found:
+- Classify its type
+- Assess severity (high/medium/low)
+- Identify affected rules/entities
+- Propose practical resolution
+
+## Input
+
+Entities and rules from Step 2:
+
 ${text}
 
 ## Required Output Format
-Respond with valid JSON:
+
+\`\`\`json
 {
   "result": {
     "conflicts": [
       {
         "id": "conflict-1",
-        "ruleIds": ["rule-1", "rule-5"],
-        "type": "CONTRADICTION",
-        "description": "Rule 1 requires form A, but Rule 5 explicitly forbids form A for this category.",
-        "severity": "HIGH"
+        "type": "contradiction|ambiguity|gap|overlap",
+        "description": "Clear description of the issue",
+        "severity": "high|medium|low",
+        "affectedRules": ["rule-1", "rule-3"],
+        "affectedEntities": ["EntityName"],
+        "sourceText": "Relevant text showing the conflict",
+        "resolutionStrategy": "Specific, actionable resolution approach"
       }
-    ],
-    "analysisSummary": "..."
+    ]
   },
-  "confidence": 0.9
+  "confidence": 0.80
 }
+\`\`\`
+
+## Conflict Types
+
+**Contradiction**: Rules with conflicting requirements (Rule-1: IF income < 20000 THEN eligible = true; Rule-2: IF income < 25000 THEN eligible = false)
+
+**Ambiguity**: Undefined or subjective terms ("reasonable time period", "appropriate documentation", "qualifying institution")
+
+**Gap**: Missing necessary information (rule references "RegistrationDate" but no such entity exists; rule requires calculation but no formula provided)
+
+**Overlap**: Redundant provisions (two rules specify identical conditions and actions)
+
+## Severity Assessment
+
+**High**: Blocks implementation entirely
+**Medium**: Creates significant ambiguity
+**Low**: Minor clarification needed
+
+## Resolution Strategies
+
+**Parameterization**: Make configurable ("Create parameter 'review_period' (default: 30 days)")
+
+**Clarification**: Request expert input ("Requires legal clarification on threshold precedence")
+
+**Standard**: Apply standard definition ("Use ISO definition for 'business day'")
+
+**Human Review**: Flag for case-by-case ("Implement as human decision point with criteria")
+
+## Success Criteria
+
+Your output will be evaluated on identifying all significant conflicts, correctly assigning types, appropriately assessing severity, and providing specific, actionable resolutions.
+
+## Important Notes
+
+- Avoid false positives (valid alternatives are not contradictions)
+- Check cross-section issues, not just within sections
+- Provide concrete resolutions, not vague suggestions
+- Consider legal context before flagging
+- Set confidence below 0.8 if analysis incomplete
+
+Now analyze the entities and rules provided above.
 `;
 
   try {

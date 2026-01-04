@@ -82,26 +82,25 @@ export default function ExtractRules({
     let output = "";
 
     if (Array.isArray(entities) && entities.length > 0) {
-      output += "=== ENTITIES ===\n\n";
+      output += "Entities\n\n";
       output += entities.map((e: any) => 
-`[${e.type}] ${e.name}
-Description: ${e.description}
-Source: ${e.sourceSection || "N/A"}
-----------------------------------------`
-      ).join("\n\n");
-      output += "\n\n";
+`type: ${e.type || "Unknown"}
+name: ${e.name}
+description: ${e.description}
+source: ${e.sourceSection || "N/A"}`
+      ).join("\n\n\n");
+      output += "\n\n\n";
     }
 
     if (Array.isArray(rules) && rules.length > 0) {
-      output += "=== RULES ===\n\n";
+      output += "Rules\n\n";
       output += rules.map((r: any) => 
-`[Rule] ${r.id}
-Condition: ${r.condition}
-Action: ${r.action}
-Source: ${r.sourceSection || "N/A"}
-Text: "${r.sourceText}"
-----------------------------------------`
-      ).join("\n\n");
+`id: ${r.id}
+condition: ${r.condition}
+action: ${r.action}
+source: ${r.sourceSection || "N/A"}
+text: "${r.sourceText}"`
+      ).join("\n\n\n");
     }
 
     return output;
