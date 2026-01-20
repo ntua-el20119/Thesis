@@ -22,7 +22,7 @@ export default function CreateDataModel({
 
   // 1. Fetch data from Step 3 (Detect Conflicts) - usually the direct predecessor
   const io = useStepDataLoader(step, "1-3");
-  const { phase, stepName, content, projectId, output: persistedOutput } = io;
+  const { phase, stepName, content, projectId, output: persistedOutput, reviewNotes: persistedNotes } = io;
 
   // 2. Fetch data from Step 2 (Extract Rules) manually
   const steps = useWizardStore((s) => s.steps);
@@ -106,6 +106,11 @@ ${conflictsText || "(No conflicts found)"}
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [processError, setProcessError] = useState<string | null>(null);
+  const [reviewNotes, setReviewNotes] = useState(persistedNotes || "");
+
+  useEffect(() => {
+     if (persistedNotes !== reviewNotes) setReviewNotes(persistedNotes || "");
+  }, [persistedNotes]);
 
   function buildReadable(src: any): string {
     const result = src?.result;
@@ -202,7 +207,8 @@ ${conflictsText || "(No conflicts found)"}
            stepNumber: step.stepNumber,
            stepName,
            input: combinedInput,
-           output: outputValue
+           output: outputValue,
+           reviewNotes
          })
       });
 
@@ -226,7 +232,7 @@ ${conflictsText || "(No conflicts found)"}
       const confidence = typeof data?.confidence === 'number' ? data.confidence : null;
 
       setOutputValue(readable);
-      onEdit(Number(phase), step.stepNumber, stepName, data, combinedInput, readable, confidence);
+      onEdit(Number(phase), step.stepNumber, stepName, data, combinedInput, readable, confidence, reviewNotes);
     } catch (err) {
       setProcessError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -254,7 +260,8 @@ ${conflictsText || "(No conflicts found)"}
            input: combinedInput,
            humanOutput: { text: finalOutput },
            content: step?.content,
-           approved: true
+           approved: true,
+           reviewNotes
         })
       });
       await onApprove(Number(phase), step.stepNumber, stepName);
@@ -309,6 +316,14 @@ ${conflictsText || "(No conflicts found)"}
               confidence: typeof step.confidenceScore === 'number' ? step.confidenceScore : null,
            } : undefined
         }
+        reviewNotes={{
+          value: reviewNotes,
+          onChange: (val) => {
+             setReviewNotes(val);
+             onEdit(Number(phase), step.stepNumber, stepName, content, combinedInput, outputValue, typeof step?.confidenceScore === 'number' ? step.confidenceScore : null, val);
+          },
+          stepName: stepName
+        }}
       />
       {processError && (
         <p className="mt-2 text-sm text-red-500">{processError}</p>

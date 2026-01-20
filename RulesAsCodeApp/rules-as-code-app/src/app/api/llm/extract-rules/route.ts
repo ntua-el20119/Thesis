@@ -127,7 +127,6 @@ Now process the segmented text provided above.
         stepName: STEP_NAME, 
         input: { text },
         llmOutput: parsed,
-        // llmOutput already set above
         confidenceScore: parsed.confidence,
         schemaValid: true, 
         humanModified: false,
@@ -139,7 +138,6 @@ Now process the segmented text provided above.
         stepName: STEP_NAME,
         input: { text },
         llmOutput: parsed,
-        // llmOutput already set above
         confidenceScore: parsed.confidence,
         schemaValid: true, 
         approved: false,

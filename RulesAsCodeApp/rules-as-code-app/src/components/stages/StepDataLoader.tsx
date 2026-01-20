@@ -18,6 +18,7 @@ export interface StepDataLoaderResult {
   };
   initialInput: string;
   hasLlmContent: boolean;
+  reviewNotes: string;
 }
 
 /**
@@ -77,6 +78,7 @@ export function useStepDataLoader(
     input, 
     output: rawOutput, 
     approved,
+    reviewNotes,
   } = step ?? {};
 
   // Robust iterative parser: handle double/triple encoded JSON strings
@@ -141,7 +143,7 @@ export function useStepDataLoader(
 
   let initialInput = "";
 
-  // ✅ Approval gate: previous output becomes binding input only if approved
+  //Approval gate: previous output becomes binding input only if approved
   if (
     previousStep?.approved &&
     typeof previousStep.output === "string" &&
@@ -149,7 +151,7 @@ export function useStepDataLoader(
   ) {
     initialInput = previousStep.output;
   } else if (readableCurrentInput.trim().length > 0) {
-    // ✅ Use readable input (not JSON/stringified JSON)
+    //Use readable input (not JSON/stringified JSON)
     initialInput = readableCurrentInput;
   } else {
     initialInput = "";
@@ -173,5 +175,6 @@ export function useStepDataLoader(
     previousStep,
     initialInput,
     hasLlmContent,
+    reviewNotes: reviewNotes ?? "",
   };
 }

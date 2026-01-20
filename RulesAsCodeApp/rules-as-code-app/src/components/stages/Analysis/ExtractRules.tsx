@@ -25,7 +25,7 @@ export default function ExtractRules({
   const io = useStepDataLoader(step, "1-1"); 
   console.log("[DEBUG] ExtractRules io.initialInput:", io.initialInput);
 
-  const { phase, stepName, content, projectId, output: persistedOutput } = io;
+  const { phase, stepName, content, projectId, output: persistedOutput, reviewNotes: persistedNotes } = io;
 
   // -- Input Formatter: Turn Step 1 sections into readable text --
   function formatInput(val: any): string {
@@ -61,6 +61,11 @@ export default function ExtractRules({
   const [inputText, setInputText] = useState(formatInput(io.initialInput));
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
+  const [reviewNotes, setReviewNotes] = useState(persistedNotes || "");
+  
+  useEffect(() => {
+     if (persistedNotes !== reviewNotes) setReviewNotes(persistedNotes || "");
+  }, [persistedNotes]);
   
   // Keep input sync
   useEffect(() => {
@@ -151,7 +156,7 @@ text: "${r.sourceText}"`
       setOutputValue(readable);
 
       // Persist to store/DB
-      onEdit(Number(phase), step.stepNumber, stepName, data, inputText, readable, confidence);
+      onEdit(Number(phase), step.stepNumber, stepName, data, inputText, readable, confidence, reviewNotes);
       
     } catch (err) {
       alert("Error processing rules: " + err);
@@ -184,6 +189,7 @@ text: "${r.sourceText}"`
         input: inputText,
         humanOutput: { text: finalOutput ?? outputValue }, // Use local outputValue
         content: step?.content,
+        reviewNotes,
       }),
     });
   }
@@ -212,6 +218,14 @@ text: "${r.sourceText}"`
           confidence: typeof step.confidenceScore === 'number' ? step.confidenceScore : null,
         } : undefined
       }
+      reviewNotes={{
+        value: reviewNotes,
+        onChange: (val) => {
+          setReviewNotes(val);
+          onEdit(Number(phase), step.stepNumber, stepName, content, inputText, outputValue, typeof step?.confidenceScore === 'number' ? step.confidenceScore : null, val);
+        },
+        stepName: stepName
+      }}
     />
   );
 }

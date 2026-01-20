@@ -35,6 +35,7 @@ export type Step = {
 
   confidenceScore?: number | null;
   approved: boolean;
+  reviewNotes?: string | null;
 };
 
 /**
@@ -52,7 +53,8 @@ export interface StepEditorProps {
     content: JsonValue,
     input?: string,
     output?: string,
-    confidenceScore?: number | null
+    confidenceScore?: number | null,
+    reviewNotes?: string | null
   ) => void;
 
   onApprove: (
@@ -80,5 +82,9 @@ export const methodology: Methodology = {
   "Modeling": [
     { stepNumber: 4, stepName: "Create Data Model" },
     { stepNumber: 5, stepName: "Generate Business Rules" },
+    { stepNumber: 6, stepName: "Generate GoRules Format" },
+  ],
+  "Testing": [
+    { stepNumber: 7, stepName: "Download File" },
   ],
 };

@@ -13,7 +13,9 @@ interface Project {
 }
 
 function phaseLabel(phase: number) {
-  return phase === 1 ? "Analysis" : "Modeling";
+  if (phase === 1) return "Analysis";
+  if (phase === 2) return "Modeling";
+  return "Testing";
 }
 
 function stepLabel(stepNumber: number) {
@@ -21,8 +23,20 @@ function stepLabel(stepNumber: number) {
   if (stepNumber === 2) return "Extract Rules";
   if (stepNumber === 3) return "Detect Conflicts";
   if (stepNumber === 4) return "Create Data Model";
-  return "Generate Business Rules";
+  if (stepNumber === 5) return "Generate Business Rules";
+  if (stepNumber === 6) return "Generate GoRules Format";
+  return "Download File";
 }
+
+const STEP_SEQUENCE = [
+  { p: 1, s: 1 },
+  { p: 1, s: 2 },
+  { p: 1, s: 3 },
+  { p: 2, s: 4 },
+  { p: 2, s: 5 },
+  { p: 2, s: 6 },
+  { p: 3, s: 7 },
+];
 
 export default function Home() {
   // --- Store (new contract)
@@ -85,6 +99,7 @@ export default function Home() {
         output: effective == null ? "" : JSON.stringify(effective, null, 2),
         confidenceScore: activeStep.confidenceScore,
         approved: activeStep.approved,
+        reviewNotes: activeStep.reviewNotes,
       };
     }
 
@@ -98,6 +113,7 @@ export default function Home() {
       output: "",
       confidenceScore: null,
       approved: false,
+      reviewNotes: null,
     };
   }, [activeStep, getEffectiveOutput, projectId]);
 
@@ -267,9 +283,45 @@ export default function Home() {
         setExpanded={setExpanded}
       />
 
-      <h2 className="text-xl font-bold text-center mt-8 mb-4">
-        {phaseLabel(currentPhase)} – {stepLabel(currentStepNumber)}
-      </h2>
+      <div className="flex items-center justify-between max-w-4xl mx-auto mt-8 mb-4 px-4">
+        {(() => {
+          const currentIndex = STEP_SEQUENCE.findIndex(
+            (x) => x.p === currentPhase && x.s === currentStepNumber
+          );
+          const prev = currentIndex > 0 ? STEP_SEQUENCE[currentIndex - 1] : null;
+          const next = currentIndex >= 0 && currentIndex < STEP_SEQUENCE.length - 1 ? STEP_SEQUENCE[currentIndex + 1] : null;
+
+          return (
+            <>
+              <div className="w-40 text-left">
+                {prev && (
+                   <button
+                     onClick={() => setCurrentStep(prev.p, prev.s)}
+                     className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-sm text-white whitespace-nowrap"
+                   >
+                     ← Previous Step
+                   </button>
+                )}
+              </div>
+              
+              <h2 className="text-xl font-bold text-center flex-1 mx-2 whitespace-nowrap">
+                {phaseLabel(currentPhase)} – {stepLabel(currentStepNumber)}
+              </h2>
+
+              <div className="w-40 text-right">
+                {next && (
+                  <button
+                    onClick={() => setCurrentStep(next.p, next.s)}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-sm text-white whitespace-nowrap"
+                  >
+                    Next Step →
+                  </button>
+                )}
+              </div>
+            </>
+          );
+        })()}
+      </div>
 
       {isApproving && (
         <p className="text-blue-400 mt-2">Processing approval…</p>
@@ -285,10 +337,11 @@ export default function Home() {
             content: any,
             input?: string,
             output?: string,
-            confidenceScore?: number | null
+            confidenceScore?: number | null,
+            reviewNotes?: string | null
           ) => {
             const phaseInt = Number(phase);
-            console.log("[DEBUG] page.tsx onEdit called:", { phase, stepNumber, output, inputLength: input?.length });
+            console.log("[DEBUG] page.tsx onEdit called:", { phase, stepNumber, output, inputLength: input?.length, reviewNotes });
 
             setStepData(phaseInt, stepNumber, {
               stepName, 
@@ -297,6 +350,7 @@ export default function Home() {
               humanOutput: output ? { text: output } : null,
               humanModified: Boolean(output),
               confidenceScore: confidenceScore,
+              reviewNotes: reviewNotes,
             });
           }}
           onApprove={async (

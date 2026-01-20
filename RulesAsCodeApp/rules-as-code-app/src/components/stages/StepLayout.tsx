@@ -32,7 +32,46 @@ interface StepLayoutProps {
   showOutput: boolean;
   input: StepInputConfig;
   output?: StepOutputConfig;
+  reviewNotes?: {
+    value: string;
+    onChange: (value: string) => void;
+    stepName: string;
+  };
 }
+
+const ConfidenceWarningModal = ({ onClose }: { onClose: () => void }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="bg-slate-900 border border-amber-500/30 rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-in fade-in zoom-in duration-200">
+      <div className="flex items-center gap-3 mb-4 text-amber-500">
+        <svg
+           xmlns="http://www.w3.org/2000/svg"
+           fill="none"
+           viewBox="0 0 24 24"
+           strokeWidth={2}
+           stroke="currentColor"
+           className="w-8 h-8"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+        <h3 className="text-xl font-bold text-white">Human Review Required</h3>
+      </div>
+      
+      <p className="text-slate-300 mb-6 leading-relaxed">
+        The AI has generated content with a <strong>low confidence score</strong> (&lt; 80%). 
+        Please carefully review the output and make necessary corrections before approving.
+      </p>
+
+      <div className="flex justify-end">
+        <button
+          onClick={onClose}
+          className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition-colors"
+        >
+          I Understand
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 const Panel = ({
   title,
@@ -91,7 +130,7 @@ const Panel = ({
         </div>
       </header>
 
-      {/* Textarea — clean, dark, eye-friendly */}
+      {/* Textarea */}
       <div className="flex-1 p-4">
         <textarea
           value={value}
@@ -112,7 +151,7 @@ const Panel = ({
   );
 };
 
-export function StepLayout({ showOutput, input, output }: StepLayoutProps) {
+export function StepLayout({ showOutput, input, output, reviewNotes }: StepLayoutProps) {
   const twoColumn = showOutput && !!output;
 
   return (
@@ -140,6 +179,16 @@ export function StepLayout({ showOutput, input, output }: StepLayoutProps) {
           background: rgba(52, 211, 153, 0.6);
         }
       `}</style>
+      
+      {output?.confidence !== undefined && output?.confidence !== null && output.confidence < 0.8 && (
+         <React.Fragment>
+            {/* We can use a state to control visibility to show it only once per mount/update? 
+                Actually, usually "when user opens the specific step". 
+                Since this component mounts when the step opens, a simple state defaulting to true works.
+            */}
+            <ConfidenceCheck confidence={output.confidence} />
+         </React.Fragment>
+      )}
 
       <div
         className={
@@ -215,8 +264,32 @@ export function StepLayout({ showOutput, input, output }: StepLayoutProps) {
           />
         )}
       </div>
+      
+      {/* Review Notes Section */}
+      {reviewNotes && (
+        <div className="mt-6">
+          <Panel
+            title="Review Notes"
+            description=""
+            value={reviewNotes.value}
+            onChange={reviewNotes.onChange}
+            readOnly={false}
+            placeholder={`Here you can keep any notes for the ${reviewNotes.stepName} step of the rules as code methodology.`}
+            rows={6}
+            footerLeft="Notes are private and for internal review only."
+            footerRight={<div />}
+          />
+        </div>
+      )}
     </>
   );
+}
+
+// Helper component to handle local state for the modal
+function ConfidenceCheck({ confidence }: { confidence: number }) {
+  const [show, setShow] = React.useState(true);
+  if (!show) return null;
+  return <ConfidenceWarningModal onClose={() => setShow(false)} />;
 }
 
 export default StepLayout;

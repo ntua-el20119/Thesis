@@ -24,7 +24,7 @@ export default function GenerateBusinessRules({
   // Note: Previous step key depends on how phases are defined.
   // Phase 2 Step 1 is "Create Data Model" in our mind, but store defines it as stepNumber 4.
   const io = useStepDataLoader(step, "2-4");
-  const { phase, stepName, content, projectId, output: persistedOutput } = io;
+  const { phase, stepName, content, projectId, output: persistedOutput, reviewNotes: persistedNotes } = io;
 
   // 2. Fetch data from Step 2 (Extract Rules) manually
   const steps = useWizardStore((s) => s.steps);
@@ -120,6 +120,11 @@ ${dataModelText || "(No data model found)"}
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
+  const [reviewNotes, setReviewNotes] = useState(persistedNotes || "");
+
+  useEffect(() => {
+      if (persistedNotes !== reviewNotes) setReviewNotes(persistedNotes || "");
+  }, [persistedNotes]);
   
   // Local state for output editing
   const [outputValue, setOutputValue] = useState<string>("");
@@ -213,7 +218,8 @@ ${dataModelText || "(No data model found)"}
             stepNumber: step.stepNumber,
             stepName,
             input: combinedInput,
-            output: outputValue
+            output: outputValue,
+            reviewNotes
          })
       });
 
@@ -232,7 +238,7 @@ ${dataModelText || "(No data model found)"}
       const confidence = typeof data?.confidence === 'number' ? data.confidence : null;
 
       setOutputValue(readable);
-      onEdit(Number(phase), step.stepNumber, stepName, data, combinedInput, readable, confidence);
+      onEdit(Number(phase), step.stepNumber, stepName, data, combinedInput, readable, confidence, reviewNotes);
     } catch (err) {
       alert("Error: " + err);
     } finally {
@@ -254,7 +260,8 @@ ${dataModelText || "(No data model found)"}
            input: combinedInput,
            humanOutput: { text: outputValue },
            content: content,
-           approved: true
+           approved: true,
+           reviewNotes
         })
       });
       await onApprove(Number(phase), step.stepNumber, stepName);
@@ -283,18 +290,26 @@ ${dataModelText || "(No data model found)"}
             value: outputValue,
             onChange: (v) => {
                 setOutputValue(v);
-                onEdit(Number(phase), step.stepNumber, stepName, content, combinedInput, v);
+                onEdit(Number(phase), step.stepNumber, stepName, content, combinedInput, v, typeof step?.confidenceScore === 'number' ? step.confidenceScore : null, reviewNotes);
             },
             onApprove: handleApprove,
             onReset: () => {
                 const r = buildReadable(content);
                 setOutputValue(r);
-                onEdit(Number(phase), step.stepNumber, stepName, content, combinedInput, r);
+                onEdit(Number(phase), step.stepNumber, stepName, content, combinedInput, r, typeof step?.confidenceScore === 'number' ? step.confidenceScore : null, reviewNotes);
             },
             isApproving,
             confidence: typeof step.confidenceScore === 'number' ? step.confidenceScore : null,
-         } : undefined
-      }
+          } : undefined
+       }
+       reviewNotes={{
+          value: reviewNotes,
+          onChange: (val) => {
+            setReviewNotes(val);
+            onEdit(Number(phase), step.stepNumber, stepName, content, combinedInput, outputValue, typeof step?.confidenceScore === 'number' ? step.confidenceScore : null, val);
+          },
+          stepName: stepName
+       }}
     />
   );
 }

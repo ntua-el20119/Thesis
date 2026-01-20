@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
       humanModified: true,
       approved: true,
       confidenceScore: true,
+      reviewNotes: true,
     },
   });
 

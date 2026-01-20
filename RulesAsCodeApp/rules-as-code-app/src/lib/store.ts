@@ -69,6 +69,10 @@ export const methodology: Record<
   2: [
     { stepNumber: 4, stepName: "Create Data Model" },
     { stepNumber: 5, stepName: "Generate Business Rules" },
+    { stepNumber: 6, stepName: "Generate GoRules Format" },
+  ],
+  3: [
+    { stepNumber: 7, stepName: "Download File" },
   ],
 };
 
@@ -389,7 +393,7 @@ export const useWizardStore = create(
       partialize: (state) => ({
         projectId: state.projectId,
         projectName: state.projectName,
-      }),
+      }) as WizardState,
     }
   )
 );

@@ -25,12 +25,17 @@ export default function SegmentText({
   // Step 1 → no previous step
   const io = useStepDataLoader(step, null);
 
-  const { phase, stepName, content, projectId, output: persistedOutput } = io;
+  const { phase, stepName, content, projectId, output: persistedOutput, reviewNotes: persistedNotes } = io;
 
   const [inputText, setInputText] = useState(io.initialInput);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [processError, setProcessError] = useState<string | null>(null);
+  const [reviewNotes, setReviewNotes] = useState(persistedNotes || "");
+
+  useEffect(() => {
+    if (persistedNotes !== reviewNotes) setReviewNotes(persistedNotes || "");
+  }, [persistedNotes]);
 
   useEffect(() => {
     setInputText(io.initialInput);
@@ -113,7 +118,8 @@ export default function SegmentText({
         data,
         inputText,
         outputText,
-        confidence
+        confidence,
+        reviewNotes
       );
     } catch (err) {
       setProcessError(err instanceof Error ? err.message : "Unknown error");
@@ -147,6 +153,7 @@ export default function SegmentText({
           input: inputText,
           humanOutput: { text: finalOutput }, // Fix: Send humanOutput for persistence
           content: step?.content,
+          reviewNotes,
         }),
       });
 
@@ -206,6 +213,15 @@ export default function SegmentText({
             confidence: typeof step?.confidenceScore === 'number' ? step.confidenceScore : null,
           } : undefined
         }
+        reviewNotes={{
+          value: reviewNotes,
+          onChange: (val) => {
+            setReviewNotes(val);
+             // Optional: Sync draft to store on change
+            onEdit(Number(phase), step.stepNumber, stepName, content, inputText, outputValue, typeof step?.confidenceScore === 'number' ? step.confidenceScore : null, val);
+          },
+          stepName: stepName
+        }}
       />
 
       {processError && (

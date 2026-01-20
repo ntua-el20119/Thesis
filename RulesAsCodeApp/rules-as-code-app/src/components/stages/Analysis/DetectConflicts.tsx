@@ -22,12 +22,17 @@ export default function DetectConflicts({
   // Chain from previous
   const io = useStepDataLoader(step, "1-2"); // Expects output of Extract Rules
 
-  const { phase, stepName, content, projectId, output: persistedOutput } = io;
+  const { phase, stepName, content, projectId, output: persistedOutput, reviewNotes: persistedNotes } = io;
 
   const [inputText, setInputText] = useState(io.initialInput);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [processError, setProcessError] = useState<string | null>(null);
+  const [reviewNotes, setReviewNotes] = useState(persistedNotes || "");
+  
+  useEffect(() => {
+     if (persistedNotes !== reviewNotes) setReviewNotes(persistedNotes || "");
+  }, [persistedNotes]);
 
   useEffect(() => {
     setInputText(io.initialInput);
@@ -89,7 +94,8 @@ resolution: ${c.resolutionStrategy}`
             stepNumber: step.stepNumber,
             stepName,
             input: inputText,
-            output: outputValue // Save current draft
+            output: outputValue, // Save current draft
+            reviewNotes
          })
       });
 
@@ -112,7 +118,7 @@ resolution: ${c.resolutionStrategy}`
       setOutputValue(readable);
 
       // Persist
-      onEdit(Number(phase), step.stepNumber, stepName, data, inputText, readable, confidence);
+      onEdit(Number(phase), step.stepNumber, stepName, data, inputText, readable, confidence, reviewNotes);
     } catch (err) {
       setProcessError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -140,7 +146,8 @@ resolution: ${c.resolutionStrategy}`
            input: inputText,
            humanOutput: { text: finalOutput },
            content: step?.content,
-           approved: true
+           approved: true,
+           reviewNotes
         })
       });
       await onApprove(Number(phase), step.stepNumber, stepName);
@@ -182,6 +189,14 @@ resolution: ${c.resolutionStrategy}`
               confidence: typeof step.confidenceScore === 'number' ? step.confidenceScore : null,
            } : undefined
         }
+        reviewNotes={{
+          value: reviewNotes,
+          onChange: (val) => {
+             setReviewNotes(val);
+             onEdit(Number(phase), step.stepNumber, stepName, content, inputText, outputValue, typeof step?.confidenceScore === 'number' ? step.confidenceScore : null, val);
+          },
+          stepName: stepName
+        }}
       />
       {processError && (
         <p className="mt-2 text-sm text-red-500">{processError}</p>
