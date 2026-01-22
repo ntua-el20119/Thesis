@@ -168,6 +168,12 @@ interface WizardState {
    * Convenience: return UI display label like "1. Segment Text"
    */
   getStepDisplayName: (phase: number, stepNumber: number) => string;
+
+  /**
+   * Check if any *subsequent* steps (after phase/stepNumber) have data or approval.
+   * Used for UI warnings before rerunning a step.
+   */
+  hasSubsequentStepsData: (phase: number, stepNumber: number) => boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -260,6 +266,32 @@ export const useWizardStore = create(
           const key = stepKey(phase, stepNumber);
           const prev = state.steps[key];
 
+          // 1. If we are updating 'llmOutput' (implies a Rerun), we must RESET subsequent steps.
+          if (patch && 'llmOutput' in patch && Object.keys(patch.llmOutput || {}).length > 0) {
+             const allKeys = Object.keys(state.steps);
+             
+             // iterate all steps
+             for (const k of allKeys) {
+                const s = state.steps[k];
+                const isSubsequent = (s.phase > phase) || (s.phase === phase && s.stepNumber > stepNumber);
+                
+                if (isSubsequent) {
+                   // MUTATION: Reset this step
+                   state.steps[k] = {
+                      ...s,
+                      input: {},
+                      llmOutput: {},
+                      humanOutput: null,
+                      confidenceScore: null,
+                      schemaValid: false,
+                      humanModified: false,
+                      approved: false, 
+                      reviewNotes: null
+                   };
+                }
+             }
+          }
+
           const phaseSteps = methodology[phase] ?? [];
           const def = phaseSteps.find((x) => x.stepNumber === stepNumber);
 
@@ -288,6 +320,7 @@ export const useWizardStore = create(
                 phase,
                 stepNumber,
                 projectId: base.projectId,
+                approved: false,
               },
             },
           };
@@ -386,6 +419,25 @@ export const useWizardStore = create(
             ?.stepName ??
           "";
         return `${stepNumber}. ${name || `Step ${stepNumber}`}`;
+      },
+
+      /* ------------------------------------------------------------------ */
+      /* hasSubsequentStepsData                                              */
+      /* ------------------------------------------------------------------ */
+      hasSubsequentStepsData: (phase, stepNumber) => {
+        const { steps } = get();
+        for (const k in steps) {
+           const s = steps[k];
+           const isSubsequent = (s.phase > phase) || (s.phase === phase && s.stepNumber > stepNumber);
+           if (!isSubsequent) continue;
+
+           // Check if it has data
+           const hasData = s.approved || 
+                           (s.llmOutput && Object.keys(s.llmOutput).length > 0) || 
+                           (s.humanOutput);
+           if (hasData) return true;
+        }
+        return false;
       },
     }),
     {

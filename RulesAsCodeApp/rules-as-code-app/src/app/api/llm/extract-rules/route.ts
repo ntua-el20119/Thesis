@@ -130,6 +130,7 @@ Now process the segmented text provided above.
         confidenceScore: parsed.confidence,
         schemaValid: true, 
         humanModified: false,
+        approved: false, // Revoke approval on rerun
       },
       create: {
         projectId,

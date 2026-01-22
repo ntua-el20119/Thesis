@@ -190,6 +190,7 @@ Now generate GoRules format from the provided business rules and data model.
         confidenceScore: parsed.confidence,
         schemaValid: true,
         humanModified: false,
+        approved: false,
       },
       create: {
         projectId,

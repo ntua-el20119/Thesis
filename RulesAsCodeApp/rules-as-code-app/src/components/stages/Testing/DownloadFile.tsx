@@ -17,6 +17,7 @@ export default function DownloadFile({
   const { projectId } = io;
   // Access step 6 directly from store to get its approved output
   const steps = useWizardStore((s) => s.steps);
+  const projectName = useWizardStore((s) => s.projectName);
   const step6 = steps["2-6"];
 
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
@@ -72,7 +73,7 @@ export default function DownloadFile({
       {downloadUrl && (
         <a
           href={downloadUrl}
-          download={`gorules-${projectId || 'project'}.json`}
+          download={`gorules-${projectName || 'project'}.json`}
           className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-emerald-600 font-lg rounded-full hover:bg-emerald-500 hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-600"
         >
           <span className="mr-3 text-xl">

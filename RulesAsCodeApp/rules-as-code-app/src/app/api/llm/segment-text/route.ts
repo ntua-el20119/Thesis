@@ -173,7 +173,8 @@ Now process the legal text provided above.
         schemaValid,
         // This is an LLM run, not a human edit:
         humanModified: false,
-        // Do NOT set approved here; approval happens in /api/approve
+        // MUST revoke approval on re-run:
+        approved: false,
       },
       create: {
         projectId,

@@ -120,7 +120,7 @@ ${dataModelText || "(No data model found)"}
       if (currentReviewNotes !== reviewNotes) setReviewNotes(currentReviewNotes || "");
   }, [currentReviewNotes]);
   
-  // Helper: aggressively unwrap nested stringified JSON (common from LLM providers)
+  // Helper: unwrap nested stringified JSON
   const unwrapGoRulesOutput = (raw: any): string => {
       try {
           if (!raw) return "";
@@ -140,7 +140,7 @@ ${dataModelText || "(No data model found)"}
               return unwrapGoRulesOutput(obj.result);
           }
 
-          // 3. Handle { text: "..." } wrapper (the issue at hand)
+          // 3. Handle { text: "..." } wrapper
           if (obj && typeof obj === 'object' && 'text' in obj && typeof obj.text === 'string') {
                try {
                   const inner = JSON.parse(obj.text);

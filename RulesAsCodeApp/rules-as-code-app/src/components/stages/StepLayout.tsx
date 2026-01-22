@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useWizardStore } from "@/lib/store";
 
 interface StepInputConfig {
   title?: string;
@@ -213,18 +214,9 @@ export function StepLayout({ showOutput, input, output, reviewNotes }: StepLayou
               : "Ready to process"
           }
           footerRight={
-            <button
-              onClick={input.onProcess}
-              disabled={input.disabled || input.isProcessing}
-              className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all shadow-md
-                ${
-                  input.disabled || input.isProcessing
-                    ? "bg-emerald-900/40 text-emerald-300/60 cursor-not-allowed border border-emerald-800/50"
-                    : "bg-emerald-500 hover:bg-emerald-450 text-slate-950 shadow-emerald-500/30"
-                }`}
-            >
-              {input.isProcessing ? "Processing…" : input.processLabel}
-            </button>
+            <ProcessButton 
+               input={input} 
+            />
           }
         />
 
@@ -291,5 +283,58 @@ function ConfidenceCheck({ confidence }: { confidence: number }) {
   if (!show) return null;
   return <ConfidenceWarningModal onClose={() => setShow(false)} />;
 }
+
+const ProcessButton = ({ input }: { input: StepInputConfig }) => {
+  const { currentPhase, currentStepNumber, projectId, hasSubsequentStepsData } = useWizardStore();
+
+  const handleClick = async () => {
+    // Only warn if there is subsequent data
+    if (hasSubsequentStepsData(currentPhase, currentStepNumber)) {
+       const confirmed = window.confirm(
+         "⚠️ Warning: Rerunning this step will delete all data in subsequent steps.\n\nThe methodology must run again from this point.\n\nDo you want to proceed?"
+       );
+       if (!confirmed) return;
+
+       // Call backend to reset steps
+       if (projectId) {
+         try {
+           const res = await fetch(`/api/projects/${projectId}/reset-steps`, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ phase: currentPhase, stepNumber: currentStepNumber })
+           });
+           
+           if (!res.ok) {
+              const err = await res.text();
+              console.error("Failed to reset steps backend:", err);
+              // We could alert here, but maybe we let it slide and just reset locally? 
+              // Safer to warn.
+              alert("Warning: Failed to sync reset with server. Please refresh to ensure consistency.");
+           }
+         } catch (e) {
+            console.error(e);
+            alert("Network error resetting steps. Modifications may not save correctly.");
+         }
+       }
+    }
+    
+    input.onProcess();
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={input.disabled || input.isProcessing}
+      className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all shadow-md
+        ${
+          input.disabled || input.isProcessing
+            ? "bg-emerald-900/40 text-emerald-300/60 cursor-not-allowed border border-emerald-800/50"
+            : "bg-emerald-500 hover:bg-emerald-450 text-slate-950 shadow-emerald-500/30"
+        }`}
+    >
+      {input.isProcessing ? "Processing…" : input.processLabel}
+    </button>
+  );
+};
 
 export default StepLayout;

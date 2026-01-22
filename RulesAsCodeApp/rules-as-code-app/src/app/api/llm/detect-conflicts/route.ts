@@ -132,6 +132,7 @@ Now analyze the entities and rules provided above.
         confidenceScore: parsed.confidence,
         schemaValid: true,
         humanModified: false,
+        approved: false,
       },
       create: {
         projectId,

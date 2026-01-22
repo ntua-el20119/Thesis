@@ -39,6 +39,27 @@ interface StartingPageProps {
  *    * Loading an existing project (modal with selectable list)
  *    * Deleting an existing project (modal with selectable list + warning)
  */
+
+
+function getStepDescription(stepName: string): string {
+  switch (stepName) {
+    // Analysis
+    case "Segment Text": return "Break down the legal text into atomic sections.";
+    case "Extract Rules": return "Identify business rules and key entities from the text.";
+    case "Detect Conflicts": return "Check for logical contradictions between rules.";
+    
+    // Modeling
+    case "Create Data Model": return "Define the structure of entities and fields.";
+    case "Generate Business Rules": return "Create executable Decision Tables from the extracted rules.";
+    case "Generate GoRules Format": return "Convert the model into a GoRules-compatible JSON graph.";
+    
+    // Testing
+    case "Download File": return "Export the final project for use in the GoRules engine.";
+    
+    default: return "";
+  }
+}
+
 export default function StartingPage({
   showCreate,
   setShowCreate,
@@ -65,8 +86,7 @@ export default function StartingPage({
                 Rules as Code Text Wizard
               </h1>
               <p className="text-sm md:text-base text-slate-300 max-w-3xl leading-relaxed">
-                A structured workflow for transforming natural-language legal
-                provisions into structured, implementation-ready rules.
+                A methodology for transforming legal provisions into structured, implementation-ready rules.
               </p>
             </div>
             <div className="flex flex-col items-start md:items-end gap-2 text-xs md:text-sm mt-1">
@@ -88,28 +108,34 @@ export default function StartingPage({
               <table className="w-full table-auto text-left text-sm text-slate-200">
                 <thead className="bg-slate-900/90 border-b border-slate-800">
                   <tr>
-                    <th className="px-5 py-3 w-1/4 text-xs md:text-sm font-semibold uppercase tracking-wide text-slate-400">
+                    <th className="px-5 py-4 w-1/4 text-sm md:text-base font-bold uppercase tracking-wide text-slate-400">
                       Stage
                     </th>
-                    <th className="px-5 py-3 text-xs md:text-sm font-semibold uppercase tracking-wide text-slate-400">
-                      Description
+                    <th className="px-5 py-4 text-sm md:text-base font-bold uppercase tracking-wide text-slate-400">
+                      Step Description
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
-                  {Object.entries(methodology).map(([phase, _]) => (
+                  {Object.entries(methodology).map(([phase, steps]) => (
                     <tr
                       key={phase}
                       className="hover:bg-slate-800/60 transition-colors"
                     >
-                      <td className="px-5 py-4 font-semibold text-slate-100 align-top">
+                      <td className="px-5 py-5 font-bold text-slate-100 align-top w-40 text-base">
                         {phase}
                       </td>
-                      <td className="px-5 py-4 text-slate-300 text-sm leading-relaxed">
-                        {phase === "Analysis" &&
-                          "Process raw legal text, segment it into atomic units, and extract formal rules and entities (Persons, Organizations, etc.)."}
-                        {phase === "Modeling" &&
-                          "Detect conflicts, create data models, and generate executable business logic (Decision Tables) that preserve traceability to the source text."}
+                      <td className="px-5 py-5 text-slate-300 text-base leading-relaxed">
+                        <ul className="space-y-3">
+                           {steps.map(step => (
+                              <li key={step.stepNumber}>
+                                 <span className="font-bold text-slate-100">{step.stepName}:</span>{" "}
+                                 <span className="text-slate-300">
+                                   {getStepDescription(step.stepName)}
+                                 </span>
+                              </li>
+                           ))}
+                        </ul>
                       </td>
                     </tr>
                   ))}
@@ -117,17 +143,10 @@ export default function StartingPage({
               </table>
             </div>
 
-            <p className="text-center text-sm md:text-base text-slate-300 mt-4 leading-relaxed">
-              The wizard will guide you step by step through this lifecycle,
-              preserving a clear link between legal text and executable rules.
-            </p>
           </section>
 
           {/* Call to action */}
           <section className="pt-2">
-            <p className="mb-4 text-center text-sm text-slate-400">
-              Choose how you want to proceed:
-            </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => setShowCreate(true)}
@@ -154,35 +173,36 @@ export default function StartingPage({
 
       {/* Modal: Create Project (controlled by showCreate) */}
       <Modal open={showCreate} onClose={() => setShowCreate(false)}>
-        <div className="space-y-4">
-          <h2 className="text-lg md:text-xl font-semibold text-slate-100">
-            Create New Project
-          </h2>
-          <p className="text-sm text-slate-400">
-            Define a descriptive project name. You can later associate this
-            project with specific regulations, articles, or use cases.
-          </p>
+        <div className="space-y-6 text-center">
           <div className="space-y-2">
-            <label className="block text-xs font-medium text-slate-300">
-              Project name
+             <h2 className="text-2xl font-bold text-slate-100">
+               Create New Project
+             </h2>
+             <p className="text-sm text-slate-400 max-w-sm mx-auto">
+               Define a descriptive project name to get started.
+             </p>
+          </div>
+          <div className="space-y-3 text-left">
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wide ml-1">
+              Project Name
             </label>
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="e.g. Student Meal Eligibility – KYA Φ5/68535/Β3/2012"
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              placeholder="e.g. Student Meal Eligibility"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all shadow-inner"
             />
           </div>
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="grid grid-cols-2 gap-3 pt-2">
             <button
               onClick={() => setShowCreate(false)}
-              className="px-4 py-2 text-sm rounded-full border border-slate-600 bg-slate-900 hover:bg-slate-800 text-slate-100"
+              className="px-4 py-2 text-xs font-semibold rounded-full border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={submitCreate}
-              className="px-5 py-2 text-sm font-medium rounded-full bg-emerald-500 hover:bg-emerald-600 text-slate-900 shadow-md shadow-emerald-500/30"
+              className="px-4 py-2 text-xs font-bold rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 transition-all"
             >
               Create Project
             </button>
@@ -192,97 +212,87 @@ export default function StartingPage({
 
       {/* Modal: Load Project (controlled by showLoad) */}
       <Modal open={showLoad} onClose={() => setShowLoad(false)}>
-        <div className="space-y-4">
-          <h2 className="text-lg md:text-xl font-semibold text-slate-100">
-            Load Project
-          </h2>
-          <p className="text-sm text-slate-400">
-            Select an existing project to resume work on its legal text
-            preparation and rule encoding workflow.
-          </p>
+        <div className="space-y-6 text-center">
+          <div className="space-y-2">
+             <h2 className="text-2xl font-bold text-slate-100">
+               Load Project
+             </h2>
+             <p className="text-sm text-slate-400 max-w-sm mx-auto">
+               Select an existing project to resume work.
+             </p>
+          </div>
 
           {projects.length ? (
-            <ul className="space-y-2 max-h-80 overflow-y-auto pr-1">
+            <ul className="space-y-2 max-h-64 overflow-y-auto pr-2 text-left">
               {projects.map((p) => (
                 <li key={p.id}>
                   <button
-                    className="w-full text-left px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-sm text-slate-100 transition-colors"
+                    className="w-full text-center px-4 py-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 text-sm text-slate-100 transition-all group"
                     onClick={() => {
-                        console.log("[DEBUG] Load project button clicked:", {
-                          id: p.id,
-                          name: p.name,
-                          time: new Date().toISOString(),
-                        });
                         selectProject(p);
                       }}
                   >
-                    <span className="font-medium">{p.name}</span>
+                    <span className="font-semibold group-hover:text-emerald-400 transition-colors block">{p.name}</span>
                   </button>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-slate-400">
-              You have not created any projects yet.
-            </p>
+            <div className="py-8 text-slate-500 italic">
+               No pages found.
+            </div>
           )}
 
-          <div className="flex justify-end pt-2">
-            <button
-              onClick={() => setShowLoad(false)}
-              className="px-4 py-2 text-sm rounded-full border border-slate-600 bg-slate-900 hover:bg-slate-800 text-slate-100"
-            >
-              Close
-            </button>
-          </div>
+          <button
+            onClick={() => setShowLoad(false)}
+            className="px-6 py-2 text-xs font-medium rounded-full border border-slate-700 bg-transparent hover:bg-slate-800 text-slate-500 hover:text-slate-300 transition-colors mt-4"
+          >
+            Cancel
+          </button>
         </div>
       </Modal>
 
       {/* Modal: Delete Project (controlled by showDelete) */}
       <Modal open={showDelete} onClose={() => setShowDelete(false)}>
-        <div className="space-y-4">
-          <h2 className="text-lg md:text-xl font-semibold text-red-400">
-            Delete Project
-          </h2>
-          <p className="text-sm text-slate-400">
-            Select a project to <strong className="text-red-400">permanently delete</strong>. 
-            This action involves removing all associated data (steps, rules, models) and 
-            <strong className="text-red-400"> cannot be undone</strong>.
-          </p>
+        <div className="space-y-6 text-center">
+            <div className="space-y-2">
+             <h2 className="text-2xl font-bold ">
+               Delete Project
+             </h2>
+             <p className="text-sm text-slate-400 max-w-sm mx-auto">
+               This action is <strong className="text-red-400">irreversible</strong>. 
+               <br />
+              Delete all of the data related to the selected project.
+             </p>
+            </div>
 
           {projects.length ? (
-            <ul className="space-y-2 max-h-80 overflow-y-auto pr-1">
+            <ul className="space-y-2 max-h-64 overflow-y-auto pr-2 text-left">
               {projects.map((p) => (
                 <li key={p.id}>
                   <button
-                    className="w-full text-left flex justify-between items-center px-4 py-2 rounded-lg bg-red-950/10 hover:bg-red-950/30 border border-red-900/30 text-sm text-slate-100 transition-colors group"
+                    className="w-full text-center px-4 py-3 rounded-lg bg-red-950/10 hover:bg-red-950/20 border border-red-900/30 hover:border-red-900/50 text-sm text-slate-100 transition-all group"
                     onClick={() => {
-                      // We can implement a secondary confirm here or rely on the global one we put in page.tsx
-                      // User requested "a warning will be shown that will require the user to ensure he wants to delete..."
-                      // The global confirm() in page.tsx acts as this warning.
                       deleteProject(p.id);
                     }}
                   >
-                    <span className="font-medium group-hover:text-red-200 transition-colors">{p.name}</span>
-                    <span className="text-xs text-red-500/60 uppercase font-semibold">Delete</span>
+                    <span className="font-semibold text-slate-300 group-hover:text-red-200 transition-colors block">{p.name}</span>
                   </button>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-slate-400">
-              No projects available to delete.
-            </p>
+            <div className="py-8 text-slate-500 italic">
+               No projects found.
+            </div>
           )}
 
-          <div className="flex justify-end pt-2">
-            <button
+          <button
               onClick={() => setShowDelete(false)}
-              className="px-4 py-2 text-sm rounded-full border border-slate-600 bg-slate-900 hover:bg-slate-800 text-slate-100"
+               className="px-6 py-2 text-xs font-medium rounded-full border border-slate-700 bg-transparent hover:bg-slate-800 text-slate-500 hover:text-slate-300 transition-colors mt-4"
             >
-              Close
-            </button>
-          </div>
+              Cancel
+          </button>
         </div>
       </Modal>
     </div>

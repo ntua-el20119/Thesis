@@ -186,6 +186,7 @@ Now generate business rules and tests from the provided inputs.
         confidenceScore: parsed.confidence,
         schemaValid: true,
         humanModified: false,
+        approved: false,
       },
       create: {
         projectId,
