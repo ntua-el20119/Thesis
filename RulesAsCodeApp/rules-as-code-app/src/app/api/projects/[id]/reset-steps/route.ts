@@ -3,9 +3,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const projectId = Number(params.id);
+  const { id } = await context.params;
+  const projectId = Number(id);
   if (!projectId) {
     return NextResponse.json({ error: "Invalid Project ID" }, { status: 400 });
   }

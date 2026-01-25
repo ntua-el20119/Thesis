@@ -191,6 +191,10 @@ const config = {
         "fromEnvVar": null,
         "value": "windows",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "linux-musl-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
@@ -216,8 +220,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\n//\n// Enums\n//\n\nenum ProjectStatus {\n  in_progress\n  completed\n  failed\n}\n\n//\n// Models\n//\n\nmodel Project {\n  id          Int           @id @default(autoincrement())\n  name        String        @unique\n  description String?\n  legalText   String\n  status      ProjectStatus @default(in_progress)\n  createdAt   DateTime      @default(now())\n  updatedAt   DateTime      @updatedAt\n\n  steps MethodologyStep[]\n\n  @@map(\"Project\")\n}\n\nmodel MethodologyStep {\n  id         Int    @id @default(autoincrement())\n  projectId  Int\n  phase      Int\n  stepNumber Int\n  stepName   String\n\n  input       Json\n  llmOutput   Json\n  humanOutput Json?\n\n  confidenceScore Decimal? @db.Decimal(3, 2)\n\n  schemaValid   Boolean\n  humanModified Boolean @default(false)\n  approved      Boolean @default(false)\n  reviewNotes   String?\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)\n  llmProviders LLMProvider[]\n\n  @@unique([projectId, phase, stepNumber])\n  @@index([projectId], map: \"idx_step_project\")\n  @@index([phase, stepNumber], map: \"idx_step_phase\")\n  @@index([approved], map: \"idx_step_approved\")\n  @@map(\"MethodologyStep\")\n}\n\nmodel LLMProvider {\n  id        Int      @id @default(autoincrement())\n  stepId    Int\n  provider  String\n  model     String\n  apiCost   Decimal? @db.Decimal(10, 6)\n  latencyMs Int?\n\n  step MethodologyStep @relation(fields: [stepId], references: [id], onDelete: Cascade)\n\n  @@index([stepId], map: \"idx_llm_step\")\n  @@map(\"LLMProvider\")\n}\n",
-  "inlineSchemaHash": "daf1bbec4b4f63a13a0f7c84ab94f37f5aa07a4074e288ca48365f5d79a2b8b4",
+  "inlineSchema": "generator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../src/generated/prisma\"\n  binaryTargets = [\"native\", \"linux-musl-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\n//\n// Enums\n//\n\nenum ProjectStatus {\n  in_progress\n  completed\n  failed\n}\n\n//\n// Models\n//\n\nmodel Project {\n  id          Int           @id @default(autoincrement())\n  name        String        @unique\n  description String?\n  legalText   String\n  status      ProjectStatus @default(in_progress)\n  createdAt   DateTime      @default(now())\n  updatedAt   DateTime      @updatedAt\n\n  steps MethodologyStep[]\n\n  @@map(\"Project\")\n}\n\nmodel MethodologyStep {\n  id         Int    @id @default(autoincrement())\n  projectId  Int\n  phase      Int\n  stepNumber Int\n  stepName   String\n\n  input       Json\n  llmOutput   Json\n  humanOutput Json?\n\n  confidenceScore Decimal? @db.Decimal(3, 2)\n\n  schemaValid   Boolean\n  humanModified Boolean @default(false)\n  approved      Boolean @default(false)\n  reviewNotes   String?\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)\n  llmProviders LLMProvider[]\n\n  @@unique([projectId, phase, stepNumber])\n  @@index([projectId], map: \"idx_step_project\")\n  @@index([phase, stepNumber], map: \"idx_step_phase\")\n  @@index([approved], map: \"idx_step_approved\")\n  @@map(\"MethodologyStep\")\n}\n\nmodel LLMProvider {\n  id        Int      @id @default(autoincrement())\n  stepId    Int\n  provider  String\n  model     String\n  apiCost   Decimal? @db.Decimal(10, 6)\n  latencyMs Int?\n\n  step MethodologyStep @relation(fields: [stepId], references: [id], onDelete: Cascade)\n\n  @@index([stepId], map: \"idx_llm_step\")\n  @@map(\"LLMProvider\")\n}\n",
+  "inlineSchemaHash": "82ff18f0af8d5d401004c33c71b4ae29aeaf2d458b1486a7485e01cb913f1317",
   "copyEngine": true
 }
 config.dirname = '/'

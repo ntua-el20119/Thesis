@@ -4,9 +4,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const projectId = Number(params.id);
+  const { id } = await context.params;
+  const projectId = Number(id);
 
   if (!projectId || isNaN(projectId)) {
     return NextResponse.json(
