@@ -52,7 +52,7 @@ export default function DownloadFile({
             <span className="text-3xl">🔒</span>
         </div>
         <h2 className="text-xl font-semibold mb-2">Step Locked</h2>
-        <p>Please complete and approve <strong>Step 6: Generate GoRules Format</strong> to proceed to download.</p>
+        <p>Please complete and approve <strong>Step 6: GoRules Format</strong> to proceed to download.</p>
       </div>
     );
   }

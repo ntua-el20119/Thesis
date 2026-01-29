@@ -14,8 +14,10 @@ const STEPS: Array<{ phase: number; stepNumber: number; stepName: string }> = [
   { phase: 1, stepNumber: 1, stepName: "Segment Text" },
   { phase: 1, stepNumber: 2, stepName: "Extract Rules" },
   { phase: 1, stepNumber: 3, stepName: "Detect Conflicts" },
-  { phase: 2, stepNumber: 4, stepName: "Create Data Model" },
-  { phase: 2, stepNumber: 5, stepName: "Generate Business Rules" },
+  { phase: 2, stepNumber: 4, stepName: "Data Model" },
+  { phase: 2, stepNumber: 5, stepName: "Business Rules" },
+  { phase: 2, stepNumber: 6, stepName: "GoRules Format" },
+  { phase: 3, stepNumber: 7, stepName: "Download File" },
 ];
 
 export async function POST(req: NextRequest) {
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // 2) Initialize all 5 steps (procedural skeleton)
+      // 2) Initialize all steps (procedural skeleton)
       await tx.methodologyStep.createMany({
         data: STEPS.map((s) => ({
           projectId: project.id,

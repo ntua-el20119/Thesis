@@ -11,17 +11,17 @@ import DownloadFile from "./Testing/DownloadFile";
 // 1. Segment Text
 // 2. Extract Rules
 // 3. Detect Conflicts
-// 4. Create Data Model
-// 5. Generate Business Rules
-// 6. Generate GoRules Format
+// 4. Data Model
+// 5. Business Rules
+// 6. GoRules Format
 // 7. Download File
 
 export const stepComponentMap: Record<string, React.FC<any>> = {
   SegmentText,
   ExtractRules,
   DetectConflicts,
-  CreateDataModel,
-  GenerateBusinessRules,
-  GenerateGoRulesFormat: GenerateGoRules,
+  DataModel: CreateDataModel,
+  BusinessRules: GenerateBusinessRules,
+  GoRulesFormat: GenerateGoRules,
   DownloadFile,
 };

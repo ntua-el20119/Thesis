@@ -10,7 +10,7 @@ interface CreateDataModelBody {
 
 const PHASE = 2;
 const STEP_NUMBER = 4;
-const STEP_NAME = "Create Data Model";
+const STEP_NAME = "Data Model";
 
 export async function POST(req: NextRequest) {
   const { entities, conflicts, projectId }: CreateDataModelBody = await req.json();
@@ -142,9 +142,14 @@ Now create the data model from the provided inputs.
   // Use combinedText as the "input" record for the DB to preserve context
   const text = combinedText; 
 
+  const apiKey = req.headers.get("X-OpenRouter-Key") || undefined;
+  const model = req.headers.get("X-LLM-Model") || undefined;
+
   try {
     const { parsed } = await callOpenRouterJson({
       prompt,
+      apiKey,
+      model,
       maxTokens: 50000,
       temperature: 0.1, // Very low temp for structural schema tasks
     });

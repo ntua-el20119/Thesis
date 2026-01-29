@@ -6,6 +6,7 @@ import StepRenderer from "@/components/stages/StepRenderer";
 import StartingPage from "@/pages/StartingPage";
 import StageNavigator from "@/components/stages/StageNavigator";
 import { usePhaseExpansion } from "@/pages/usePhaseExpansion";
+import ConfigurationModal from "@/components/ConfigurationModal";
 
 interface Project {
   id: number;
@@ -22,9 +23,9 @@ function stepLabel(stepNumber: number) {
   if (stepNumber === 1) return "Segment Text";
   if (stepNumber === 2) return "Extract Rules";
   if (stepNumber === 3) return "Detect Conflicts";
-  if (stepNumber === 4) return "Create Data Model";
-  if (stepNumber === 5) return "Generate Business Rules";
-  if (stepNumber === 6) return "Generate GoRules Format";
+  if (stepNumber === 4) return "Data Model";
+  if (stepNumber === 5) return "Business Rules";
+  if (stepNumber === 6) return "GoRules Format";
   return "Download File";
 }
 
@@ -46,6 +47,9 @@ export default function Home() {
     setProjectId,
     setProjectName,
 
+    apiKey,
+    llmModel,
+
     currentPhase,
     currentStepNumber,
     steps,
@@ -66,8 +70,19 @@ export default function Home() {
   const [showDelete, setShowDelete] = useState(false);
   const [newName, setNewName] = useState("");
   const [projects, setProjects] = useState<Project[]>([]);
+  const [showConfig, setShowConfig] = useState(false);
+
+  // Check configuration whenever we are in "started" mode
+  useEffect(() => {
+    if (started && (!apiKey || !llmModel)) {
+      setShowConfig(true);
+    } else {
+      setShowConfig(false);
+    }
+  }, [started, apiKey, llmModel]);
 
   const { expanded, setExpanded, initPhaseExpansion } = usePhaseExpansion();
+
 
   // --- Derived (ALWAYS compute hooks before any return)
   const activeKey = `${currentPhase}-${currentStepNumber}`;
@@ -254,6 +269,9 @@ export default function Home() {
   // --- Active workspace
   return (
     <div className="container mx-auto p-4 text-white">
+      {showConfig && (
+        <ConfigurationModal onSave={() => setShowConfig(false)} />
+      )}
       <div className="relative flex flex-col md:flex-row items-center justify-center mb-8 pt-4">
         <button
           onClick={() => {
@@ -283,7 +301,7 @@ export default function Home() {
         setExpanded={setExpanded}
       />
 
-      <div className="flex items-center justify-between max-w-4xl mx-auto mt-8 mb-4 px-4">
+      <div className="flex items-center justify-center max-w-4xl mx-auto mt-8 mb-4 px-4">
         {(() => {
           const currentIndex = STEP_SEQUENCE.findIndex(
             (x) => x.p === currentPhase && x.s === currentStepNumber
@@ -292,33 +310,29 @@ export default function Home() {
           const next = currentIndex >= 0 && currentIndex < STEP_SEQUENCE.length - 1 ? STEP_SEQUENCE[currentIndex + 1] : null;
 
           return (
-            <>
-              <div className="w-40 text-left">
-                {prev && (
-                   <button
-                     onClick={() => setCurrentStep(prev.p, prev.s)}
-                     className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-sm text-white whitespace-nowrap"
-                   >
-                     ← Previous Step
-                   </button>
-                )}
-              </div>
+            <div className="flex items-center justify-center gap-6 mt-8 mb-4 px-4">
+              {prev && (
+                 <button
+                   onClick={() => setCurrentStep(prev!.p, prev!.s)}
+                   className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs font-semibold text-white transition-colors"
+                 >
+                   ← Prev
+                 </button>
+              )}
               
-              <h2 className="text-xl font-bold text-center flex-1 mx-2 whitespace-nowrap">
-                {phaseLabel(currentPhase)} – {stepLabel(currentStepNumber)}
+              <h2 className="text-xl font-bold text-slate-100 whitespace-nowrap">
+                {phaseLabel(currentPhase)} <span className="text-slate-600 mx-2">/</span> {stepLabel(currentStepNumber)}
               </h2>
 
-              <div className="w-40 text-right">
-                {next && (
-                  <button
-                    onClick={() => setCurrentStep(next.p, next.s)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-sm text-white whitespace-nowrap"
-                  >
-                    Next Step →
-                  </button>
-                )}
-              </div>
-            </>
+              {next && (
+                <button
+                  onClick={() => setCurrentStep(next!.p, next!.s)}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs font-semibold text-white transition-colors"
+                >
+                  Next →
+                </button>
+              )}
+            </div>
           );
         })()}
       </div>

@@ -5,6 +5,8 @@ import { StepEditorProps } from "@/lib/types";
 import { StepLayout } from "@/components/stages/StepLayout";
 import { useStepDataLoader } from "@/components/stages/StepDataLoader";
 
+import { useWizardStore } from "@/lib/store";
+
 /*
   Step 3: Detect Conflicts
   ------------------------
@@ -17,6 +19,7 @@ export default function DetectConflicts({
   onEdit,
   onApprove,
 }: StepEditorProps) {
+  const { apiKey, llmModel } = useWizardStore();
   if (!step) return null;
 
   // Chain from previous
@@ -101,7 +104,11 @@ resolution: ${c.resolutionStrategy}`
 
       const res = await fetch("/api/llm/detect-conflicts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-OpenRouter-Key": apiKey || "",
+          "X-LLM-Model": llmModel || "",
+        },
         body: JSON.stringify({ text: inputText, projectId }), // Note: API expects 'text', not 'rules'
       });
 
@@ -165,11 +172,11 @@ resolution: ${c.resolutionStrategy}`
       <StepLayout
         showOutput={showOutputPanel}
         input={{
-          title: "Extracted Rules",
-          description: "Rules from Step 2.",
+          title: "Entities and Rules",
+          description: "These are the entities and rules extracted from the previous step.",
           value: inputText,
           onChange: setInputText,
-          processLabel: "Detect Conflicts",
+          processLabel: showOutputPanel ? "Process Again" : "Process",
           onProcess: handleProcess,
           isProcessing,
           disabled: !inputText.trim()
@@ -179,7 +186,10 @@ resolution: ${c.resolutionStrategy}`
               title: "Conflict Analysis",
               description: "Review detected contradictions and gaps.",
               value: outputValue,
-              onChange: setOutputValue, // Local state
+              onChange: (v) => {
+                setOutputValue(v);
+                onEdit(Number(phase), step.stepNumber, stepName, content, inputText, v, typeof step?.confidenceScore === 'number' ? step.confidenceScore : null, reviewNotes);
+              }, // Local state + Persistence
               onApprove: handleApprove,
               onReset: () => {
                   setOutputValue(readableOutput);

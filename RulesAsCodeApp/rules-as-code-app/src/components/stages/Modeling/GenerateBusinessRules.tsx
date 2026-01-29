@@ -28,6 +28,8 @@ export default function GenerateBusinessRules({
 
   // 2. Fetch data from Step 2 (Extract Rules) manually
   const steps = useWizardStore((s) => s.steps);
+  const apiKey = useWizardStore((s) => s.apiKey);
+  const llmModel = useWizardStore((s) => s.llmModel);
   const step2Raw = steps["1-2"]; // Canonical key for Phase 1, Step 2
 
   // Helper to reliably get text
@@ -48,13 +50,16 @@ export default function GenerateBusinessRules({
   const getStepEntities = (rawStep: any) => {
     if (!rawStep) return "";
     let entities: any[] = [];
-    if (rawStep.llmOutput?.result?.entities && Array.isArray(rawStep.llmOutput.result.entities)) {
-         entities = rawStep.llmOutput.result.entities;
-    } else if (rawStep.humanOutput) {
+    if (rawStep.humanModified && rawStep.humanOutput) {
          if (Array.isArray(rawStep.humanOutput)) entities = rawStep.humanOutput;
          else if (typeof rawStep.humanOutput.text === "string" && (rawStep.humanOutput.text.startsWith('[') || rawStep.humanOutput.text.startsWith('{'))) {
              try { const p = JSON.parse(rawStep.humanOutput.text); if (Array.isArray(p)) entities = p; } catch {}
          }
+    }
+    
+    // Fallback to LLM if no human entities found
+    if (entities.length === 0 && rawStep.llmOutput?.result?.entities && Array.isArray(rawStep.llmOutput.result.entities)) {
+         entities = rawStep.llmOutput.result.entities;
     }
     // Return readable list if possible, or raw text
     if (entities.length > 0) {
@@ -225,7 +230,11 @@ ${dataModelText || "(No data model found)"}
 
       const res = await fetch("/api/llm/generate-business-rules", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-OpenRouter-Key": apiKey || "",
+          "X-LLM-Model": llmModel || "",
+        },
         body: JSON.stringify({ 
             rules: rulesText, 
             dataModel: dataModelText, 
@@ -274,8 +283,8 @@ ${dataModelText || "(No data model found)"}
     <StepLayout
       showOutput={showOutputPanel}
       input={{
-        title: "Input Context",
-        description: "Rules (Step 2) & Data Model (Step 4).",
+        title: "Rules and Data Model",
+        description: "The input for this step is the rules and data model from the previous steps.",
         value: combinedInput,
         onChange: setCombinedInput,
         processLabel: "Generate Business Rules",
@@ -285,7 +294,7 @@ ${dataModelText || "(No data model found)"}
       }}
       output={
          showOutputPanel ? {
-            title: "Business Logic Specifications",
+            title: "Business Rules",
             description: "Formalized rules and test scenarios.",
             value: outputValue,
             onChange: (v) => {

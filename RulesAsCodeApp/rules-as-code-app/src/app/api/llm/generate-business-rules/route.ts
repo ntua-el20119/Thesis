@@ -10,7 +10,7 @@ interface GenBusinessRulesBody {
 
 const PHASE = 2;
 const STEP_NUMBER = 5;
-const STEP_NAME = "Generate Business Rules";
+const STEP_NAME = "Business Rules";
 
 export async function POST(req: NextRequest) {
   const { rules, dataModel, projectId }: GenBusinessRulesBody = await req.json();
@@ -68,7 +68,7 @@ ${combinedText}
 
 ## Required Output Format
 
-\`\`\`json
+
 {
   "result": {
     "businessRules": [
@@ -131,7 +131,7 @@ ${combinedText}
   },
   "confidence": 0.90
 }
-\`\`\`
+
 
 ## Operators
 
@@ -164,11 +164,17 @@ Your output will be evaluated on: all rules formalized with data model reference
 Now generate business rules and tests from the provided inputs.
 `;
 
+  /* ------------------------------------------------------------------ */
+  const apiKey = req.headers.get("X-OpenRouter-Key") || undefined;
+  const model = req.headers.get("X-LLM-Model") || undefined;
+
   try {
     const { parsed } = await callOpenRouterJson({
       prompt,
-      maxTokens: 50000,
-      temperature: 0.1, 
+      apiKey,
+      model,
+      maxTokens: 10000,
+      temperature: 0.3,
     });
 
     await prisma.methodologyStep.upsert({

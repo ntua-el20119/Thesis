@@ -142,9 +142,15 @@ Respond with ONLY valid JSON in this exact structure:
 Now process the legal text provided above.
   `;
 
+  /* ------------------------------------------------------------------ */
+  const apiKey = request.headers.get("X-OpenRouter-Key") || undefined;
+  const model = request.headers.get("X-LLM-Model") || undefined;
+
   try {
     const { parsed } = await callOpenRouterJson({
       prompt,
+      apiKey,
+      model,
       maxTokens: 10000,
       temperature: 0.3,
     });

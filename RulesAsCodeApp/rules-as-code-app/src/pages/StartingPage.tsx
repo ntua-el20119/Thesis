@@ -49,9 +49,9 @@ function getStepDescription(stepName: string): string {
     case "Detect Conflicts": return "Check for logical contradictions between rules.";
     
     // Modeling
-    case "Create Data Model": return "Define the structure of entities and fields.";
-    case "Generate Business Rules": return "Create executable Decision Tables from the extracted rules.";
-    case "Generate GoRules Format": return "Convert the model into a GoRules-compatible JSON graph.";
+    case "Data Model": return "Define the structure of entities and fields.";
+    case "Business Rules": return "Create executable Decision Tables from the extracted rules.";
+    case "GoRules Format": return "Convert the model into a GoRules-compatible JSON graph.";
     
     // Testing
     case "Download File": return "Export the final project for use in the GoRules engine.";

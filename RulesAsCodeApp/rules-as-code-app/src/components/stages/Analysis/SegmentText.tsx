@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { StepLayout } from "@/components/stages/StepLayout";
 import { useStepDataLoader } from "@/components/stages/StepDataLoader";
 
+import { useWizardStore } from "@/lib/store";
+
 /**
  * Phase1SegmentText
  * -----------------------------------------------------------------------------
@@ -21,6 +23,8 @@ export default function SegmentText({
   onApprove,
 }: StepEditorProps) {
   if (!step) return null;
+
+  const { apiKey, llmModel } = useWizardStore();
 
   // Step 1 → no previous step
   const io = useStepDataLoader(step, null);
@@ -92,7 +96,11 @@ export default function SegmentText({
     try {
       const response = await fetch("/api/llm/segment-text", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-OpenRouter-Key": apiKey || "",
+          "X-LLM-Model": llmModel || "",
+        },
         body: JSON.stringify({ projectId, text: inputText }),
         cache: "no-store",
       });
@@ -198,10 +206,13 @@ export default function SegmentText({
         }}
         output={
           showOutput ? {
-            title: "LLM Response",
-            description: "Segmented text. You can edit invalid segments.",
+            title: "Segmented Text",
+            description: "This is the segmented text. You can edit segments.",
             value: outputValue,
-            onChange: setOutputValue, // Local state only
+            onChange: (v) => {
+               setOutputValue(v);
+               onEdit(Number(phase), step.stepNumber, stepName, content, inputText, v, typeof step?.confidenceScore === 'number' ? step.confidenceScore : null, reviewNotes);
+            }, // Local state only + Persistence
             onApprove: handleApprove,
             onReset: () => {
                // Reset by sending undefined output to onEdit (clearing DB)

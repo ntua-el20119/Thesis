@@ -67,9 +67,9 @@ export const methodology: Record<
     { stepNumber: 3, stepName: "Detect Conflicts" },
   ],
   2: [
-    { stepNumber: 4, stepName: "Create Data Model" },
-    { stepNumber: 5, stepName: "Generate Business Rules" },
-    { stepNumber: 6, stepName: "Generate GoRules Format" },
+    { stepNumber: 4, stepName: "Data Model" },
+    { stepNumber: 5, stepName: "Business Rules" },
+    { stepNumber: 6, stepName: "GoRules Format" },
   ],
   3: [
     { stepNumber: 7, stepName: "Download File" },
@@ -111,6 +111,12 @@ const stepKey = (phase: number, stepNumber: number) => `${phase}-${stepNumber}`;
 /* WizardState interface                                               */
 /* ------------------------------------------------------------------ */
 interface WizardState {
+  // Configuration (Ephemeral - not persisted)
+  apiKey: string | null;
+  llmModel: string | null;
+  setApiKey: (key: string) => void;
+  setLlmModel: (model: string) => void;
+
   projectId: number | null;
   projectName: string | null;
 
@@ -182,6 +188,13 @@ interface WizardState {
 export const useWizardStore = create(
   persist<WizardState>(
     (set, get) => ({
+      /* ---------- Configuration (Ephemeral) ---------- */
+      apiKey: null,
+      llmModel: null,
+
+      setApiKey: (key) => set({ apiKey: key }),
+      setLlmModel: (model) => set({ llmModel: model }),
+
       /* ---------- Identity & Cursor ---------- */
       projectId: null,
       projectName: null,
@@ -266,8 +279,48 @@ export const useWizardStore = create(
           const key = stepKey(phase, stepNumber);
           const prev = state.steps[key];
 
-          // 1. If we are updating 'llmOutput' (implies a Rerun), we must RESET subsequent steps.
-          if (patch && 'llmOutput' in patch && Object.keys(patch.llmOutput || {}).length > 0) {
+          // Detect meaningful content changes
+          // Note: patch.llmOutput comes from the component. If it's passed from store -> component -> onEdit -> patch,
+          // it might be referentially equal. If not, we use JSON stringify as a backup.
+          
+          // Detect meaningful content changes
+          // Note: patch.llmOutput comes from the component. If it's passed from store -> component -> onEdit -> patch,
+          // it might be referentially equal. If not, we use JSON stringify as a backup.
+          
+          const isLlmChanged = (() => {
+            if (!patch || !('llmOutput' in patch)) return false;
+            if (patch.llmOutput === prev?.llmOutput) return false;
+            // Backup deep check (stringify is acceptable for these sizes)
+            const changed = JSON.stringify(patch.llmOutput) !== JSON.stringify(prev?.llmOutput);
+            if (changed) console.log(`[DEBUG] llmOutput changed. Prev: ${JSON.stringify(prev?.llmOutput)}, Patch: ${JSON.stringify(patch.llmOutput)}`);
+            return changed;
+          })();
+
+          const isHumanChanged = (() => {
+            if (!patch || !('humanOutput' in patch)) return false;
+            // Human output is usually a new object { text: ... } from page.tsx, so deep check is needed
+            const changed = JSON.stringify(patch.humanOutput) !== JSON.stringify(prev?.humanOutput);
+            if (changed) console.log(`[DEBUG] humanOutput changed. Prev: ${JSON.stringify(prev?.humanOutput)}, Patch: ${JSON.stringify(patch.humanOutput)}`);
+            return changed;
+          })();
+
+          const isInputChanged = (() => {
+             if (!patch || !('input' in patch)) return false;
+             // Input might flip between object/string, check value equality
+             const changed = JSON.stringify(patch.input) !== JSON.stringify(prev?.input);
+             if (changed) console.log(`[DEBUG] input changed. Prev: ${JSON.stringify(prev?.input)}, Patch: ${JSON.stringify(patch.input)}`);
+             return changed;
+          })();
+
+          const contentChanged = isLlmChanged || isHumanChanged || isInputChanged;
+          if (contentChanged) {
+             console.log("[DEBUG] contentChanged=true, resetting approval.");
+          } else {
+             console.log("[DEBUG] contentChanged=false, preserving approval.");
+          }
+
+          // 1. If 'llmOutput' changed (implies a Rerun), we must RESET subsequent steps.
+          if (isLlmChanged && Object.keys(patch?.llmOutput || {}).length > 0) {
              const allKeys = Object.keys(state.steps);
              
              // iterate all steps
@@ -320,7 +373,9 @@ export const useWizardStore = create(
                 phase,
                 stepNumber,
                 projectId: base.projectId,
-                approved: false,
+                // Only reset approved if content changed. 
+                // If only reviewNotes changed, keep existing approval status.
+                approved: contentChanged ? false : (prev?.approved ?? false),
               },
             },
           };

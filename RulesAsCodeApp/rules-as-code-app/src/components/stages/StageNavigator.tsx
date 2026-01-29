@@ -56,6 +56,7 @@ function phaseLabel(phaseKey: string) {
   const asNum = Number(phaseKey);
   if (asNum === 1) return "1. Analysis";
   if (asNum === 2) return "2. Modeling";
+  if (asNum === 3) return "3. Testing";
   
   return Number.isFinite(asNum) && phaseKey.trim() !== ""
     ? `Phase ${asNum}`
@@ -189,70 +190,6 @@ export default function StageNavigator({
                           >
                             <span className={`truncate ${textClass}`}>
                               {display}
-                            </span>
-                            <span
-                              className={`
-                                ml-3 inline-flex items-center rounded-full border px-2 py-[1px] text-[10px] font-medium
-                                ${
-                                  isCurrent
-                                    ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-300"
-                                    : isApproved
-                                    ? "border-slate-500/60 bg-slate-800/80 text-slate-200"
-                                    : reachable
-                                    ? "border-slate-600 bg-slate-900 text-slate-200"
-                                    : "border-slate-700 bg-slate-950 text-slate-500"
-                                }
-                              `}
-                            >
-                              {statusLabel}
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-
-                  {/* LEGACY schema: steps are strings */}
-                  {!isNewStepDefArray(list) &&
-                    (list as string[]).map((stepName) => {
-                      const key = `${pKey}-${stepName}`;
-                      const isCurrent =
-                        String(currentPhase) === pKey &&
-                        String(currentStep) === String(stepName);
-
-                      const isApproved = steps[key]?.approved;
-                      const reachable = canNavigateTo(pKey, stepName);
-
-                      const textClass = isCurrent
-                        ? "text-emerald-300"
-                        : isApproved
-                        ? "text-slate-400"
-                        : reachable
-                        ? "text-slate-100"
-                        : "text-slate-600";
-
-                      const statusLabel = isCurrent
-                        ? "Current"
-                        : isApproved
-                        ? "Approved"
-                        : reachable
-                        ? "Available"
-                        : "Locked";
-
-                      return (
-                        <li key={key}>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              reachable && onSelect(pKey, stepName)
-                            }
-                            className={`group w-full text-left flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs md:text-sm transition-colors ${
-                              reachable
-                                ? "hover:bg-slate-900 cursor-pointer"
-                                : "cursor-default"
-                            }`}
-                          >
-                            <span className={`truncate ${textClass}`}>
-                              {stepName}
                             </span>
                             <span
                               className={`

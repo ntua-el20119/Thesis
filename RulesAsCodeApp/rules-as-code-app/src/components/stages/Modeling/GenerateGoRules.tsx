@@ -34,7 +34,9 @@ export default function GenerateGoRules({
   } = step;
 
   // 3. Get Project ID from store (global context)
-  const projectId = useWizardStore(s => s.projectId);
+  const projectId = useWizardStore((s) => s.projectId);
+  const apiKey = useWizardStore((s) => s.apiKey);
+  const llmModel = useWizardStore((s) => s.llmModel);
 
   // 4. Fetch data from Step 4 (Data Model) manually - "2-4"
   const steps = useWizardStore((s) => s.steps);
@@ -192,7 +194,11 @@ ${dataModelText || "(No data model found)"}
 
       const res = await fetch("/api/llm/generate-gorules", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-OpenRouter-Key": apiKey || "",
+          "X-LLM-Model": llmModel || "",
+        },
         body: JSON.stringify({ 
             businessRules: businessRulesText, 
             dataModel: dataModelText, 

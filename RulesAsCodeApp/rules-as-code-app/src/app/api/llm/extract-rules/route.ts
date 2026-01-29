@@ -107,11 +107,16 @@ Your output will be evaluated on entity completeness (all significant entities i
 Now process the segmented text provided above.
 `;
 
+  const apiKey = req.headers.get("X-OpenRouter-Key") || undefined;
+  const model = req.headers.get("X-LLM-Model") || undefined;
+
   try {
     const { parsed } = await callOpenRouterJson({
       prompt,
-      maxTokens: 5000,
-      temperature: 0.2, // Low temp for precision
+      apiKey,
+      model,
+      maxTokens: 10000,
+      temperature: 0.3, // Low temp for precision
     });
 
     // Upsert to DB

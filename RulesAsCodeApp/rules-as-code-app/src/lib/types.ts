@@ -80,9 +80,9 @@ export const methodology: Methodology = {
     { stepNumber: 3, stepName: "Detect Conflicts" },
   ],
   "Modeling": [
-    { stepNumber: 4, stepName: "Create Data Model" },
-    { stepNumber: 5, stepName: "Generate Business Rules" },
-    { stepNumber: 6, stepName: "Generate GoRules Format" },
+    { stepNumber: 4, stepName: "Data Model" },
+    { stepNumber: 5, stepName: "Business Rules" },
+    { stepNumber: 6, stepName: "GoRules Format" },
   ],
   "Testing": [
     { stepNumber: 7, stepName: "Download File" },

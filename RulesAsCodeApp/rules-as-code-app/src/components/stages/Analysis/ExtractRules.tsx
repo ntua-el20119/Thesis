@@ -5,6 +5,8 @@ import { StepEditorProps } from "@/lib/types";
 import { StepLayout } from "@/components/stages/StepLayout";
 import { useStepDataLoader } from "@/components/stages/StepDataLoader";
 
+import { useWizardStore } from "@/lib/store";
+
 /*
   Step 2: Extract Rules
   ---------------------
@@ -17,6 +19,7 @@ export default function ExtractRules({
   onEdit,
   onApprove,
 }: StepEditorProps) {
+  const { apiKey, llmModel } = useWizardStore();
   if (!step) return null;
   // Chain from Step 1 (phase 1, step 1) -> use previousKey logic if needed, 
   // but simpler to relying on StepDataLoader to find the *previous sequential step* 
@@ -141,7 +144,11 @@ text: "${r.sourceText}"`
       // 2. Call LLM
       const res = await fetch("/api/llm/extract-rules", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-OpenRouter-Key": apiKey || "",
+          "X-LLM-Model": llmModel || "",
+        },
         body: JSON.stringify({ text: inputText, projectId }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -178,6 +185,7 @@ text: "${r.sourceText}"`
 
   // Helper to save via /api/approve (which acts as a general 'upsert step' endpoint)
   async function saveDraft(finalOutput?: string, approved = false) {
+    if (!step) return;
     await fetch("/api/approve", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -198,21 +206,24 @@ text: "${r.sourceText}"`
     <StepLayout
       showOutput={showOutput}
       input={{
-        title: "Source Attributes (Segments)",
-        description: "Approved text segments from Step 1.",
+        title: "Segments",
+        description: "Approved text segments",
         value: inputText,
         onChange: setInputText,
-        processLabel: showOutput ? "Re-Extract" : "Extract Rules",
+        processLabel: showOutput ? "Process Again" : "Process",
         onProcess: handleProcess,
         isProcessing,
         disabled: !inputText,
       }}
       output={
         showOutput ? {
-          title: "Extracted Rules",
-          description: "Atomic rules (obligations, permissions) extracted from text.",
+          title: "Entities and Rules",
+          description: "Atomic entities and rules extracted from text.",
           value: outputValue,
-          onChange: setOutputValue, // Local state update only (matches Left side)
+          onChange: (v) => {
+            setOutputValue(v);
+            onEdit(Number(phase), step.stepNumber, stepName, content, inputText, v, typeof step?.confidenceScore === 'number' ? step.confidenceScore : null, reviewNotes);
+          }, // Local state update only (matches Left side) + Persistence
           onApprove: handleApprove,
           isApproving,
           confidence: typeof step.confidenceScore === 'number' ? step.confidenceScore : null,

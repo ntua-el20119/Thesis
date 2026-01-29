@@ -30,6 +30,7 @@ export class LlmApiError extends Error {
 export interface CallOpenRouterJsonOptions {
   prompt: string;
   model?: string; // if omitted, falls back to process.env.LLM_MODEL
+  apiKey?: string; // if omitted, falls back to process.env.OPENROUTER_API_KEY
   maxTokens?: number;
   temperature?: number;
 }
@@ -44,12 +45,12 @@ export async function callOpenRouterJson(
 ): Promise<CallOpenRouterJsonResult> {
   const { prompt, maxTokens = 10000, temperature = 0.3 } = opts;
 
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = opts.apiKey;
   if (!apiKey) {
-    throw new Error("OPENROUTER_API_KEY is not set in environment variables");
+    throw new Error("OPENROUTER_API_KEY is not set in environment variables and not provided in options");
   }
 
-  const model = opts.model || process.env.LLM_MODEL;
+  const model = opts.model;
   if (!model) {
     throw new Error(
       "No LLM model configured: set LLM_MODEL in env or pass opts.model"

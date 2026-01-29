@@ -109,11 +109,17 @@ Your output will be evaluated on identifying all significant conflicts, correctl
 Now analyze the entities and rules provided above.
 `;
 
+  /* ------------------------------------------------------------------ */
+  const apiKey = req.headers.get("X-OpenRouter-Key") || undefined;
+  const model = req.headers.get("X-LLM-Model") || undefined;
+
   try {
     const { parsed } = await callOpenRouterJson({
       prompt,
-      maxTokens: 5000,
-      temperature: 0.2,
+      apiKey,
+      model,
+      maxTokens: 10000,
+      temperature: 0.3,
     });
 
     await prisma.methodologyStep.upsert({

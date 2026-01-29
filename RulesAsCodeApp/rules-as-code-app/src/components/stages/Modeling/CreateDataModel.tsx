@@ -24,8 +24,11 @@ export default function CreateDataModel({
   const io = useStepDataLoader(step, "1-3");
   const { phase, stepName, content, projectId, output: persistedOutput, reviewNotes: persistedNotes } = io;
 
-  // 2. Fetch data from Step 2 (Extract Rules) manually
+  /* ------------------------------------------------------------------ */
   const steps = useWizardStore((s) => s.steps);
+  const apiKey = useWizardStore((s) => s.apiKey);
+  const llmModel = useWizardStore((s) => s.llmModel);
+
   const step2Raw = steps["1-2"]; // Canonical key for Phase 1, Step 2
   
   // Helper to get structured content
@@ -34,13 +37,8 @@ export default function CreateDataModel({
     
     let entities: any[] = [];
 
-    // 1. Try structured LLM output
-    const structured = rawStep.llmOutput;
-    if (structured && structured.result && Array.isArray(structured.result.entities)) {
-         entities = structured.result.entities;
-    }
-    // 2. Try human output (wrap check)
-    else if (rawStep.humanOutput) {
+    // 1. Try human output (wrap check) - Priority 1
+    if (rawStep.humanModified && rawStep.humanOutput) {
         if (Array.isArray(rawStep.humanOutput)) {
             entities = rawStep.humanOutput;
         } else if (typeof rawStep.humanOutput.text === "string") {
@@ -52,6 +50,14 @@ export default function CreateDataModel({
                 } catch { } // Not JSON, fall through
             }
         }
+    }
+
+    // 2. Try structured LLM output (Fallback)
+    if (entities.length === 0 && rawStep.llmOutput) {
+       const structured = rawStep.llmOutput;
+       if (structured && structured.result && Array.isArray(structured.result.entities)) {
+            entities = structured.result.entities;
+       }
     }
 
     // If we found entities, format them nicely
@@ -214,7 +220,11 @@ ${conflictsText || "(No conflicts found)"}
 
       const res = await fetch("/api/llm/create-data-model", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-OpenRouter-Key": apiKey || "",
+          "X-LLM-Model": llmModel || "",
+        },
         body: JSON.stringify({ 
             entities: entitiesText, 
             conflicts: conflictsText, 
@@ -279,8 +289,8 @@ ${conflictsText || "(No conflicts found)"}
       <StepLayout
         showOutput={showOutputPanel}
         input={{
-          title: "Input Context",
-          description: "Combined Rules (Step 2) & Conflicts (Step 3).",
+          title: "Rules and Conflicts",
+          description: "These are the rules and conflicts extracted from the previous steps",
           value: combinedInput,
           onChange: setCombinedInput, // Allow editing the context if needed? usually read-only derived
           // Actually, if user edits this, it doesn't feed back to previous steps. 
@@ -296,7 +306,7 @@ ${conflictsText || "(No conflicts found)"}
           // So editing `combinedInput` here is purely visual/notes for now unless I update logic.
           // I will mark it readOnly for clarity or leave as reference.
           // Actually, standard StepLayout input is editable. 
-          processLabel: "Generate Data Model",
+          processLabel: showOutputPanel ? "Process Again" : "Process",
           onProcess: handleProcess,
           isProcessing,
           disabled: !conflictsText
@@ -306,7 +316,10 @@ ${conflictsText || "(No conflicts found)"}
               title: "Data Model Specification",
               description: "Formal definition of entities, properties, and relationships.",
               value: outputValue,
-              onChange: setOutputValue,
+              onChange: (v) => {
+                 setOutputValue(v);
+                 onEdit(Number(phase), step.stepNumber, stepName, content, combinedInput, v, typeof step?.confidenceScore === 'number' ? step.confidenceScore : null, reviewNotes);
+              },
               onApprove: handleApprove,
               onReset: () => {
                    setOutputValue(readableOutput);

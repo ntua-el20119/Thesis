@@ -10,7 +10,7 @@ interface GenGoRulesBody {
 
 const PHASE = 2;
 const STEP_NUMBER = 6;
-const STEP_NAME = "Generate GoRules Format";
+const STEP_NAME = "GoRules Format";
 
 export async function POST(req: NextRequest) {
   const { businessRules, dataModel, projectId }: GenGoRulesBody = await req.json();
@@ -42,10 +42,10 @@ GoRules uses a visual graph structure with nodes (decision tables, functions, in
 
 Based on the business rules and data model, create:
 
-1. **Input Node**: Entry point for data
+1. **Input Node**: Entry point for data (schema must be stringified JSON)
 2. **Decision Table Nodes**: One per rule category
 3. **Function Nodes**: For complex calculations or aggregations
-4. **Output Node**: Final results
+4. **Output Node**: Final results (schema must be stringified JSON)
 5. **Edges**: Connect nodes in execution order
 
 ## Input
@@ -168,11 +168,17 @@ Your output will be evaluated on: all business rules converted to decision table
 Now generate GoRules format from the provided business rules and data model.
 `;
 
+  /* ------------------------------------------------------------------ */
+  const apiKey = req.headers.get("X-OpenRouter-Key") || undefined;
+  const model = req.headers.get("X-LLM-Model") || undefined;
+
   try {
     const { parsed } = await callOpenRouterJson({
       prompt,
-      maxTokens: 50000,
-      temperature: 0.1, 
+      apiKey,
+      model,
+      maxTokens: 10000,
+      temperature: 0.3,
     });
 
     await prisma.methodologyStep.upsert({
