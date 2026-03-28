@@ -144,16 +144,21 @@ export function useStepDataLoader(
   let initialInput = "";
 
   //Approval gate: previous output becomes binding input only if approved
-  if (
+  //Approval gate: previous output becomes binding input only if approved
+  // BUT: if we have saved input for THIS step (which might be an edit of the previous output), we MUST use it.
+  
+  if (readableCurrentInput.trim().length > 0) {
+    // 1. Saved input exists -> Use it (restore draft/edits)
+    initialInput = readableCurrentInput;
+  } else if (
     previousStep?.approved &&
     typeof previousStep.output === "string" &&
     previousStep.output.trim().length > 0
   ) {
+    // 2. No saved input -> Fallback to previous step output (if approved)
     initialInput = previousStep.output;
-  } else if (readableCurrentInput.trim().length > 0) {
-    //Use readable input (not JSON/stringified JSON)
-    initialInput = readableCurrentInput;
   } else {
+    // 3. Nothing to show
     initialInput = "";
   }
 

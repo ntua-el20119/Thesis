@@ -201,7 +201,8 @@ ${dataModelText || "(No data model found)"}
         },
         body: JSON.stringify({ 
             businessRules: businessRulesText, 
-            dataModel: dataModelText, 
+            dataModel: dataModelText,
+            text: combinedInput, // Send manually edited text
             projectId 
         }),
       });

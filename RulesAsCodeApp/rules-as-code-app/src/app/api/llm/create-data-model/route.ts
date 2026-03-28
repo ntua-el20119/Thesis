@@ -13,7 +13,8 @@ const STEP_NUMBER = 4;
 const STEP_NAME = "Data Model";
 
 export async function POST(req: NextRequest) {
-  const { entities, conflicts, projectId }: CreateDataModelBody = await req.json();
+  const reqBody: CreateDataModelBody & { text?: string } = await req.json();
+  const { entities, conflicts, projectId } = reqBody;
 
   if (!projectId || typeof projectId !== "number") {
     return NextResponse.json({ error: "Invalid projectId" }, { status: 400 });
@@ -140,7 +141,8 @@ Now create the data model from the provided inputs.
 `;
 
   // Use combinedText as the "input" record for the DB to preserve context
-  const text = combinedText; 
+  // Fixed: Use provided 'text' (manual edit) if available, else fallback to combined
+  const text = (reqBody as any).text || combinedText; 
 
   const apiKey = req.headers.get("X-OpenRouter-Key") || undefined;
   const model = req.headers.get("X-LLM-Model") || undefined;
@@ -150,7 +152,7 @@ Now create the data model from the provided inputs.
       prompt,
       apiKey,
       model,
-      maxTokens: 50000,
+      maxTokens: 10000,
       temperature: 0.1, // Very low temp for structural schema tasks
     });
 

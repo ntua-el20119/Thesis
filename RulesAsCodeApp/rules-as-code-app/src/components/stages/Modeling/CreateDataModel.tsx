@@ -227,7 +227,8 @@ ${conflictsText || "(No conflicts found)"}
         },
         body: JSON.stringify({ 
             entities: entitiesText, 
-            conflicts: conflictsText, 
+            conflicts: conflictsText,
+            text: combinedInput, // Send manually edited text
             projectId 
         }),
       });

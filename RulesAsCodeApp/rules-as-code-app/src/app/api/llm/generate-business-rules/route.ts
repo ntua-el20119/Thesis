@@ -13,7 +13,8 @@ const STEP_NUMBER = 5;
 const STEP_NAME = "Business Rules";
 
 export async function POST(req: NextRequest) {
-  const { rules, dataModel, projectId }: GenBusinessRulesBody = await req.json();
+  const reqBody: GenBusinessRulesBody & { text?: string } = await req.json();
+  const { rules, dataModel, projectId } = reqBody;
 
   if (!projectId || typeof projectId !== "number") {
     return NextResponse.json({ error: "Invalid projectId" }, { status: 400 });
@@ -187,7 +188,7 @@ Now generate business rules and tests from the provided inputs.
       },
       update: {
         stepName: STEP_NAME,
-        input: { text: combinedText },
+        input: { text: reqBody.text || combinedText },
         llmOutput: parsed,
         confidenceScore: parsed.confidence,
         schemaValid: true,
@@ -199,7 +200,7 @@ Now generate business rules and tests from the provided inputs.
         phase: PHASE,
         stepNumber: STEP_NUMBER,
         stepName: STEP_NAME,
-        input: { text: combinedText },
+        input: { text: reqBody.text || combinedText },
         llmOutput: parsed,
         confidenceScore: parsed.confidence,
         schemaValid: true,

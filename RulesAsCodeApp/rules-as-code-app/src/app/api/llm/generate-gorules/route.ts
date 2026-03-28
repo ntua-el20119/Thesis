@@ -13,7 +13,8 @@ const STEP_NUMBER = 6;
 const STEP_NAME = "GoRules Format";
 
 export async function POST(req: NextRequest) {
-  const { businessRules, dataModel, projectId }: GenGoRulesBody = await req.json();
+  const reqBody: GenGoRulesBody & { text?: string } = await req.json();
+  const { businessRules, dataModel, projectId } = reqBody;
 
   if (!projectId || typeof projectId !== "number") {
     return NextResponse.json({ error: "Invalid projectId" }, { status: 400 });
@@ -47,6 +48,12 @@ Based on the business rules and data model, create:
 3. **Function Nodes**: For complex calculations or aggregations
 4. **Output Node**: Final results (schema must be stringified JSON)
 5. **Edges**: Connect nodes in execution order
+
+## Structural Requirements
+- Design the graph so the Input Node connects to multiple Decision Table Nodes simultaneously (parallel paths) rather than a linear chain.
+- All Decision Table outputs must use namespaced fields (e.g., 'basicEligibility.result', 'incomeThreshold.reason') to prevent data overwriting before the aggregation step.
+- In the decision nodes, each different value of an input has to be one row in the decision table with the corresponding result and reason which explains the decision.
+- Include a Function Node named 'finalResult' that collects all parallel outputs and constructs the analytical result, based on the logic of the business rules.
 
 ## Input
 
@@ -163,6 +170,7 @@ Your output will be evaluated on: all business rules converted to decision table
 - Connect nodes with edges showing execution flow
 - Use hitPolicy "first" for exclusive rules
 - Include traceability mapping
+- Each node has to pass an output to the 
 - Set confidence below 0.8 if conversion incomplete
 
 Now generate GoRules format from the provided business rules and data model.
@@ -191,7 +199,7 @@ Now generate GoRules format from the provided business rules and data model.
       },
       update: {
         stepName: STEP_NAME,
-        input: { text: combinedText },
+        input: { text: reqBody.text || combinedText },
         llmOutput: parsed,
         confidenceScore: parsed.confidence,
         schemaValid: true,
@@ -203,7 +211,7 @@ Now generate GoRules format from the provided business rules and data model.
         phase: PHASE,
         stepNumber: STEP_NUMBER,
         stepName: STEP_NAME,
-        input: { text: combinedText },
+        input: { text: reqBody.text || combinedText },
         llmOutput: parsed,
         confidenceScore: parsed.confidence,
         schemaValid: true,
