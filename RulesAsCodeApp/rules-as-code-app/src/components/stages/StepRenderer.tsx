@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { stepComponentMap } from "@/components/stages";
 import { StepEditorProps, JsonValue } from "@/lib/types";
-import { useWizardStore } from "@/lib/store";
+import { useWizardStore } from "@/store/wizardStore";
 
 function jsonToTextareaString(v: unknown): string {
   // DB Json is non-null. Empty object should render as empty textarea.

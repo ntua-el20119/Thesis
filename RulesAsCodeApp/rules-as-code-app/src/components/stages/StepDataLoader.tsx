@@ -1,6 +1,6 @@
 "use client";
 
-import { useWizardStore } from "@/lib/store";
+import { useWizardStore } from "@/store/wizardStore";
 
 export interface StepDataLoaderResult {
   phase: string;

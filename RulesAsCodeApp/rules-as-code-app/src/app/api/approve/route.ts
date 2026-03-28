@@ -78,18 +78,23 @@ export async function POST(request: NextRequest) {
 
         approved: true,
 
-        // If your schema defines humanOutput as NON-NULL too, keep it DEFAULT_JSON.
-        // If it is nullable, you can set it to null here, but you told me the JSON fields are non-null.
         humanModified: hasHumanOutput,
         humanOutput: (hasHumanOutput ? humanOutput : DEFAULT_JSON) as any,
 
-        // If confidenceScore is NON-NULL in your schema, set a default number (e.g., 0).
         confidenceScore: null as any,
 
         schemaValid: true,
         reviewNotes: (reviewNotes ?? null) as any,
       },
     });
+
+    // Step 6 (GoRules Format) is the final methodology step — mark project as completed
+    if (stepNumber === 6) {
+      await prisma.project.update({
+        where: { id: projectId },
+        data: { status: "completed" },
+      });
+    }
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

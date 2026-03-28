@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { StepLayout } from "@/components/stages/StepLayout";
 import { useStepDataLoader } from "@/components/stages/StepDataLoader";
 
-import { useWizardStore } from "@/lib/store";
+import { useWizardStore } from "@/store/wizardStore";
 
 /**
  * Phase1SegmentText

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { StepEditorProps } from "@/lib/types";
 import { StepLayout } from "@/components/stages/StepLayout";
 import { useStepDataLoader, unwrapInputText } from "@/components/stages/StepDataLoader";
-import { useWizardStore } from "@/lib/store";
+import { useWizardStore } from "@/store/wizardStore";
 
 /*
   Step 5: Generate Business Rules

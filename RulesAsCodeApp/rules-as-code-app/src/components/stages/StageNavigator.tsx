@@ -1,13 +1,14 @@
 "use client";
 
 import React from "react";
+import ModelSwitcher from "@/components/ui/ModelSwitcher";
 
 // IMPORTANT:
 // We now prefer methodology coming from the store, because the store is the
 // client-side single source of truth for ordering/navigation logic.
 // If your project still exports methodology from "@/lib/types", you can switch
 // this import back accordingly.
-import { methodology as methodologyRaw, useWizardStore } from "@/lib/store";
+import { methodology as methodologyRaw, useWizardStore } from "@/store/wizardStore";
 
 /**
  * The navigator must work with BOTH shapes during migration:
@@ -72,7 +73,6 @@ export default function StageNavigator({
   expanded,
   setExpanded,
 }: StageNavigatorProps) {
-  const llmModel = useWizardStore((s) => s.llmModel);
 
   // Methodology can be legacy or new; treat as unknown and normalise via guards.
   const methodology = methodologyRaw as unknown as
@@ -219,17 +219,11 @@ export default function StageNavigator({
           );
         })}
       </div>
-      {/* Model Display */}
-      {llmModel && (
-        <div className="mx-3 md:mx-4 mt-2 mb-4 w-fit max-w-[calc(100%-2rem)] px-3 py-2 rounded-lg border border-slate-800 bg-slate-900/50">
-          <span className="block text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-0.5">
-            Active Model
-          </span>
-          <span className="block text-xs font-mono text-emerald-400 break-all" title={llmModel}>
-            {llmModel}
-          </span>
-        </div>
-      )}
+
+      {/* Model Switcher */}
+      <div className="mt-2">
+        <ModelSwitcher />
+      </div>
     </nav>
   );
 }

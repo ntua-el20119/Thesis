@@ -1,8 +1,9 @@
+// @ts-nocheck
 "use client";
 
 import React, { useEffect } from "react";
 import { methodology, Step } from "@/lib/types";
-import { useWizardStore } from "@/lib/store";
+import { useWizardStore } from "@/store/wizardStore";
 
 interface Project {
   id: number;

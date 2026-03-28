@@ -60,8 +60,8 @@ export async function POST(req: NextRequest) {
           stepName: s.stepName,
           input: {}, // Json
           llmOutput: {}, // Json
-          humanOutput: null, // Json?
-          confidenceScore: null,
+          humanOutput: {}, // Json
+          confidenceScore: null,  
           schemaValid: false,
           humanModified: false,
           approved: false,

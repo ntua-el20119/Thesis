@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useWizardStore } from "@/lib/store";
+import { useWizardStore } from "@/store/wizardStore";
 
 interface StepInputConfig {
   title?: string;

@@ -1,16 +1,18 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useWizardStore } from "@/lib/store";
+import { useWizardStore } from "@/store/wizardStore";
 import StepRenderer from "@/components/stages/StepRenderer";
-import StartingPage from "@/pages/StartingPage";
+import StartingPage from "@/components/views/StartingPage";
 import StageNavigator from "@/components/stages/StageNavigator";
-import { usePhaseExpansion } from "@/pages/usePhaseExpansion";
-import ConfigurationModal from "@/components/ConfigurationModal";
+import { usePhaseExpansion } from "@/hooks/usePhaseExpansion";
+import ConfigurationModal from "@/components/ui/ConfigurationModal";
 
 interface Project {
   id: number;
   name: string;
+  status: string;
+  createdAt: string;
 }
 
 function phaseLabel(phase: number) {
@@ -246,6 +248,30 @@ export default function Home() {
     }
   };
 
+  // --- Rename project
+  const renameProject = async (id: number, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    try {
+      const res = await fetch(`/api/projects/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!res.ok) {
+        alert((await res.json()).error ?? "Failed to rename project.");
+        return;
+      }
+      // Update local list
+      setProjects((prev) => prev.map((p) => p.id === id ? { ...p, name: trimmed } : p));
+      // If this is the active project, update the name in the store too
+      if (projectId === id) setProjectName(trimmed);
+    } catch (err) {
+      console.error("Rename error:", err);
+      alert("Error renaming project.");
+    }
+  };
+
   // --- Pre-start mode
   if (!started) {
     return (
@@ -262,6 +288,7 @@ export default function Home() {
         submitCreate={submitCreate}
         selectProject={selectProject}
         deleteProject={deleteProject}
+        renameProject={renameProject}
       />
     );
   }
