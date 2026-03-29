@@ -295,7 +295,7 @@ export default function Home() {
 
   // --- Active workspace
   return (
-    <div className="container mx-auto p-4 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white px-4 py-6">
       {showConfig && (
         <ConfigurationModal onSave={() => setShowConfig(false)} />
       )}
@@ -305,13 +305,17 @@ export default function Home() {
             setStarted(false);
             setProjectId(0);
           }}
-          className="md:absolute md:left-0 px-4 py-2 bg-gray-800/50 hover:bg-gray-700 rounded-lg text-gray-300 hover:text-white transition-all flex items-center gap-2 mb-4 md:mb-0 border border-gray-700"
+          className="md:absolute md:left-0 p-3 bg-slate-800/50 hover:bg-emerald-600 rounded-full text-slate-400 hover:text-white transition-all flex items-center justify-center mb-4 md:mb-0 border border-slate-700 hover:border-emerald-500 shadow-sm hover:shadow-lg hover:shadow-emerald-500/20 hover:scale-[1.05] active:scale-[0.95]"
+          title="Back to Starting Page"
         >
-          <span>←</span> Back to Starting Page
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+            <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.99 8.99a.75.75 0 1 1-1.06 1.06L12 5.432l-8.46 8.46a.75.75 0 1 1-1.06-1.06l8.99-8.99Z" />
+            <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
+          </svg>
         </button>
 
         <div className="text-center">
-          <div className="text-xs text-gray-500 font-mono mb-1">PROJECT ID: {projectId}</div>
+
           <h1 className="text-3xl font-bold text-white tracking-tight">
              {projectName ?? "Unnamed Project"}
           </h1>

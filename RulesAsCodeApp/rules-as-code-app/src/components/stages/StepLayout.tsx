@@ -13,6 +13,7 @@ interface StepInputConfig {
   isProcessing?: boolean;
   disabled?: boolean;
   rows?: number;
+  actions?: React.ReactNode;
 }
 
 interface StepOutputConfig {
@@ -85,6 +86,7 @@ const Panel = ({
   footerRight,
   rows = 26,
   confidence,
+  actions,
 }: {
   title: string;
   description?: React.ReactNode;
@@ -96,6 +98,7 @@ const Panel = ({
   footerRight: React.ReactNode;
   rows?: number;
   confidence?: number | null;
+  actions?: React.ReactNode;
 }) => {
   const handleChange = onChange
     ? (e: React.ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)
@@ -114,9 +117,11 @@ const Panel = ({
               </p>
             )}
           </div>
-          {confidence !== undefined && confidence !== null && (
-            <div
-              title={`Confidence Score: ${confidence}`}
+          <div className="flex items-center gap-3">
+            {actions}
+            {confidence !== undefined && confidence !== null && (
+              <div
+                title={`Confidence Score: ${confidence}`}
               className={`ml-3 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider border ${
                 confidence >= 0.8
                   ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
@@ -128,6 +133,7 @@ const Panel = ({
               {(confidence * 100).toFixed(0)}% CONFIDENCE SCORE
             </div>
           )}
+          </div>
         </div>
       </header>
 
@@ -139,7 +145,7 @@ const Panel = ({
           readOnly={readOnly}
           rows={rows}
           placeholder={placeholder}
-          className="scrollbar-minimal w-full h-full min-h-0 resize-none rounded-xl bg-slate-900/90 border border-slate-700/50 px-5 py-4 text-[15px] leading-relaxed text-slate-100 font-light outline-none focus:ring-2 focus:ring-emerald-500/50 placeholder:text-slate-600 caret-emerald-400 selection:bg-emerald-500/20"
+          className="scrollbar-minimal w-full h-full min-h-0 resize-none rounded-xl bg-black border border-slate-700/50 px-5 py-4 text-[15px] leading-relaxed text-slate-100 font-light outline-none focus:ring-2 focus:ring-emerald-500/50 placeholder:text-slate-600 caret-emerald-400 selection:bg-emerald-500/20 whitespace-pre-wrap break-words"
         />
       </div>
 
@@ -218,6 +224,7 @@ export function StepLayout({ showOutput, input, output, reviewNotes }: StepLayou
                input={input} 
             />
           }
+          actions={input.actions}
         />
 
         {/* RIGHT: Output — now perfectly matched */}
@@ -240,11 +247,11 @@ export function StepLayout({ showOutput, input, output, reviewNotes }: StepLayou
                 <button
                   onClick={output.onApprove}
                   disabled={output.disabled || output.isApproving}
-                  className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all shadow-md
+                  className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-200 shadow-md
                     ${
                       output.disabled || output.isApproving
                         ? "bg-emerald-900/40 text-emerald-300/60 cursor-not-allowed border border-emerald-800/50"
-                        : "bg-emerald-500 hover:bg-emerald-450 text-slate-950 shadow-emerald-500/30"
+                        : "bg-emerald-500 hover:bg-emerald-400 text-slate-950 hover:text-white shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-[1.03] active:scale-[0.97]"
                     }`}
                 >
                   {output.isApproving
@@ -325,11 +332,11 @@ const ProcessButton = ({ input }: { input: StepInputConfig }) => {
     <button
       onClick={handleClick}
       disabled={input.disabled || input.isProcessing}
-      className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all shadow-md
+      className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-200 shadow-md
         ${
           input.disabled || input.isProcessing
             ? "bg-emerald-900/40 text-emerald-300/60 cursor-not-allowed border border-emerald-800/50"
-            : "bg-emerald-500 hover:bg-emerald-450 text-slate-950 shadow-emerald-500/30"
+            : "bg-emerald-500 hover:bg-emerald-400 text-slate-950 hover:text-white shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-[1.03] active:scale-[0.97]"
         }`}
     >
       {input.isProcessing ? "Processing…" : input.processLabel}

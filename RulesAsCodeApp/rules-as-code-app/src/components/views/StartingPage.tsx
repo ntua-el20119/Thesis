@@ -95,7 +95,7 @@ export default function StartingPage({
           <header className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
             <div className="space-y-3">
               <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-                Rules as Code Text Wizard
+                Rules as Code Methodology Tool
               </h1>
               <p className="text-sm md:text-base text-slate-300 max-w-3xl leading-relaxed">
                 A methodology for transforming legal provisions into structured, implementation-ready rules.
@@ -103,7 +103,7 @@ export default function StartingPage({
             </div>
             <div className="flex flex-col items-start md:items-end gap-2 text-xs md:text-sm mt-1">
               <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-medium text-emerald-300">
-                RaC Methodology Assistant
+                Methodology Assistant
               </span>
             </div>
           </header>
@@ -116,43 +116,43 @@ export default function StartingPage({
               </h2>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/80">
-              <table className="w-full table-auto text-left text-sm text-slate-200">
-                <thead className="bg-slate-900/90 border-b border-slate-800">
-                  <tr>
-                    <th className="px-5 py-4 w-1/4 text-sm md:text-base font-bold uppercase tracking-wide text-slate-400">
-                      Stage
-                    </th>
-                    <th className="px-5 py-4 text-sm md:text-base font-bold uppercase tracking-wide text-slate-400">
-                      Step Description
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/80">
-                  {Object.entries(methodology).map(([phase, steps]) => (
-                    <tr
-                      key={phase}
-                      className="hover:bg-slate-800/60 transition-colors"
-                    >
-                      <td className="px-5 py-5 font-bold text-slate-100 align-top w-40 text-base">
-                        {phase}
-                      </td>
-                      <td className="px-5 py-5 text-slate-300 text-base leading-relaxed">
-                        <ul className="space-y-3">
-                           {steps.map(step => (
-                              <li key={step.stepNumber}>
-                                 <span className="font-bold text-slate-100">{step.stepName}:</span>{" "}
-                                 <span className="text-slate-300">
-                                   {getStepDescription(step.stepName)}
-                                 </span>
+            <div className="flex flex-col gap-6">
+              {Object.entries(methodology).map(([phase, steps], phaseIndex) => (
+                <div key={phase} className="overflow-hidden rounded-xl border border-slate-800 shadow-sm">
+                  <table className="w-full text-left text-sm text-slate-200">
+                    <tbody className="">
+                      {/* Stage Header Row */}
+                      <tr className="bg-slate-800/50 border-b border-slate-800/60">
+                        <td className="px-5 py-3 font-bold text-emerald-400 text-base md:text-lg uppercase tracking-wider">
+                          <span className="text-slate-100">{phase}</span>
+                        </td>
+                      </tr>
+                      {/* Steps Details Row */}
+                      <tr>
+                        <td className="px-5 py-5 text-slate-300 text-base leading-relaxed bg-slate-900/40">
+                          <ul className="space-y-4">
+                            {steps.map((step) => (
+                              <li key={step.stepNumber} className="flex items-start gap-3">
+                                {/* Step Number */}
+                                <div className="flex-shrink-0 mt-0.5 flex items-center justify-center w-6 h-6 rounded-full bg-slate-800 border border-slate-700 text-xs font-bold text-slate-300 shadow-sm">
+                                  {step.stepNumber}
+                                </div>
+                                {/* Step Content */}
+                                <div>
+                                  <span className="font-bold text-slate-100">{step.stepName} — </span>
+                                  <span className="text-slate-400">
+                                    {getStepDescription(step.stepName)}
+                                  </span>
+                                </div>
                               </li>
-                           ))}
-                        </ul>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                            ))}
+                          </ul>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ))}
             </div>
 
           </section>
@@ -356,13 +356,13 @@ export default function StartingPage({
               {projects.map((p) => (
                 <li key={p.id}>
                   <button
-                    className="w-full flex items-center justify-between px-5 py-4 rounded-lg bg-red-950/10 hover:bg-red-950/20 border border-red-900/30 hover:border-red-900/50 text-sm text-slate-100 transition-all group"
+                    className="w-full flex items-center justify-between px-5 py-4 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-slate-500 text-sm text-slate-100 transition-all group"
                     onClick={() => {
                       deleteProject(p.id);
                     }}
                   >
                     <div className="flex flex-col items-start gap-1">
-                      <span className="font-semibold text-base text-slate-300 group-hover:text-red-200 transition-colors block">{p.name}</span>
+                      <span className="font-semibold text-base text-slate-300 group-hover:text-emerald-400 transition-colors block">{p.name}</span>
                       <span className="text-xs text-slate-500 block tracking-wide">
                         Created: {new Date(p.createdAt).toLocaleDateString('en-GB')}
                       </span>
@@ -375,7 +375,6 @@ export default function StartingPage({
                       }`}>
                         {p.status === 'in_progress' ? 'In Progress' : p.status.charAt(0).toUpperCase() + p.status.slice(1)}
                       </span>
-                      <span className="text-red-900/50 group-hover:text-red-400 transition-colors">🗑</span>
                     </div>
                   </button>
                 </li>

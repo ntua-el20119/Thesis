@@ -80,7 +80,7 @@ export default function StageNavigator({
     | NewMethodology;
 
   return (
-    <nav className="space-y-4">
+    <nav className="relative z-50 space-y-4 bg-slate-950/70 border border-slate-800 rounded-2xl p-4 md:p-6 shadow-sm backdrop-blur-sm">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -93,8 +93,8 @@ export default function StageNavigator({
         </div>
       </div>
 
-      {/* Per-phase cards */}
-      <div className="space-y-3">
+      {/* Per-phase cards — 3 columns, one per phase */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
         {Object.entries(methodology).map(([phaseKey, list]) => {
           const pKey = String(phaseKey);
           const isCurrentPhase = String(currentPhase) === pKey;
@@ -108,7 +108,11 @@ export default function StageNavigator({
               className="rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-sm shadow-sm"
             >
               {/* Phase header */}
-              <header className="flex items-center justify-between px-3 py-2.5 md:px-4 md:py-3 border-b border-slate-800/80">
+              <header
+                className={`flex items-center justify-between px-3 py-2.5 md:px-4 md:py-3 ${
+                  isExpanded ? "border-b border-slate-800/80" : ""
+                }`}
+              >
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-2">
                     <h3
