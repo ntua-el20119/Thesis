@@ -105,7 +105,7 @@ export default function ConfigurationModal({ onSave }: ConfigurationModalProps) 
   const isPaidModel = isLoaded && paidModels.some((m) => m.id === model);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
       <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
         <h2 className="text-xl font-bold text-white mb-4">Configuration Required</h2>
         <p className="text-gray-400 text-sm mb-6">

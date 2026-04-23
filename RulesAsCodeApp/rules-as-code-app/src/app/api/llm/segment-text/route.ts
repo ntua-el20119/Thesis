@@ -86,7 +86,8 @@ export async function POST(request: NextRequest) {
 
 ## Your Task
 
-You are processing legal text as part of a Rules as Code methodology. Your task is to divide the legal document into logical sections while preserving all content.
+You are processing legal text as part of a Rules as Code methodology. 
+Your task is to divide the legal document into logical sections while preserving all content.
 
 ## Instructions
 
@@ -124,11 +125,11 @@ Respond with ONLY valid JSON in this exact structure:
         "id": "sec-1",
         "title": "Clear section title",
         "content": "Complete section text...",
-        "referenceId": "Article 3"
+        "referenceId": "Clear reference id"
       }
     ]
   },
-  "confidence": 0.95
+  "confidence": from 0.00 to 1.00
 }
 
 ## Field Requirements
@@ -137,7 +138,7 @@ Respond with ONLY valid JSON in this exact structure:
 - **title**: 3-10 word descriptive title
 - **content**: Complete text with all formatting preserved
 - **referenceId**: Original document reference (Article X, Section Y, etc.)
-- **confidence**: Number between 0 and 1
+- **confidence**: Number between 0.00 and 1.00
 
 Now process the legal text provided above.
   `;
