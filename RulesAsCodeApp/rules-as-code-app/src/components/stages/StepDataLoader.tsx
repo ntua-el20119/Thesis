@@ -12,11 +12,11 @@ export interface StepDataLoaderResult {
   projectId: number | null;
   previousStep?: {
     input?: any;
-    output?: string;
+    output?: any;
     content?: any;
     approved?: boolean;
   };
-  initialInput: string;
+  initialInput: any;
   hasLlmContent: boolean;
   reviewNotes: string;
 }
@@ -128,11 +128,9 @@ export function useStepDataLoader(
   const previousStep = previousRaw
     ? {
         input: previousRaw.input,
-        output: unwrapInputText(
-          previousRaw.humanModified && previousRaw.humanOutput
-            ? iterativeParse(previousRaw.humanOutput)
-            : iterativeParse(previousRaw.llmOutput)
-        ),
+        output: previousRaw.humanModified && previousRaw.humanOutput
+            ? unwrapInputText(iterativeParse(previousRaw.humanOutput))
+            : iterativeParse(previousRaw.llmOutput),
         content: iterativeParse(previousRaw.llmOutput),
         approved: previousRaw.approved,
       }
@@ -152,11 +150,14 @@ export function useStepDataLoader(
     initialInput = readableCurrentInput;
   } else if (
     previousStep?.approved &&
-    typeof previousStep.output === "string" &&
-    previousStep.output.trim().length > 0
+    previousStep.output != null
   ) {
     // 2. No saved input -> Fallback to previous step output (if approved)
-    initialInput = previousStep.output;
+    // If it's an object (LLM output), stringify it for the UI/TextArea, 
+    // but the component (e.g. ExtractRules) can re-parse it if it wants.
+    initialInput = typeof previousStep.output === "string" 
+        ? previousStep.output 
+        : JSON.stringify(previousStep.output, null, 2);
   } else {
     // 3. Nothing to show
     initialInput = "";

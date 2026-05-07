@@ -35,6 +35,8 @@ export type Step = {
 
   confidenceScore?: number | null;
   approved: boolean;
+  humanModified: boolean;
+  humanOutput?: any | null;
   reviewNotes?: string | null;
 };
 

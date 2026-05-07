@@ -114,6 +114,8 @@ export default function Home() {
             ? JSON.stringify(activeStep.input, null, 2)
             : "",
         output: effective == null ? "" : JSON.stringify(effective, null, 2),
+        humanModified: activeStep.humanModified,
+        humanOutput: activeStep.humanOutput,
         confidenceScore: activeStep.confidenceScore,
         approved: activeStep.approved,
         reviewNotes: activeStep.reviewNotes,
@@ -128,6 +130,8 @@ export default function Home() {
       content: {},
       input: "",
       output: "",
+      humanModified: false,
+      humanOutput: null,
       confidenceScore: null,
       approved: false,
       reviewNotes: null,

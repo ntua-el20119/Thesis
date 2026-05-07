@@ -456,10 +456,15 @@ export const useWizardStore = create(
       getEffectiveOutput: (phase, stepNumber) => {
         const key = stepKey(phase, stepNumber);
         const s = get().steps[key];
-        if (!s || !s.approved) return null;
+        if (!s) return null;
 
+        // 1. Always prefer human output if the step was modified
         if (s.humanModified && s.humanOutput != null) return s.humanOutput;
-        return s.llmOutput;
+        
+        // 2. Return LLM output if it exists (allows seeing drafts/results before approval)
+        if (s.llmOutput && Object.keys(s.llmOutput).length > 0) return s.llmOutput;
+
+        return null;
       },
 
       /* ------------------------------------------------------------------ */

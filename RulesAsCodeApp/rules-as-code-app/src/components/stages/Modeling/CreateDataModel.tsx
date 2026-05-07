@@ -36,9 +36,10 @@ export default function CreateDataModel({
     if (!rawStep) return "";
     
     let entities: any[] = [];
+    const isHuman = rawStep.humanModified && rawStep.humanOutput;
 
     // 1. Try human output (wrap check) - Priority 1
-    if (rawStep.humanModified && rawStep.humanOutput) {
+    if (isHuman) {
         if (Array.isArray(rawStep.humanOutput)) {
             entities = rawStep.humanOutput;
         } else if (typeof rawStep.humanOutput.text === "string") {
@@ -46,40 +47,50 @@ export default function CreateDataModel({
             if (txt.startsWith("[") || txt.startsWith("{")) {
                 try {
                     const parsed = JSON.parse(txt);
-                    if (Array.isArray(parsed)) entities = parsed;
+                    // Handle both bare array and { result: { entities: [...] } }
+                    if (Array.isArray(parsed)) {
+                        entities = parsed;
+                    } else if (parsed.result && Array.isArray(parsed.result.entities)) {
+                        entities = parsed.result.entities;
+                    }
                 } catch { } // Not JSON, fall through
             }
         }
+        
+        // If we found structured entities in human output, format them
+        if (entities.length > 0) {
+            return entities.map((e: any) => {
+                const name = e.name || "Unknown Entity";
+                const type = e.type ? `(${e.type})` : "";
+                const desc = e.description || "";
+                return `- ${name} ${type}: ${desc}`;
+            }).join("\n\n");
+        }
+        
+        // If human modified but not structured JSON, return the raw human text string
+        return unwrapInputText(rawStep.humanOutput);
     }
 
-    // 2. Try structured LLM output (Fallback)
-    if (entities.length === 0 && rawStep.llmOutput) {
+    // 2. Try structured LLM output (Fallback - only if not human modified)
+    if (!isHuman && rawStep.llmOutput) {
        const structured = rawStep.llmOutput;
        if (structured && structured.result && Array.isArray(structured.result.entities)) {
             entities = structured.result.entities;
        }
     }
 
-    // If we found entities, format them nicely
+    // If we found LLM entities, format them nicely
     if (entities.length > 0) {
-        // User requested "readable form".
-        // Transform JSON array into a readable text list.
         return entities.map((e: any) => {
             const name = e.name || "Unknown Entity";
             const type = e.type ? `(${e.type})` : "";
             const desc = e.description || "";
             return `- ${name} ${type}: ${desc}`;
         }).join("\n\n");
-        
-        // If map fails or entities are weird structure, fallback to JSON
     }
 
-    // 3. Fallback to raw text
-    return unwrapInputText(
-      rawStep.humanModified && rawStep.humanOutput
-        ? rawStep.humanOutput
-        : rawStep.llmOutput
-    ) || "";
+    // 3. Final Fallback to raw text
+    return unwrapInputText(rawStep.llmOutput) || "";
   };
 
   // Helper to reliably get text from step

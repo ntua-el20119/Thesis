@@ -50,54 +50,71 @@ export default function GenerateBusinessRules({
   const getStepEntities = (rawStep: any) => {
     if (!rawStep) return "";
     let entities: any[] = [];
-    if (rawStep.humanModified && rawStep.humanOutput) {
-         if (Array.isArray(rawStep.humanOutput)) entities = rawStep.humanOutput;
-         else if (typeof rawStep.humanOutput.text === "string" && (rawStep.humanOutput.text.startsWith('[') || rawStep.humanOutput.text.startsWith('{'))) {
-             try { const p = JSON.parse(rawStep.humanOutput.text); if (Array.isArray(p)) entities = p; } catch {}
+    const isHuman = rawStep.humanModified && rawStep.humanOutput;
+
+    if (isHuman) {
+         if (Array.isArray(rawStep.humanOutput)) {
+             entities = rawStep.humanOutput;
+         } else if (typeof rawStep.humanOutput.text === "string" && (rawStep.humanOutput.text.startsWith('[') || rawStep.humanOutput.text.startsWith('{'))) {
+             try { 
+                const p = JSON.parse(rawStep.humanOutput.text); 
+                if (Array.isArray(p)) entities = p; 
+                else if (p.result && Array.isArray(p.result.entities)) entities = p.result.entities;
+             } catch {}
          }
+         
+         // If human entities found, format them
+         if (entities.length > 0) {
+             return entities.map((e: any) => `- ${e.name}: ${e.description || ""}`).join("\n");
+         }
+         
+         // Human modified but not JSON, return raw text
+         return unwrapInputText(rawStep.humanOutput);
     }
     
-    // Fallback to LLM if no human entities found
-    if (entities.length === 0 && rawStep.llmOutput?.result?.entities && Array.isArray(rawStep.llmOutput.result.entities)) {
+    // Fallback to LLM only if NOT human modified
+    if (!isHuman && rawStep.llmOutput?.result?.entities && Array.isArray(rawStep.llmOutput.result.entities)) {
          entities = rawStep.llmOutput.result.entities;
     }
-    // Return readable list if possible, or raw text
+
     if (entities.length > 0) {
         return entities.map((e: any) => `- ${e.name}: ${e.description || ""}`).join("\n");
     }
-    return getStepText(rawStep) || "(No rules found)";
+    return unwrapInputText(rawStep.llmOutput) || "(No rules found)";
   };
 
   // Specific extractor for Rules only (ignoring Entities from Step 2)
   const getRulesOnly = (rawStep: any) => {
     if (!rawStep) return "";
     
-    // 1. Try human output (if edited)
-    const text = unwrapInputText(rawStep.humanModified && rawStep.humanOutput ? rawStep.humanOutput : null);
-    
-    if (text) {
-        // Try match plain "Rules" section (plain text format)
-        // Look for "Rules" followed by newlines at start or after a newline
-        const rulesMatch = text.match(/(?:^|\n)Rules\s*\n+([\s\S]*?)(?:$)/i);
-        if (rulesMatch && rulesMatch[1]) {
-             return rulesMatch[1].trim();
-        }
-        // Legacy fallback: === RULES ===
-        const legacyMatch = text.match(/=== RULES ===([\s\S]*?)(?:===|$)/);
-        if (legacyMatch && legacyMatch[1]) return legacyMatch[1].trim();
+    const isHuman = rawStep.humanModified && rawStep.humanOutput;
 
-        // If valid JSON?
-        if (text.trim().startsWith("{") || text.trim().startsWith("[")) {
-             try {
-                const p = JSON.parse(text);
-                const r = p.result?.rules ?? p.rules ?? (Array.isArray(p) ? p : []);
-                if (Array.isArray(r) && r.length > 0) return r.map((x: any) => `- [${x.id}] ${x.condition} -> ${x.action}`).join("\n");
-             } catch {}
+    // 1. Try human output (if edited)
+    if (isHuman) {
+        const text = unwrapInputText(rawStep.humanOutput);
+        if (text) {
+            // Try match plain "Rules" section (plain text format)
+            const rulesMatch = text.match(/(?:^|\n)Rules\s*\n+([\s\S]*?)(?:$)/i);
+            if (rulesMatch && rulesMatch[1]) return rulesMatch[1].trim();
+            
+            // Legacy fallback
+            const legacyMatch = text.match(/=== RULES ===([\s\S]*?)(?:===|$)/);
+            if (legacyMatch && legacyMatch[1]) return legacyMatch[1].trim();
+
+            // JSON check
+            if (text.trim().startsWith("{") || text.trim().startsWith("[")) {
+                 try {
+                    const p = JSON.parse(text);
+                    const r = p.result?.rules ?? p.rules ?? (Array.isArray(p) ? p : []);
+                    if (Array.isArray(r) && r.length > 0) return r.map((x: any) => `- [${x.id}] ${x.condition} -> ${x.action}`).join("\n");
+                 } catch {}
+            }
+            return text;
         }
-        return text; // Return everything if we can't split it
+        return "";
     }
 
-    // 2. Fallback to LLM Output (Structure)
+    // 2. Fallback to LLM Output (Structure) - Only if NOT human modified
     const structured = rawStep.llmOutput?.result?.rules;
     if (Array.isArray(structured) && structured.length > 0) {
         return structured.map((r: any) => `- [${r.id}] ${r.condition} -> ${r.action}`).join("\n");

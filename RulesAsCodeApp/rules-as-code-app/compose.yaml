@@ -17,12 +17,15 @@ services:
       DATABASE_URL: postgresql://postgres:root@db:5432/rules_as_code?schema=public
     ports:
       - 3703:3000
+    volumes:
+      - .:/app
+      - /app/node_modules
     depends_on:
       db:
         condition: service_healthy
 
   db:
-    image: postgres:15-alpine
+    image: postgres:latest
     restart: always
     environment:
       POSTGRES_USER: postgres
@@ -31,7 +34,7 @@ services:
     ports:
       - 5432:5432 # Expose to host for local Prisma Studio / mgmt
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
