@@ -141,23 +141,23 @@ export function useStepDataLoader(
 
   let initialInput = "";
 
-  //Approval gate: previous output becomes binding input only if approved
-  //Approval gate: previous output becomes binding input only if approved
-  // BUT: if we have saved input for THIS step (which might be an edit of the previous output), we MUST use it.
+  // Approval gate: previous output becomes binding input only if approved
+  // Prioritize upstream output to ensure changes in previous steps propagate downstream.
   
-  if (readableCurrentInput.trim().length > 0) {
-    // 1. Saved input exists -> Use it (restore draft/edits)
-    initialInput = readableCurrentInput;
-  } else if (
+  if (
     previousStep?.approved &&
-    previousStep.output != null
+    previousStep.output != null &&
+    String(previousStep.output).trim().length > 0
   ) {
-    // 2. No saved input -> Fallback to previous step output (if approved)
+    // 1. Fallback to previous step output (if approved)
     // If it's an object (LLM output), stringify it for the UI/TextArea, 
     // but the component (e.g. ExtractRules) can re-parse it if it wants.
     initialInput = typeof previousStep.output === "string" 
         ? previousStep.output 
         : JSON.stringify(previousStep.output, null, 2);
+  } else if (readableCurrentInput.trim().length > 0) {
+    // 2. Saved input exists -> Use it (restore draft/edits if no upstream or not approved)
+    initialInput = readableCurrentInput;
   } else {
     // 3. Nothing to show
     initialInput = "";

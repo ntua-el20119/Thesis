@@ -27,7 +27,60 @@ export default function DetectConflicts({
 
   const { phase, stepName, content, projectId, output: persistedOutput, reviewNotes: persistedNotes } = io;
 
-  const [inputText, setInputText] = useState(io.initialInput);
+  function formatInput(val: any): string {
+    if (!val) return "";
+    
+    // If it's already a string, check if it's JSON
+    let parsed = val;
+    if (typeof val === "string") {
+      if (!val.trim().startsWith("{")) return val;
+      try {
+        parsed = JSON.parse(val);
+      } catch {
+        return val;
+      }
+    }
+
+    const result = parsed?.result || parsed;
+    if (result && (result.entities || result.rules)) {
+      const entities = result.entities ?? [];
+      const rules = result.rules ?? [];
+
+      if ((!Array.isArray(entities) || entities.length === 0) && (!Array.isArray(rules) || rules.length === 0)) {
+        return typeof parsed === "string" ? parsed : JSON.stringify(parsed, null, 2);
+      }
+
+      let output = "";
+
+      if (Array.isArray(entities) && entities.length > 0) {
+        output += "Entities\n\n";
+        output += entities.map((e: any) => 
+`type: ${e.type || "Unknown"}
+name: ${e.name}
+description: ${e.description}
+source: ${e.sourceSection || "N/A"}`
+        ).join("\n\n\n");
+        output += "\n\n\n";
+      }
+
+      if (Array.isArray(rules) && rules.length > 0) {
+        output += "Rules\n\n";
+        output += rules.map((r: any) => 
+`id: ${r.id}
+condition: ${r.condition}
+action: ${r.action}
+source: ${r.sourceSection || "N/A"}
+text: "${r.sourceText}"`
+        ).join("\n\n\n");
+      }
+
+      return output.trim();
+    }
+
+    return typeof parsed === "string" ? parsed : JSON.stringify(parsed, null, 2);
+  }
+
+  const [inputText, setInputText] = useState(formatInput(io.initialInput));
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [processError, setProcessError] = useState<string | null>(null);
@@ -38,7 +91,7 @@ export default function DetectConflicts({
   }, [persistedNotes]);
 
   useEffect(() => {
-    setInputText(io.initialInput);
+    setInputText(formatInput(io.initialInput));
   }, [io.initialInput]);
 
   function buildReadable(src: any): string {
